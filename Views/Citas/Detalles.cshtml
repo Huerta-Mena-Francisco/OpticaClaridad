@@ -1,0 +1,121 @@
+﻿@model OpticaClaridad.Models.Cita
+
+@{
+    ViewData["Title"] = "Detalles de Cita";
+}
+
+<div class="container mt-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-action="Index">Citas</a></li>
+            <li class="breadcrumb-item active">Detalles</li>
+        </ol>
+    </nav>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4><i class="bi bi-calendar-event"></i> @ViewData["Title"]</h4>
+                </div>
+                <div class="card-body">
+                    <dl class="row">
+                        <dt class="col-sm-4">Cliente:</dt>
+                        <dd class="col-sm-8">@Model.ClienteNombre</dd>
+
+                        <dt class="col-sm-4">Teléfono:</dt>
+                        <dd class="col-sm-8">@Model.Telefono</dd>
+
+                        <dt class="col-sm-4">Fecha y Hora:</dt>
+                        <dd class="col-sm-8">
+                            @Model.FechaHora.ToString("dddd, dd MMMM yyyy")<br>
+                            <span class="text-muted">@Model.FechaHora.ToString("hh:mm tt")</span>
+                            @if (Model.EsHoy)
+                            {
+                                <span class="badge bg-warning ms-2">HOY</span>
+                            }
+                        </dd>
+
+                        <dt class="col-sm-4">Tipo de Cita:</dt>
+                        <dd class="col-sm-8">@Model.TipoCita</dd>
+
+                        <dt class="col-sm-4">Motivo:</dt>
+                        <dd class="col-sm-8">@Model.Motivo</dd>
+
+                        <dt class="col-sm-4">Estado:</dt>
+                        <dd class="col-sm-8">
+                            @if (Model.Estado == "Pendiente")
+                            {
+                                <span class="badge bg-warning">Pendiente</span>
+                            }
+                            else if (Model.Estado == "Confirmada")
+                            {
+                                <span class="badge bg-success">Confirmada</span>
+                            }
+                            else if (Model.Estado == "Atendida")
+                            {
+                                <span class="badge bg-info">Atendida</span>
+                            }
+                            else if (Model.Estado == "Cancelada")
+                            {
+                                <span class="badge bg-danger">Cancelada</span>
+                            }
+                        </dd>
+
+                        <dt class="col-sm-4">Notas:</dt>
+                        <dd class="col-sm-8">@Model.Notas</dd>
+
+                        <dt class="col-sm-4">Recordatorio:</dt>
+                        <dd class="col-sm-8">
+                            @if (Model.RecordatorioEnviado)
+                            {
+                                <span class="badge bg-success">Enviado</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-warning">No enviado</span>
+                            }
+                        </dd>
+
+                        <dt class="col-sm-4">Creada:</dt>
+                        <dd class="col-sm-8">@Model.FechaCreacion.ToString("dd/MM/yyyy HH:mm")</dd>
+                    </dl>
+
+                    <div class="d-flex justify-content-between mt-4">
+                        <a asp-action="Index" class="btn btn-secondary">Volver</a>
+                        <div>
+                            <a asp-action="Editar" asp-route-id="@Model.Id" class="btn btn-primary me-2">
+                                <i class="bi bi-pencil"></i> Editar
+                            </a>
+
+                            @if (Model.Estado == "Pendiente")
+                            {
+                                <a asp-action="Confirmar" asp-route-id="@Model.Id"
+                                   class="btn btn-success me-2"
+                                   onclick="return confirm('¿Confirmar esta cita?')">
+                                    <i class="bi bi-check-circle"></i> Confirmar
+                                </a>
+                            }
+
+                            @if (Model.Estado == "Confirmada" || Model.Estado == "Pendiente")
+                            {
+                                <a asp-action="Completar" asp-route-id="@Model.Id"
+                                   class="btn btn-info me-2"
+                                   onclick="return confirm('¿Marcar como atendida?')">
+                                    <i class="bi bi-check-all"></i> Atendida
+                                </a>
+                            }
+
+                            @if (Model.Estado != "Cancelada" && Model.Estado != "Atendida")
+                            {
+                                <a asp-action="Cancelar" asp-route-id="@Model.Id" class="btn btn-danger">
+                                    <i class="bi bi-x-circle"></i> Cancelar
+                                </a>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

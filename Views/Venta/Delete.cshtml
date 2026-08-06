@@ -1,0 +1,348 @@
+﻿@model OpticaClaridad.Models.Venta
+@{
+    ViewData["Title"] = "Eliminar Venta";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container mt-3">
+    <!-- Encabezado -->
+    <div class="d-flex justify-content-between align-items-start mb-4">
+        <div>
+            <h2><i class="bi bi-trash text-danger"></i> Eliminar Venta Permanentemente</h2>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a asp-action="Index">Ventas</a></li>
+                    <li class="breadcrumb-item"><a asp-action="Details" asp-route-id="@Model.Id">@Model.NumeroVenta</a></li>
+                    <li class="breadcrumb-item active text-danger">Eliminar</li>
+                </ol>
+            </nav>
+        </div>
+        <div>
+            <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Volver al Detalle
+            </a>
+        </div>
+    </div>
+
+    <!-- Verificar que solo administradores puedan ver esto -->
+    @if (!User.IsInRole("Admin"))
+    {
+        <div class="alert alert-danger">
+            <h4><i class="bi bi-shield-exclamation"></i> Acceso Restringido</h4>
+            <p class="mb-0">
+                Solo los administradores pueden eliminar ventas permanentemente del sistema.
+                Contacte al administrador si necesita realizar esta acción.
+            </p>
+            <div class="mt-3">
+                <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left"></i> Volver al Detalle
+                </a>
+                <a asp-action="Index" class="btn btn-outline-primary">
+                    <i class="bi bi-list"></i> Ver Lista de Ventas
+                </a>
+            </div>
+        </div>
+    }
+    else
+    {
+        <!-- Verificar que la venta esté cancelada -->
+        @if (Model.Estado != "CANCELADA")
+        {
+            <div class="alert alert-warning">
+                <h4><i class="bi bi-exclamation-triangle"></i> No se puede eliminar esta venta</h4>
+                <p class="mb-0">
+                    Solo se pueden eliminar permanentemente ventas que estén en estado <strong>CANCELADA</strong>.
+                    Esta venta está actualmente en estado: <strong>@Model.Estado</strong>.
+                </p>
+                <div class="mt-3">
+                    <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-secondary">
+                        <i class="bi bi-arrow-left"></i> Volver al Detalle
+                    </a>
+                    @if (Model.Estado != "CANCELADA")
+                    {
+                        <a asp-action="Cancel" asp-route-id="@Model.Id" class="btn btn-warning">
+                            <i class="bi bi-x-circle"></i> Cancelar Venta Primero
+                        </a>
+                    }
+                </div>
+            </div>
+        }
+        else
+        {
+            <!-- Advertencia CRÍTICA (sin cambios) -->
+            <div class="card border-danger mb-4">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0"><i class="bi bi-exclamation-triangle-fill"></i> ADVERTENCIA CRÍTICA: Eliminación Permanente</h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-danger">
+                        <h5 class="alert-heading">
+                            <i class="bi bi-exclamation-octagon-fill"></i> ¡ESTA ACCIÓN ES IRREVERSIBLE!
+                        </h5>
+                        <p class="mb-0">
+                            Está a punto de <strong>ELIMINAR PERMANENTEMENTE</strong> esta venta del sistema.
+                            Esta acción <strong>NO SE PUEDE DESHACER</strong> y la información será
+                            <strong>BORRADA COMPLETAMENTE</strong> de la base de datos.
+                        </p>
+                    </div>
+
+                    <div class="alert alert-dark">
+                        <h6><i class="bi bi-database-exclamation"></i> ¿Qué significa "eliminación permanente"?</h6>
+                        <ul class="mb-0">
+                            <li><strong>Toda la información de la venta será borrada</strong></li>
+                            <li><strong>No habrá copia de seguridad automática</strong></li>
+                            <li><strong>No aparecerá en ningún reporte histórico</strong></li>
+                            <li><strong>No se podrá recuperar de ninguna manera</strong></li>
+                            <li><strong>Afectará estadísticas y reportes definitivamente</strong></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Información de la Venta a Eliminar -->
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="bi bi-cart-x"></i> Venta a Eliminar</h5>
+                        </div>
+                        <div class="card-body">
+                            <table class="table table-sm table-borderless">
+                                <tr>
+                                    <td width="40%"><strong>N° Venta:</strong></td>
+                                    <td><code>@Model.NumeroVenta</code></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Fecha Original:</strong></td>
+                                    <td>@Model.FechaVenta.ToString("dd/MM/yyyy HH:mm")</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Paciente:</strong></td>  <!-- 🔴 CAMBIO -->
+                                    <td>@(Model.Paciente?.Nombre ?? "Cliente General")</td>  <!-- 🔴 CAMBIO -->
+                                </tr>
+                                <tr>
+                                    <td><strong>Tipo de Pago:</strong></td>
+                                    <td>@Model.TipoPago.ToUpper()</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Total Original:</strong></td>
+                                    <td><strong class="text-success">@Model.Total.ToString("C")</strong></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Estado Actual:</strong></td>
+                                    <td><span class="badge bg-danger">CANCELADA</span></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Cancelada el:</strong></td>
+                                    <td>@Model.FechaCreacion.ToString("dd/MM/yyyy HH:mm")</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="bi bi-trash"></i> Datos que se Eliminarán</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="alert alert-warning">
+                                <h6><i class="bi bi-list-check"></i> Registros a eliminar:</h6>
+                                <ul class="mb-0">
+                                    <li><strong>1 registro</strong> de venta principal</li>
+                                    <li><strong>@Model.Detalles.Count registro(s)</strong> de detalle de venta</li>
+                                    <li><strong>Toda la información asociada</strong> a esta venta</li>
+                                </ul>
+                            </div>
+
+                            <div class="mt-3">
+                                <h6><i class="bi bi-box"></i> Productos en esta venta:</h6>
+                                <div style="max-height: 150px; overflow-y: auto;">
+                                    <table class="table table-sm">
+                                        <tbody>
+                                            @foreach (var detalle in Model.Detalles)
+                                            {
+                                                <tr>
+                                                    <td><small>@detalle.Producto.Nombre</small></td>
+                                                    <td class="text-center"><small>@detalle.Cantidad uds.</small></td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Formulario de Eliminación (sin cambios) -->
+            <div class="card border-dark">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0"><i class="bi bi-x-octagon-fill"></i> Confirmar Eliminación Permanente</h5>
+                </div>
+                <div class="card-body">
+                    <form asp-action="Delete" method="post" id="deleteForm">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@Model.Id" />
+
+                        <!-- Verificaciones de Seguridad Múltiples -->
+                        <div class="alert alert-danger">
+                            <h6><i class="bi bi-shield-exclamation"></i> Verificaciones de Seguridad:</h6>
+
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="confirmPermanent" required>
+                                <label class="form-check-label" for="confirmPermanent">
+                                    <strong>Confirmo que comprendo que esta eliminación es PERMANENTE e IRREVERSIBLE</strong>
+                                </label>
+                            </div>
+
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="confirmBackup" required>
+                                <label class="form-check-label" for="confirmBackup">
+                                    <strong>Confirmo que tengo una copia de seguridad de los datos si es necesaria</strong>
+                                </label>
+                            </div>
+
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="confirmReports" required>
+                                <label class="form-check-label" for="confirmReports">
+                                    <strong>Confirmo que esta acción afectará reportes históricos y estadísticas</strong>
+                                </label>
+                            </div>
+
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="confirmResponsibility" required>
+                                <label class="form-check-label" for="confirmResponsibility">
+                                    <strong>Confirmo que soy el administrador y asumo toda la responsabilidad</strong>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Confirmación de Número de Venta -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">
+                                <i class="bi bi-key"></i> Confirmación Final
+                            </label>
+                            <p class="text-muted">
+                                Para confirmar que realmente desea eliminar esta venta, escriba el número de venta a continuación:
+                            </p>
+                            <div class="input-group">
+                                <span class="input-group-text">V-</span>
+                                <input type="text" class="form-control" id="confirmNumber"
+                                       placeholder="Ingrese el número después de V- (ej: 20240101-123456)">
+                            </div>
+                            <div class="form-text">
+                                Número de venta completo: <code>@Model.NumeroVenta</code>
+                            </div>
+                        </div>
+
+                        <!-- Botones -->
+                        <div class="d-flex justify-content-between mt-4">
+                            <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Volver sin Eliminar
+                            </a>
+
+                            <button type="submit" class="btn btn-dark" id="btnEliminarVenta" disabled>
+                                <i class="bi bi-trash-fill"></i> ELIMINAR PERMANENTEMENTE
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Información de Auditoría (sin cambios) -->
+            <div class="card border-info mt-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="bi bi-clipboard-data"></i> Registro de Auditoría</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6><i class="bi bi-person-check"></i> Información de Usuario:</h6>
+                            <ul class="list-unstyled">
+                                <li><i class="bi bi-person"></i> <strong>Usuario:</strong> @User.Identity?.Name</li>
+                                <li><i class="bi bi-clock"></i> <strong>Fecha/Hora:</strong> @DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss")</li>
+                                <li><i class="bi bi-pc-display"></i> <strong>IP:</strong> <span id="ipAddress">Cargando...</span></li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6><i class="bi bi-journal-text"></i> Notas para Administrador:</h6>
+                            <ul class="list-unstyled">
+                                <li><i class="bi bi-file-earmark-text"></i> Considere exportar los datos antes de eliminar</li>
+                                <li><i class="bi bi-graph-up"></i> Esta acción afectará reportes financieros</li>
+                                <li><i class="bi bi-archive"></i> Mantenga registro escrito de la eliminación</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    }
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // 1. SIMPLE: Habilitar botón cuando todos los checkboxes estén marcados
+            function validarCheckboxes() {
+                const check1 = $('#confirmPermanent').is(':checked');
+                const check2 = $('#confirmBackup').is(':checked');
+                const check3 = $('#confirmReports').is(':checked');
+                const check4 = $('#confirmResponsibility').is(':checked');
+
+                const todosMarcados = check1 && check2 && check3 && check4;
+
+                $('#btnEliminarVenta').prop('disabled', !todosMarcados);
+
+                // Solo para visual feedback
+                if (todosMarcados) {
+                    $('#btnEliminarVenta').removeClass('btn-dark').addClass('btn-danger');
+                }
+
+                return todosMarcados;
+            }
+
+            // 2. SIMPLE: Escuchar cambios en checkboxes
+            $('.form-check-input').on('change', validarCheckboxes);
+
+            // 3. SIMPLE: Validar al enviar
+            $('#deleteForm').submit(function(e) {
+                // Validar checkboxes
+                if (!validarCheckboxes()) {
+                    e.preventDefault();
+                    alert('Marque todas las verificaciones de seguridad.');
+                    return false;
+                }
+
+                // Validar número de venta
+                const numeroIngresado = $('#confirmNumber').val().trim();
+                const numeroEsperado = '@Model.NumeroVenta'.replace('V-', '');
+
+                if (numeroIngresado !== numeroEsperado) {
+                    e.preventDefault();
+                    alert('El número de venta no coincide.');
+                    $('#confirmNumber').focus().select();
+                    return false;
+                }
+
+                // SOLO UNA confirmación (no 3 + prompt)
+                if (!confirm('¿ELIMINAR PERMANENTEMENTE la venta @Model.NumeroVenta?\n\n¡NO SE PUEDE DESHACER!')) {
+                    e.preventDefault();
+                    return false;
+                }
+
+                // Mostrar loading
+                $('#btnEliminarVenta').prop('disabled', true).html(
+                    '<span class="spinner-border spinner-border-sm"></span> Eliminando...'
+                );
+
+                return true;
+            });
+
+            // 4. Inicializar
+            validarCheckboxes();
+        });
+    </script>
+}

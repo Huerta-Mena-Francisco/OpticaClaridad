@@ -1,0 +1,165 @@
+﻿@model OpticaClaridad.Models.AbonoCredito
+@{
+    ViewData["Title"] = "Editar Abono";
+    var credito = ViewBag.Credito as OpticaClaridad.Models.Credito;
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle-fill"></i> @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header bg-warning text-dark">
+            <h3 class="card-title">
+                <i class="bi bi-pencil-square"></i> @ViewData["Title"]
+            </h3>
+        </div>
+        <div class="card-body">
+            <!-- Información del crédito -->
+            @if (credito != null)
+            {
+                <div class="alert alert-info mb-4">
+                    <h6 class="alert-heading">
+                        <i class="bi bi-credit-card"></i> Crédito #@credito.Id
+                    </h6>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <small class="text-muted">Paciente:</small><br />  <!-- 🔴 CAMBIO: Paciente -->
+                            <strong>@credito.Paciente?.Nombre</strong>  <!-- 🔴 CAMBIO: Paciente en lugar de Cliente -->
+                        </div>
+                        <div class="col-md-4">
+                            <small class="text-muted">Saldo Actual:</small><br />
+                            <strong class="text-warning">@credito.Saldo.ToString("C")</strong>
+                        </div>
+                        <div class="col-md-4">
+                            <small class="text-muted">Estado:</small><br />
+                            <span class="badge bg-@(credito.Estado == "PAGADO" ? "success" : "primary")">
+                                @credito.Estado
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <form asp-action="Edit">
+                <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                <input type="hidden" asp-for="Id" />
+                <input type="hidden" asp-for="CreditoId" />
+                <input type="hidden" asp-for="FechaCreacion" />
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="FechaAbono" class="form-label required"></label>
+                        <input asp-for="FechaAbono" type="date" class="form-control" required />
+                        <span asp-validation-for="FechaAbono" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="Monto" class="form-label required"></label>
+                        <div class="input-group">
+                            <span class="input-group-text">$</span>
+                            <input asp-for="Monto" class="form-control"
+                                   placeholder="0.00" step="0.01" min="0.01" required
+                                   id="montoInput" />
+                        </div>
+                        <span asp-validation-for="Monto" class="text-danger"></span>
+                        <small class="text-muted">
+                            Monto original: <span class="fw-bold">@Model.Monto.ToString("C")</span>
+                        </small>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-12 mb-3">
+                        <label asp-for="Observaciones" class="form-label"></label>
+                        <textarea asp-for="Observaciones" class="form-control" rows="3"></textarea>
+                        <span asp-validation-for="Observaciones" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <!-- Información del registro -->
+                <div class="card mb-4 bg-light">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <small class="text-muted">
+                                    <i class="bi bi-person-circle"></i>
+                                    <strong>Usuario:</strong> @Model.UsuarioId
+                                </small>
+                            </div>
+                            <div class="col-md-6 text-end">
+                                <small class="text-muted">
+                                    <i class="bi bi-calendar"></i>
+                                    <strong>Creado:</strong> @Model.FechaCreacion.ToString("dd/MM/yyyy HH:mm")
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Botones -->
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <a asp-action="Index" asp-route-creditoId="@Model.CreditoId"
+                           class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Cancelar
+                        </a>
+                        <a asp-controller="Creditos" asp-action="Details" asp-route-id="@Model.CreditoId"
+                           class="btn btn-info ms-2">
+                            <i class="bi bi-credit-card"></i> Ver Crédito
+                        </a>
+                    </div>
+                    <div>
+                        <button type="submit" class="btn btn-warning">
+                            <i class="bi bi-save"></i> Guardar Cambios
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const montoInput = document.getElementById('montoInput');
+            const montoOriginal = @Model.Monto.ToString("0.00").Replace(",", ".");
+
+            // Validar que el monto no sea negativo
+            montoInput.addEventListener('change', function() {
+                const monto = parseFloat(this.value) || 0;
+                if (monto <= 0) {
+                    this.classList.add('is-invalid');
+                    document.querySelector('[data-valmsg-for="Monto"]').textContent =
+                        'El monto debe ser mayor a 0';
+                } else {
+                    this.classList.remove('is-invalid');
+                }
+            });
+
+            // Establecer fecha mínima
+            const fechaInput = document.getElementById('FechaAbono');
+            if (!fechaInput.value) {
+                const today = new Date().toISOString().split('T')[0];
+                fechaInput.value = today;
+            }
+        });
+    </script>
+}
+
+<style>
+    .required::after {
+        content: " *";
+        color: red;
+    }
+</style>

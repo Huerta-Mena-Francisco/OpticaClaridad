@@ -1,0 +1,229 @@
+﻿@model OpticaClaridad.Models.Venta
+@{
+    ViewData["Title"] = "Detalle de Venta";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container mt-3">
+    <div class="d-flex justify-content-between align-items-start mb-4">
+        <div>
+            <h2><i class="bi bi-eye"></i> Detalle de Venta</h2>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a asp-action="Index">Ventas</a></li>
+                    <li class="breadcrumb-item active">@Model.NumeroVenta</li>
+                </ol>
+            </nav>
+        </div>
+        <div class="btn-group">
+            <a asp-action="Ticket" asp-route-id="@Model.Id" class="btn btn-outline-primary">
+                <i class="bi bi-receipt"></i> Ver Ticket
+            </a>
+            @if (Model.Estado != "CANCELADA")
+            {
+                <a asp-action="Cancel" asp-route-id="@Model.Id" class="btn btn-outline-warning">
+                    <i class="bi bi-x-circle"></i> Cancelar Venta
+                </a>
+            }
+            <a asp-action="Index" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Volver
+            </a>
+        </div>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle"></i> @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-info-circle"></i> Información de Venta</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm table-borderless">
+                        <tr>
+                            <td><strong>N° Venta:</strong></td>
+                            <td>@Model.NumeroVenta</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Fecha:</strong></td>
+                            <td>@Model.FechaVenta.ToString("dd/MM/yyyy HH:mm")</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Estado:</strong></td>
+                            <td>
+                                @if (Model.Estado == "COMPLETADA")
+                                {
+                                    <span class="badge bg-success">COMPLETADA</span>
+                                }
+                                else if (Model.Estado == "PENDIENTE")
+                                {
+                                    <span class="badge bg-warning">PENDIENTE</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-danger">CANCELADA</span>
+                                }
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>Registrada:</strong></td>
+                            <td>@Model.FechaCreacion.ToString("dd/MM/yyyy HH:mm")</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Vendedor ID:</strong></td>
+                            <td>@Model.UsuarioId</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="bi bi-person"></i> Información del Paciente</h5>  <!-- 🔴 CAMBIO -->
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm table-borderless">
+                        <tr>
+                            <td><strong>Nombre:</strong></td>
+                            <td>@(Model.Paciente?.Nombre ?? "Cliente General")</td>  <!-- 🔴 CAMBIO -->
+                        </tr>
+                        @if (Model.Paciente != null) 
+                        {
+                            <tr>
+                                <td><strong>Teléfono:</strong></td>
+                                <td>@(Model.Paciente.Telefono ?? "-")</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Email:</strong></td>
+                                <td>@(Model.Paciente.Email ?? "-")</td>
+                            </tr>
+                        }
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="bi bi-cash"></i> Información de Pago</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm table-borderless">
+                        <tr>
+                            <td><strong>Tipo:</strong></td>
+                            <td>
+                                @if (Model.TipoPago == "Credito")
+                                {
+                                    <span class="badge bg-warning text-dark">CRÉDITO</span>
+                                }
+                                else if (Model.TipoPago == "Tarjeta")
+                                {
+                                    <span class="badge bg-info">TARJETA</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-success">EFECTIVO</span>
+                                }
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>Total:</strong></td>
+                            <td><strong class="text-success">@Model.Total.ToString("C")</strong></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Pagado:</strong></td>
+                            <td>@Model.MontoPagado.ToString("C")</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Cambio:</strong></td>
+                            <td>@Model.Cambio.ToString("C")</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Productos:</strong></td>
+                            <td>@Model.Detalles.Count</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header bg-secondary text-white">
+            <h5 class="mb-0"><i class="bi bi-box"></i> Productos (@Model.Detalles.Count)</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Producto</th>
+                            <th class="text-center">Cantidad</th>
+                            <th class="text-end">Precio Unitario</th>
+                            <th class="text-end">Subtotal</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.Detalles != null && Model.Detalles.Any())
+                        {
+                            @foreach (var detalle in Model.Detalles)
+                            {
+                                <tr>
+                                    <td>@(detalle.Producto?.Nombre ?? "Producto no encontrado")</td>
+                                    <td class="text-center">
+                                        <span class="badge bg-primary rounded-pill">@detalle.Cantidad</span>
+                                    </td>
+                                    <td class="text-end">@detalle.PrecioUnitario.ToString("C")</td>
+                                    <td class="text-end"><strong>@detalle.Subtotal.ToString("C")</strong></td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="4" class="text-center text-muted py-3">
+                                    No hay productos en esta venta
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                    <tfoot>
+                        <tr class="table-active">
+                            <td colspan="3" class="text-end"><h5 class="mb-0">TOTAL:</h5></td>
+                            <td class="text-end">
+                                <h4 class="mb-0 text-success">@Model.Total.ToString("C")</h4>
+                            </td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-between mt-4">
+        <a asp-action="Index" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Volver al Listado
+        </a>
+        <div class="btn-group">
+            <a asp-action="Ticket" asp-route-id="@Model.Id" class="btn btn-primary">
+                <i class="bi bi-receipt"></i> Ver Ticket
+            </a>
+            @if (Model.Estado != "CANCELADA")
+            {
+                <a asp-action="Cancel" asp-route-id="@Model.Id" class="btn btn-warning">
+                    <i class="bi bi-x-circle"></i> Cancelar Venta
+                </a>
+            }
+        </div>
+    </div>
+</div>

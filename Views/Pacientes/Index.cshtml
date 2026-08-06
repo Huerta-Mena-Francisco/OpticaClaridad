@@ -1,0 +1,484 @@
+﻿@model IEnumerable<OpticaClaridad.Models.Paciente>
+
+@{
+    ViewData["Title"] = "Gestión de Pacientes";
+    ViewData["Subtitle"] = "Listado de pacientes registrados en el sistema";
+    var sexoFilter = ViewData["SexoFilter"] as string;
+    var searchString = ViewData["CurrentFilter"] as string;
+}
+
+<div class="container-fluid px-4">
+    <!-- Encabezado -->
+    <div class="d-flex justify-content-between align-items-center mt-4 mb-4">
+        <div>
+            <h1 class="mt-4">
+                <i class="fas fa-user-injured me-2" style="color: #0dcaf0;"></i>
+                @ViewData["Title"]
+            </h1>
+            <ol class="breadcrumb mb-4">
+                <li class="breadcrumb-item">
+                    <a asp-controller="Home" asp-action="Index" class="text-decoration-none">
+                        <i class="fas fa-home me-1"></i>Inicio
+                    </a>
+                </li>
+                <li class="breadcrumb-item active">
+                    <i class="fas fa-user-injured me-1"></i>Pacientes
+                </li>
+            </ol>
+        </div>
+        <div>
+            <a asp-action="Create" class="btn btn-success btn-lg shadow-sm">
+                <i class="fas fa-plus-circle me-2"></i>Nuevo Paciente
+            </a>
+        </div>
+    </div>
+
+    <!-- Mensajes de alerta -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+            <i class="fas fa-check-circle me-2"></i>@TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+            <i class="fas fa-exclamation-triangle me-2"></i>@TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <!-- Panel de filtros mejorado -->
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header bg-gradient" style="background: linear-gradient(45deg, #0dcaf0, #0d6efd);">
+            <h5 class="mb-0 text-white">
+                <i class="fas fa-filter me-2"></i>Filtros de Búsqueda
+            </h5>
+        </div>
+        <div class="card-body">
+            <form asp-action="Index" method="get" class="row g-3">
+                <div class="col-md-5">
+                    <label class="form-label fw-bold">
+                        <i class="fas fa-search me-1"></i>Buscar Paciente
+                    </label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light">
+                            <i class="fas fa-search text-primary"></i>
+                        </span>
+                        <input type="text" name="searchString" class="form-control form-control-lg"
+                               placeholder="Nombre, teléfono, email, dirección..."
+                               value="@searchString" />
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-bold">
+                        <i class="fas fa-venus-mars me-1"></i>Sexo
+                    </label>
+                    <select name="sexoFilter" class="form-select form-select-lg bg-light">
+                        <option value="">Todos los sexos</option>
+                        <option value="Masculino" selected="@(sexoFilter == "Masculino")">Masculino</option>
+                        <option value="Femenino" selected="@(sexoFilter == "Femenino")">Femenino</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label fw-bold">
+                        <i class="fas fa-toggle-on me-1"></i>Estado
+                    </label>
+                    <select name="estadoFilter" class="form-select form-select-lg bg-light">
+                        <option value="">Todos</option>
+                        <option value="Activo" selected="@(ViewData["EstadoFilter"]?.ToString() == "Activo")">Activos</option>
+                        <option value="Inactivo" selected="@(ViewData["EstadoFilter"]?.ToString() == "Inactivo")">Inactivos</option>
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100 btn-lg">
+                        <i class="fas fa-filter me-2"></i>Filtrar
+                    </button>
+                </div>
+                <div class="col-12 mt-3">
+                    <hr class="my-2" />
+                    <div class="d-flex gap-2">
+                        <a asp-action="Index" class="btn btn-outline-secondary">
+                            <i class="fas fa-undo me-1"></i>Limpiar filtros
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Tarjetas de resumen -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-start border-primary border-5 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="small text-primary fw-bold">TOTAL PACIENTES</div>
+                            <div class="h2 fw-bold">@Model.Count()</div>
+                        </div>
+                        <i class="fas fa-users fa-3x text-primary opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-start border-success border-5 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="small text-success fw-bold">ACTIVOS</div>
+                            <div class="h2 fw-bold text-success">@Model.Count(p => p.Activo)</div>
+                        </div>
+                        <i class="fas fa-user-check fa-3x text-success opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-start border-warning border-5 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="small text-warning fw-bold">REGISTROS HOY</div>
+                            <div class="h2 fw-bold text-warning">@Model.Count(p => p.FechaRegistro?.Date == DateTime.Today)</div>
+                        </div>
+                        <i class="fas fa-calendar-day fa-3x text-warning opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-start border-info border-5 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="small text-info fw-bold">CON EXÁMENES</div>
+                            <div class="h2 fw-bold text-info">@Model.Count(p => p.ExamenesVisuales != null && p.ExamenesVisuales.Any())</div>
+                        </div>
+                        <i class="fas fa-eye fa-3x text-info opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla de pacientes -->
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header bg-white">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-table me-2 text-primary"></i>
+                    Registro de Pacientes
+                </h5>
+                <span class="badge bg-primary p-2">
+                    <i class="fas fa-list me-1"></i> @Model.Count() registros
+                </span>
+            </div>
+        </div>
+        <div class="card-body">
+            @if (!Model.Any())
+            {
+                <div class="text-center py-5">
+                    <div class="mb-4">
+                        <i class="fas fa-user-injured fa-5x text-muted"></i>
+                    </div>
+                    <h3 class="text-muted">No hay pacientes registrados</h3>
+                    <p class="text-muted mb-4">Comienza agregando un nuevo paciente al sistema.</p>
+                    <a asp-action="Create" class="btn btn-primary btn-lg px-5">
+                        <i class="fas fa-plus-circle me-2"></i>Agregar Paciente
+                    </a>
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle" id="pacientesTable">
+                        <thead class="table-dark">
+                            <tr>
+                                <th class="text-center" style="width: 60px;">ID</th>
+                                <th style="width: 200px;">Paciente</th>
+                                <th style="width: 200px;">Contacto</th>
+                                <th class="text-center" style="width: 100px;">Edad</th>
+                                <th class="text-center" style="width: 100px;">Sexo</th>
+                                <th style="width: 120px;">Registro</th>
+                                <th class="text-center" style="width: 100px;">Estado</th>
+                                <th class="text-center" style="width: 100px;">Exámenes</th>
+                                <th class="text-center" style="width: 120px;">Créditos</th>  <!-- 🔴 NUEVA COLUMNA -->
+                                <th class="text-center" style="width: 220px;">Acciones</th>  <!-- Ajustar ancho -->
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model)
+                            {
+                                // ✅ CORREGIDO: Cargar explícitamente los exámenes visuales
+                                var examenesCount = 0;
+                                if (item.ExamenesVisuales != null)
+                                {
+                                    examenesCount = item.ExamenesVisuales.Count;
+                                }
+                                else
+                                {
+                                    // Intentar cargar desde ViewBag o calcular
+                                    examenesCount = ViewBag.ExamenesCount?[item.Id] ?? 0;
+                                }
+
+                                <tr class="@(!item.Activo ? "table-secondary" : "")">
+                                    <td class="text-center">
+                                        <span class="badge bg-dark px-3 py-2">@item.Id.ToString("D4")</span>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar-circle bg-@(item.Sexo == "Masculino" ? "primary" : "pink") me-2">
+                                                <span class="avatar-initials">
+                                                    @(string.IsNullOrEmpty(item.Nombre) ? "?" : item.Nombre.Substring(0, 1).ToUpper())
+                                                </span>
+                                            </div>
+                                            <div>
+                                                <strong class="fs-6">@item.Nombre</strong>
+                                                @if (!string.IsNullOrEmpty(item.Observaciones))
+                                                {
+                                                    <div>
+                                                        <small class="text-muted">
+                                                            <i class="fas fa-sticky-note me-1"></i>
+                                                            @{
+                                                                var observacion = item.Observaciones.Length > 40 ?
+                                                                item.Observaciones.Substring(0, 40) + "..." :
+                                                                item.Observaciones;
+                                                            }
+                                                            @observacion
+                                                        </small>
+                                                    </div>
+                                                }
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(item.Telefono))
+                                        {
+                                            <div class="mb-1">
+                                                <i class="fas fa-phone me-1 text-primary"></i>
+                                                <a href="tel:@item.Telefono" class="text-decoration-none">@item.Telefono</a>
+                                            </div>
+                                        }
+                                        @if (!string.IsNullOrEmpty(item.Email))
+                                        {
+                                            <div>
+                                                <i class="fas fa-envelope me-1 text-primary"></i>
+                                                <a href="mailto:@item.Email" class="text-decoration-none">@item.Email</a>
+                                            </div>
+                                        }
+                                        @if (string.IsNullOrEmpty(item.Telefono) && string.IsNullOrEmpty(item.Email))
+                                        {
+                                            <span class="text-muted fst-italic">
+                                                <i class="fas fa-ban me-1"></i>Sin contacto
+                                            </span>
+                                        }
+                                    </td>
+                                    <td class="text-center">
+                                        @if (item.FechaNacimiento.HasValue)
+                                        {
+                                            <span class="badge bg-info bg-opacity-25 text-dark p-2">
+                                                <span class="fs-6 fw-bold">@item.Edad</span>
+                                                <span class="text-muted">años</span>
+                                            </span>
+                                            <div>
+                                                <small class="text-muted">
+                                                    @item.FechaNacimiento.Value.ToString("dd/MM/yyyy")
+                                                </small>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted fst-italic">No registrado</span>
+                                        }
+                                    </td>
+                                    <td class="text-center">
+                                        @if (!string.IsNullOrEmpty(item.Sexo))
+                                        {
+                                            <span class="badge @(item.Sexo == "Masculino" ? "bg-primary" : "bg-pink") p-2">
+                                                <i class="fas @(item.Sexo == "Masculino" ? "fa-mars" : "fa-venus") me-1"></i>
+                                                @item.Sexo
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted fst-italic">No especificado</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-light text-dark">
+                                            <i class="fas fa-calendar me-1"></i>
+                                            @item.FechaRegistro?.ToString("dd/MM/yyyy")
+                                        </span>
+                                    </td>
+                                    <td class="text-center">
+                                        @if (item.Activo)
+                                        {
+                                            <span class="badge bg-success p-2">
+                                                <i class="fas fa-check-circle me-1"></i>Activo
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-danger p-2">
+                                                <i class="fas fa-times-circle me-1"></i>Inactivo
+                                            </span>
+                                        }
+                                        <!-- Después de la columna de Exámenes (aproximadamente línea 350) -->
+                                    <td class="text-center">
+                                        @if (examenesCount > 0)
+                                        {
+                                            <a asp-controller="HistorialClinico" asp-action="Index" asp-route-pacienteId="@item.Id"
+                                               class="text-decoration-none">
+                                                <span class="badge bg-info p-2">
+                                                    <i class="fas fa-eye me-1"></i>
+                                                    @examenesCount @(examenesCount == 1 ? "examen" : "exámenes")
+                                                </span>
+                                            </a>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary bg-opacity-25 text-dark p-2">
+                                                <i class="fas fa-eye-slash me-1"></i>Sin exámenes
+                                            </span>
+                                        }
+                                    </td>
+                                    <!-- 🔴 NUEVA COLUMNA: Créditos -->
+                                    <td class="text-center">
+                                        @{
+                                            var creditosCount = item.Creditos?.Count ?? 0;
+                                            var creditosPendientes = item.Creditos?.Count(c => c.Estado != "PAGADO") ?? 0;
+                                        }
+                                        @if (creditosCount > 0)
+                                        {
+                                            <a asp-controller="Creditos" asp-action="Index" asp-route-pacienteId="@item.Id"
+                                               class="text-decoration-none">
+                                                <span class="badge bg-warning p-2">
+                                                    <i class="fas fa-credit-card me-1"></i>
+                                                    @creditosCount @(creditosCount == 1 ? "crédito" : "créditos")
+                                                </span>
+                                                @if (creditosPendientes > 0)
+                                                {
+                                                    <span class="badge bg-danger ms-1">@creditosPendientes pend.</span>
+                                                }
+                                            </a>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary bg-opacity-25 text-dark p-2">
+                                                <i class="fas fa-credit-card me-1"></i>Sin créditos
+                                            </span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <div class="d-flex justify-content-center gap-1">
+                                            <!-- ✅ CORREGIDO: Action y Controller explícitos -->
+                                            <a asp-controller="Pacientes" asp-action="Details" asp-route-id="@item.Id"
+                                               class="btn btn-sm btn-outline-info" title="Ver detalles"
+                                               data-bs-toggle="tooltip">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a asp-controller="Pacientes" asp-action="Edit" asp-route-id="@item.Id"
+                                               class="btn btn-sm btn-outline-warning" title="Editar paciente"
+                                               data-bs-toggle="tooltip">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <a asp-controller="HistorialClinico" asp-action="Create" asp-route-pacienteId="@item.Id"
+                                               class="btn btn-sm btn-outline-primary" title="Nuevo examen"
+                                               data-bs-toggle="tooltip">
+                                                <i class="fas fa-file-medical-alt"></i>
+                                            </a>
+                                            <a asp-controller="Pacientes" asp-action="Delete" asp-route-id="@item.Id"
+                                               class="btn btn-sm btn-outline-danger" title="Eliminar paciente"
+                                               data-bs-toggle="tooltip">
+                                                <i class="fas fa-trash"></i>
+                                            </a>
+                                            @if (!item.Activo)
+                                            {
+                                                <a asp-controller="Pacientes" asp-action="ToggleStatus" asp-route-id="@item.Id"
+                                                   class="btn btn-sm btn-outline-success" title="Activar paciente"
+                                                   data-bs-toggle="tooltip">
+                                                    <i class="fas fa-toggle-on"></i>
+                                                </a>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Estilos personalizados -->
+<style>
+    .bg-gradient {
+        background: linear-gradient(45deg, #0dcaf0, #0d6efd);
+    }
+
+    .bg-pink {
+        background-color: #e83e8c !important;
+        color: white !important;
+    }
+
+    .avatar-circle {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .avatar-initials {
+        color: white;
+        font-size: 18px;
+        font-weight: bold;
+        text-transform: uppercase;
+    }
+
+    .border-start {
+        transition: transform 0.2s;
+    }
+
+        .border-start:hover {
+            transform: translateY(-5px);
+        }
+
+    .table-hover tbody tr:hover {
+        background-color: rgba(13, 202, 240, 0.05);
+    }
+
+    .badge {
+        font-weight: 500;
+    }
+</style>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Inicializar DataTable
+            $('#pacientesTable').DataTable({
+                pageLength: 25,
+                language: {
+                    url: '//cdn.datatables.net/plug-ins/1.13.4/i18n/es-ES.json'
+                },
+                order: [[0, 'desc']],
+                columnDefs: [
+                    { orderable: false, targets: [8] }
+                ]
+            });
+
+            // Inicializar tooltips
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            var tooltipList = tooltipTriggerList.map(function(tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+        });
+    </script>
+}

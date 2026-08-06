@@ -1,0 +1,57 @@
+﻿@model IEnumerable<OpticaClaridad.Models.Producto>
+
+@if (Model != null && Model.Any())
+{
+    <div class="container">
+        <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
+            @foreach (var producto in Model)
+            {
+                <div class="col">
+                    <div class="card product-card h-100 border-0 shadow-sm">
+                        <div class="position-absolute top-0 start-0 m-2">
+                            @if (producto.EstadoStock == "AGOTADO")
+                            {
+                                <span class="badge bg-danger">AGOTADO</span>
+                            }
+                            else if (producto.EstadoStock == "BAJO")
+                            {
+                                <span class="badge bg-warning">ÚLTIMAS</span>
+                            }
+                        </div>
+
+                        <img src="@producto.ImagenUrl"
+                             class="card-img-top p-3"
+                             alt="@producto.Nombre"
+                             style="height: 200px; object-fit: contain;">
+
+                        <div class="card-body">
+                            <h6 class="card-title">
+                                <a asp-action="Detalles" asp-route-id="@producto.Id"
+                                   class="text-decoration-none text-dark">
+                                    @producto.Nombre
+                                </a>
+                            </h6>
+                            <p class="card-text text-primary fw-bold">@producto.PrecioVenta.ToString("C")</p>
+                            <div class="d-grid">
+                                <a asp-action="Detalles" asp-route-id="@producto.Id"
+                                   class="btn btn-outline-primary btn-sm">
+                                    Ver detalles
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+}
+else
+{
+    <div class="container">
+        <div class="text-center py-5">
+            <i class="bi bi-box display-1 text-muted"></i>
+            <h4 class="text-muted mt-3">No hay productos disponibles</h4>
+            <p class="text-muted">Pronto agregaremos más productos a esta sección</p>
+        </div>
+    </div>
+}

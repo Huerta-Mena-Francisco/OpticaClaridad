@@ -1,0 +1,46 @@
+﻿@* Views/Catalogo/Nuevos.cshtml *@
+@model IEnumerable<OpticaClaridad.Models.Producto>
+
+@{
+    ViewData["Title"] = "Nuevos Productos";
+    ViewData["Subtitle"] = "Descubre nuestras últimas adquisiciones";
+}
+
+<!-- Hero Section para Nuevos -->
+<div class="hero-nuevos mb-5">
+    <div class="container py-5">
+        <div class="row align-items-center">
+            <div class="col-lg-8">
+                <h1 class="display-4 fw-bold text-white mb-3">@ViewData["Title"]</h1>
+                <p class="lead text-white mb-4">@ViewData["Subtitle"]</p>
+                <p class="text-white-50">
+                    Las últimas tendencias en óptica.
+                    Productos recién llegados con los mejores diseños y tecnología.
+                </p>
+            </div>
+            <div class="col-lg-4 text-center">
+                <div class="nuevo-badge">
+                    <i class="bi bi-star-fill display-1 text-warning"></i>
+                    <p class="text-white mt-2">PRODUCTOS<br>RECIÉN LLEGADOS</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Reutiliza el grid de productos del Index -->
+@await Html.PartialAsync("_ProductGrid", Model)
+
+<style>
+    .hero-nuevos {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        border-radius: 0 0 30px 30px;
+    }
+
+    .nuevo-badge {
+        background: rgba(255,255,255,0.2);
+        border-radius: 20px;
+        padding: 2rem;
+        backdrop-filter: blur(10px);
+    }
+</style>

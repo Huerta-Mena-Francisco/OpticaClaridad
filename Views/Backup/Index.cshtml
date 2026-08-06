@@ -1,0 +1,192 @@
+﻿@model List<OpticaClaridad.Controllers.BackupInfo>
+@{
+    ViewData["Title"] = "Gestión de Backups";
+    var estadisticas = ViewBag.Estadisticas as OpticaClaridad.Controllers.BackupEstadisticas;
+}
+
+
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>💾 Backup de Base de Datos</h2>
+        <div>
+            <form asp-action="Crear" method="post" class="d-inline me-2">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn btn-success">
+                    <i class="bi bi-plus-circle"></i> Crear Backup
+                </button>
+            </form>
+            <a asp-action="AbrirCarpeta" class="btn btn-outline-info">
+                <i class="bi bi-folder"></i> Abrir Carpeta
+            </a>
+        </div>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @Html.Raw(TempData["Success"])
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @Html.Raw(TempData["Error"])
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- Estadísticas -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Ubicación</h5>
+                    <p class="card-text small">@estadisticas.RutaBackups</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card bg-info text-white">
+                <div class="card-body text-center">
+                    <h4>@estadisticas.TotalBackups</h4>
+                    <p class="small mb-0">Total Backups</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card bg-success text-white">
+                <div class="card-body text-center">
+                    <h4>@estadisticas.TamanoTotalMB.ToString("N1")</h4>
+                    <p class="small mb-0">MB Totales</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card bg-warning text-white">
+                <div class="card-body text-center">
+                    <h4>@estadisticas.EspacioDiscoGB.ToString("N1")</h4>
+                    <p class="small mb-0">GB Libres</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-secondary text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Configuración</h5>
+                    <p class="card-text small mb-0">Mantener: @estadisticas.MantenerDias días</p>
+                    <p class="card-text small">Backups hoy: @estadisticas.BackupsHoy</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lista de Backups -->
+    <div class="card">
+        <div class="card-header bg-dark text-white">
+            <i class="bi bi-archive"></i> Backups Disponibles (@Model.Count)
+        </div>
+        <div class="card-body">
+            @if (Model.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Nombre del Archivo</th>
+                                <th>Tamaño</th>
+                                <th>Fecha de Creación</th>
+                                <th>Antigüedad</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var backup in Model)
+                            {
+                                <tr class="@(backup.DiasDesdeCreacion > 30 ? "table-warning" : "")">
+                                    <td>@backup.NombreArchivo</td>
+                                    <td>@backup.TamanoMB.ToString("N1") MB</td>
+                                    <td>@backup.FechaCreacion.ToString("dd/MM/yyyy HH:mm")</td>
+                                    <td>
+                                        @if (backup.DiasDesdeCreacion == 0)
+                                        {
+                                            <span class="badge bg-success">Hoy</span>
+                                        }
+                                        else if (backup.DiasDesdeCreacion < 7)
+                                        {
+                                            <span class="badge bg-info">@backup.DiasDesdeCreacion día(s)</span>
+                                        }
+                                        else if (backup.DiasDesdeCreacion < 30)
+                                        {
+                                            <span class="badge bg-warning">@backup.DiasDesdeCreacion día(s)</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-danger">@backup.DiasDesdeCreacion día(s)</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <a asp-action="Descargar" asp-route-nombreArchivo="@backup.NombreArchivo"
+                                           class="btn btn-sm btn-primary" title="Descargar">
+                                            <i class="bi bi-download"></i>
+                                        </a>
+
+                                        @if (ViewBag.EsAdmin == true)
+                                        {
+                                            <form asp-action="Eliminar" method="post" class="d-inline">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="nombreArchivo" value="@backup.NombreArchivo" />
+                                                <button type="submit" class="btn btn-sm btn-danger"
+                                                        onclick="return confirm('¿Eliminar backup @backup.NombreArchivo?')"
+                                                        title="Eliminar">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </form>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-4">
+                    <i class="bi bi-archive display-1 text-muted"></i>
+                    <p class="lead mt-3">No hay backups disponibles</p>
+                    <p>Crea tu primer backup usando el botón superior</p>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Información técnica -->
+    <div class="card mt-4">
+        <div class="card-header bg-light">
+            <i class="bi bi-info-circle"></i> Información Técnica
+        </div>
+        <div class="card-body">
+            <p><strong>Base de datos principal:</strong> @ViewBag.RutaBaseDatos</p>
+            <p>
+                <strong>Estado:</strong>
+                @if (ViewBag.ExisteBaseDatos)
+                {
+                    <span class="badge bg-success">Presente (@(new FileInfo(ViewBag.RutaBaseDatos).Length / 1024) KB)</span>
+                }
+                else
+                {
+                    <span class="badge bg-danger">No encontrada</span>
+                }
+            </p>
+            <p><strong>Carpeta de backups:</strong> @estadisticas.RutaBackups</p>
+            <p><strong>Configuración:</strong> Se mantienen backups de los últimos @estadisticas.MantenerDias días</p>
+            <p class="text-muted small mt-3">
+                <i class="bi bi-exclamation-triangle"></i>
+                Los backups son esenciales para recuperar datos en caso de fallos.
+                Se recomienda crear backups diarios y guardar copias en ubicaciones externas.
+            </p>
+        </div>
+    </div>
+</div>

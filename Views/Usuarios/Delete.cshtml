@@ -1,0 +1,64 @@
+﻿@model OpticaClaridad.Models.UsuarioSimple
+
+@{
+    ViewData["Title"] = "Desactivar Usuario";
+}
+
+<div class="container mt-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-action="Index">Usuarios</a></li>
+            <li class="breadcrumb-item active">Desactivar</li>
+        </ol>
+    </nav>
+
+    <div class="card">
+        <div class="card-header bg-warning text-white">
+            <h4><i class="bi bi-exclamation-triangle"></i> @ViewData["Title"]</h4>
+        </div>
+        <div class="card-body">
+            <h5>¿Está seguro que desea desactivar este usuario?</h5>
+            <p>El usuario no podrá acceder al sistema hasta que sea reactivado.</p>
+
+            <dl class="row">
+                <dt class="col-sm-3">Usuario:</dt>
+                <dd class="col-sm-9">@Model.NombreUsuario</dd>
+
+                <dt class="col-sm-3">Nombre:</dt>
+                <dd class="col-sm-9">@Model.NombreCompleto</dd>
+
+                <dt class="col-sm-3">Rol:</dt>
+                <dd class="col-sm-9">
+                    @if (Model.EsAdmin)
+                    {
+                        <span class="badge bg-primary">Administrador</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-secondary">Vendedor</span>
+                    }
+                </dd>
+
+                <dt class="col-sm-3">Estado:</dt>
+                <dd class="col-sm-9">
+                    @if (Model.Activo)
+                    {
+                        <span class="badge bg-success">Activo</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-danger">Inactivo</span>
+                    }
+                </dd>
+            </dl>
+
+            <form asp-action="Delete">
+                <input type="hidden" asp-for="Id" />
+                <div class="d-flex justify-content-between">
+                    <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
+                    <button type="submit" class="btn btn-danger">Sí, Desactivar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

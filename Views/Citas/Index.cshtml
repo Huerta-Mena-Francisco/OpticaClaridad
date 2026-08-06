@@ -1,0 +1,312 @@
+﻿@model IEnumerable<OpticaClaridad.Models.Cita>
+
+@{
+    ViewData["Title"] = "Gestión de Citas";
+    var estadoSeleccionado = ViewBag.EstadoSeleccionado as string ?? "Todos";
+    var fechaSeleccionada = ViewBag.FechaSeleccionada as DateTime?;
+    var hoy = ViewBag.Hoy as DateTime? ?? DateTime.Today;
+}
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1><i class="bi bi-calendar-check"></i> @ViewData["Title"]</h1>
+            <p class="text-muted mb-0">Administre las citas de clientes</p>
+        </div>
+        <div>
+            <!-- Botón para Papelera de Citas añadido aquí -->
+            <a asp-controller="Citas" asp-action="CitasEliminadas"
+               class="btn btn-outline-secondary me-2">
+                <i class="bi bi-trash"></i> Papelera de Citas
+            </a>
+
+            <a asp-action="Hoy" class="btn btn-warning me-2">
+                <i class="bi bi-calendar-day"></i> Citas Hoy
+            </a>
+            <a asp-action="Calendario" class="btn btn-info me-2">
+                <i class="bi bi-calendar-week"></i> Calendario
+            </a>
+            <a asp-action="Crear" class="btn btn-success">
+                <i class="bi bi-plus-circle"></i> Nueva Cita
+            </a>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" asp-action="Index" class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">Estado</label>
+                    <select name="estado" class="form-select">
+                        <option value="Todos" selected="@(estadoSeleccionado == "Todos")">Todos los estados</option>
+                        <option value="Pendiente" selected="@(estadoSeleccionado == "Pendiente")">Pendiente</option>
+                        <option value="Confirmada" selected="@(estadoSeleccionado == "Confirmada")">Confirmada</option>
+                        <option value="Atendida" selected="@(estadoSeleccionado == "Atendida")">Atendida</option>
+                        <option value="Cancelada" selected="@(estadoSeleccionado == "Cancelada")">Cancelada</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Fecha</label>
+                    <input type="date" name="fecha" class="form-control"
+                           value="@(fechaSeleccionada?.ToString("yyyy-MM-dd"))" />
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-funnel"></i> Filtrar
+                    </button>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <a asp-action="Index" class="btn btn-outline-secondary w-100">
+                        <i class="bi bi-x-circle"></i> Limpiar
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle"></i> @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle"></i> @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (Model != null && Model.Any())
+    {
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Fecha/Hora</th>
+                                <th>Cliente</th>
+                                <th>Tipo</th>
+                                <th>Motivo</th>
+                                <th>Estado</th>
+                                <th class="text-end">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var cita in Model)
+                            {
+                                <tr>
+                                    <td>
+                                        <div class="fw-semibold">@cita.FechaHora.ToString("dd/MM/yyyy")</div>
+                                        <div class="text-muted small">@cita.FechaHora.ToString("hh:mm tt")</div>
+                                        @if (cita.EsHoy)
+                                        {
+                                            <span class="badge bg-warning mt-1">HOY</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <div class="fw-semibold">@cita.ClienteNombre</div>
+                                        @if (!string.IsNullOrEmpty(cita.Telefono))
+                                        {
+                                            <div class="text-muted small"><i class="bi bi-telephone"></i> @cita.Telefono</div>
+                                        }
+                                    </td>
+                                    <td>@cita.TipoCita</td>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(cita.Motivo))
+                                        {
+                                            <span title="@cita.Motivo">
+                                                @(cita.Motivo.Length > 30 ? cita.Motivo.Substring(0, 30) + "..." : cita.Motivo)
+                                            </span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (cita.Estado == "Pendiente")
+                                        {
+                                            <span class="badge bg-warning">Pendiente</span>
+                                        }
+                                        else if (cita.Estado == "Confirmada")
+                                        {
+                                            <span class="badge bg-success">Confirmada</span>
+                                        }
+                                        else if (cita.Estado == "Atendida")
+                                        {
+                                            <span class="badge bg-info">Atendida</span>
+                                        }
+                                        else if (cita.Estado == "Cancelada")
+                                        {
+                                            <span class="badge bg-danger">Cancelada</span>
+                                        }
+                                    </td>
+                                    <td class="text-end">
+                                        <div class="btn-group btn-group-sm">
+                                            <a asp-action="Detalles" asp-route-id="@cita.Id"
+                                               class="btn btn-outline-info" title="Detalles">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            <a asp-action="Editar" asp-route-id="@cita.Id"
+                                               class="btn btn-outline-primary" title="Editar">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+
+                                            @if (cita.Estado == "Pendiente")
+                                            {
+                                                <a href="#" data-cita-id="@cita.Id"
+                                                   class="btn btn-outline-success btn-confirmar"
+                                                   title="Confirmar">
+                                                    <i class="bi bi-check-circle"></i>
+                                                </a>
+                                            }
+
+                                            @if (cita.Estado == "Confirmada" || cita.Estado == "Pendiente")
+                                            {
+                                                <a href="#" data-cita-id="@cita.Id"
+                                                   class="btn btn-outline-info btn-completar"
+                                                   title="Marcar como Atendida">
+                                                    <i class="bi bi-check-all"></i>
+                                                </a>
+                                            }
+
+                                            @if (cita.Estado != "Cancelada" && cita.Estado != "Atendida")
+                                            {
+                                                <a href="#" data-cita-id="@cita.Id"
+                                                   class="btn btn-outline-danger btn-cancelar"
+                                                   title="Cancelar">
+                                                    <i class="bi bi-x-circle"></i>
+                                                </a>
+                                            }
+                                            @if (!cita.Eliminada)
+                                            {
+                                                <a href="#" data-cita-id="@cita.Id"
+                                                   class="btn btn-outline-dark btn-mover-papelera"
+                                                   title="Mover a Papelera">
+                                                    <i class="bi bi-trash"></i>
+                                                </a>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="card">
+            <div class="card-body text-center py-5">
+                <i class="bi bi-calendar-x display-1 text-muted mb-3"></i>
+                <h4 class="text-muted">No hay citas programadas</h4>
+                <p class="text-muted">No se encontraron citas con los filtros seleccionados</p>
+                <a asp-action="Crear" class="btn btn-primary mt-3">
+                    <i class="bi bi-plus-circle"></i> Programar Nueva Cita
+                </a>
+            </div>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Configuración común para SweetAlert
+            const swalConfig = {
+                reverseButtons: true,
+                allowOutsideClick: false,
+                showCancelButton: true,
+                cancelButtonText: '<i class="bi bi-x-circle"></i> Cancelar',
+                cancelButtonColor: '#6c757d'
+            };
+
+            // Confirmar cita
+            document.querySelectorAll('.btn-confirmar').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const citaId = this.getAttribute('data-cita-id');
+
+                    Swal.fire({
+                        ...swalConfig,
+                        title: '¿Confirmar esta cita?',
+                        text: 'La cita cambiará a estado "Confirmada"',
+                        icon: 'question',
+                        confirmButtonText: '<i class="bi bi-check-circle"></i> Sí, confirmar',
+                        confirmButtonColor: '#198754',
+                        preConfirm: () => {
+                            window.location.href = `@Url.Action("Confirmar", "Citas")/${citaId}`;
+                        }
+                    });
+                });
+            });
+
+            // Completar cita
+            document.querySelectorAll('.btn-completar').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const citaId = this.getAttribute('data-cita-id');
+
+                    Swal.fire({
+                        ...swalConfig,
+                        title: '¿Marcar como atendida?',
+                        text: 'La cita cambiará a estado "Atendida"',
+                        icon: 'info',
+                        confirmButtonText: '<i class="bi bi-check-all"></i> Sí, marcar como atendida',
+                        confirmButtonColor: '#0dcaf0',
+                        preConfirm: () => {
+                            window.location.href = `@Url.Action("Completar", "Citas")/${citaId}`;
+                        }
+                    });
+                });
+            });
+
+            // Cancelar cita
+            document.querySelectorAll('.btn-cancelar').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const citaId = this.getAttribute('data-cita-id');
+
+                    Swal.fire({
+                        ...swalConfig,
+                        title: '¿Cancelar esta cita?',
+                        html: '<div class="text-danger">La cita cambiará a estado "Cancelada"</div>',
+                        icon: 'warning',
+                        confirmButtonText: '<i class="bi bi-x-circle"></i> Sí, cancelar',
+                        confirmButtonColor: '#dc3545',
+                        preConfirm: () => {
+                            window.location.href = `@Url.Action("Cancelar", "Citas")/${citaId}`;
+                        }
+                    });
+                });
+            });
+
+            // Mover a papelera (eliminación lógica)
+            document.querySelectorAll('.btn-mover-papelera').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const citaId = this.getAttribute('data-cita-id');
+
+                    Swal.fire({
+                        ...swalConfig,
+                        title: '¿Mover a papelera?',
+                        html: '<div class="text-dark">La cita será movida a la papelera de citas eliminadas</div>',
+                        icon: 'question',
+                        confirmButtonText: '<i class="bi bi-trash"></i> Sí, mover a papelera',
+                        confirmButtonColor: '#212529',
+                        preConfirm: () => {
+                            window.location.href = `@Url.Action("EliminarLogicamente", "Citas")/${citaId}`;
+                        }
+                    });
+                });
+            });
+        });
+    </script>
+}

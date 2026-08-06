@@ -1,0 +1,266 @@
+﻿@model OpticaClaridad.Models.ReporteVentaDetallada
+@{
+    ViewData["Title"] = "Reporte de Ventas Detalladas";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var categorias = ViewBag.Categorias as List<CategoriaProducto> ?? new List<CategoriaProducto>();
+}
+
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0"><i class="bi bi-receipt me-2"></i> Reporte de Ventas Detalladas</h1>
+        <div>
+            <a href="@Url.Action("Dashboard")" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-arrow-left"></i> Volver al Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary"><i class="bi bi-funnel me-2"></i> Filtros</h6>
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <!-- Fechas -->
+                <div class="col-md-3">
+                    <label class="form-label">Fecha Inicio</label>
+                    <input type="date" class="form-control" name="FechaInicio"
+                           value="@Model.FechaInicio?.ToString("yyyy-MM-dd")">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Fecha Fin</label>
+                    <input type="date" class="form-control" name="FechaFin"
+                           value="@Model.FechaFin?.ToString("yyyy-MM-dd")">
+                </div>
+
+                <!-- Tipo de Pago -->
+                <div class="col-md-2">
+                    <label class="form-label">Tipo de Pago</label>
+                    <select class="form-select" name="TipoPago">
+                        <option value="TODOS" selected="@(Model.TipoPago == "TODOS")">Todos</option>
+                        <option value="Efectivo" selected="@(Model.TipoPago == "Efectivo")">Efectivo</option>
+                        <option value="Tarjeta" selected="@(Model.TipoPago == "Tarjeta")">Tarjeta</option>
+                        <option value="Credito" selected="@(Model.TipoPago == "Credito")">Crédito</option>
+                    </select>
+                </div>
+
+                <!-- Categoría -->
+                <div class="col-md-2">
+                    <label class="form-label">Categoría</label>
+                    <select class="form-select" name="CategoriaId">
+                        <option value="">Todas</option>
+                        @foreach (var categoria in categorias)
+                        {
+                            <option value="@categoria.Id" selected="@(Model.CategoriaId == categoria.Id)">
+                                @categoria.Nombre
+                            </option>
+                        }
+                    </select>
+                </div>
+
+                <!-- Producto -->
+                <div class="col-md-2">
+                    <label class="form-label">Producto</label>
+                    <input type="text" class="form-control" name="ProductoNombre"
+                           value="@Model.ProductoNombre" placeholder="Nombre del producto">
+                </div>
+
+                <!-- Ordenar por -->
+                <div class="col-md-2">
+                    <label class="form-label">Ordenar por</label>
+                    <select class="form-select" name="OrdenarPor">
+                        <option value="FechaDesc" selected="@(Model.OrdenarPor == "FechaDesc")">Fecha (más reciente)</option>
+                        <option value="FechaAsc" selected="@(Model.OrdenarPor == "FechaAsc")">Fecha (más antigua)</option>
+                        <option value="TotalDesc" selected="@(Model.OrdenarPor == "TotalDesc")">Total (mayor a menor)</option>
+                        <option value="TotalAsc" selected="@(Model.OrdenarPor == "TotalAsc")">Total (menor a mayor)</option>
+                        <option value="CantidadDesc" selected="@(Model.OrdenarPor == "CantidadDesc")">Cantidad (mayor a menor)</option>
+                    </select>
+                </div>
+
+                <!-- Botones -->
+                <div class="col-12">
+                    <div class="d-flex justify-content-between">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-search me-2"></i> Aplicar Filtros
+                        </button>
+                        <a href="@Url.Action("VentasDetallada")" class="btn btn-outline-secondary">
+                            <i class="bi bi-x-circle me-2"></i> Limpiar Filtros
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Resumen -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Total General
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.TotalGeneral.ToString("C2")</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-currency-dollar fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Ventas
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.TotalVentas</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-receipt fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Productos Vendidos
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.TotalProductosVendidos</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-box-seam fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Período
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                @Model.FechaInicio?.ToString("dd/MM/yyyy") - @Model.FechaFin?.ToString("dd/MM/yyyy")
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-calendar-range fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla de Resultados -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+            <h6 class="m-0 font-weight-bold text-primary">Detalles de Ventas</h6>
+            <div>
+                <span class="badge bg-primary">@Model.Resultados.Count registros</span>
+            </div>
+        </div>
+        <div class="card-body">
+            @if (Model.Resultados.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover" id="dataTable" width="100%" cellspacing="0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Fecha</th>
+                                <th>N° Venta</th>
+                                <th>Cliente</th>
+                                <th>Producto</th>
+                                <th class="text-end">Cantidad</th>
+                                <th class="text-end">Precio Unit.</th>
+                                <th class="text-end">Subtotal</th>
+                                <th>Pago</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var venta in Model.Resultados)
+                            {
+                                <tr>
+                                    <td>@venta.FechaVenta.ToString("dd/MM/yyyy HH:mm")</td>
+                                    <td>
+                                        <strong>@venta.NumeroVenta</strong>
+                                        <small class="text-muted d-block">ID: @venta.VentaId</small>
+                                    </td>
+                                    <td>@venta.ClienteNombre</td>
+                                    <td>
+                                        <strong>@venta.ProductoNombre</strong>
+                                        <small class="text-muted d-block">@venta.CodigoProducto - @venta.Categoria</small>
+                                    </td>
+                                    <td class="text-end">@venta.Cantidad</td>
+                                    <td class="text-end">@venta.PrecioUnitario.ToString("C2")</td>
+                                    <td class="text-end">
+                                        <strong>@venta.Subtotal.ToString("C2")</strong>
+                                        <small class="text-muted d-block">Total Venta: @venta.TotalVenta.ToString("C2")</small>
+                                    </td>
+                                    <td>
+                                        <span class="badge @(venta.TipoPago == "Efectivo" ? "bg-success" :
+                                                                                                          venta.TipoPago == "Tarjeta" ? "bg-info" : "bg-warning")">
+                                            @venta.TipoPago
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-success">@venta.Estado</span>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                        <tfoot class="table-light">
+                            <tr>
+                                <td colspan="5" class="text-end"><strong>Total General:</strong></td>
+                                <td colspan="4" class="text-start">
+                                    <strong class="text-primary">@Model.TotalGeneral.ToString("C2")</strong>
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-info text-center py-4">
+                    <i class="bi bi-info-circle display-4 d-block mb-3"></i>
+                    <h4>No se encontraron ventas</h4>
+                    <p class="mb-0">No hay registros que coincidan con los filtros aplicados.</p>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Inicializar DataTable
+        $(document).ready(function() {
+            $('#dataTable').DataTable({
+                language: {
+                    url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json'
+                },
+                order: [], // Deshabilitar orden inicial
+                pageLength: 25,
+                dom: '<"row"<"col-md-6"l><"col-md-6"f>>rt<"row"<"col-md-6"i><"col-md-6"p>>'
+            });
+        });
+    </script>
+}

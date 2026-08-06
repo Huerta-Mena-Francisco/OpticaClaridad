@@ -1,0 +1,243 @@
+﻿@model IEnumerable<OpticaClaridad.Models.Cita>
+
+@{
+    ViewData["Title"] = "Calendario de Citas";
+    var mesActual = ViewBag.MesActual as DateTime? ?? DateTime.Today;
+    var mesAnterior = ViewBag.MesAnterior as DateTime? ?? mesActual.AddMonths(-1);
+    var mesSiguiente = ViewBag.MesSiguiente as DateTime? ?? mesActual.AddMonths(1);
+
+    var inicioMes = new DateTime(mesActual.Year, mesActual.Month, 1);
+    var finMes = inicioMes.AddMonths(1).AddDays(-1);
+    var diasEnMes = DateTime.DaysInMonth(mesActual.Year, mesActual.Month);
+    var primerDiaSemana = (int)inicioMes.DayOfWeek;
+
+    var nombresMeses = new[] { "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+                               "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre" };
+    var nombresDias = new[] { "Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb" };
+}
+
+<style>
+    .calendar-day {
+        min-height: 120px;
+        border: 1px solid #dee2e6;
+        padding: 5px;
+        background-color: white;
+        transition: background-color 0.2s;
+    }
+
+        .calendar-day:hover {
+            background-color: #f8f9fa;
+        }
+
+        .calendar-day.today {
+            background-color: #e7f5ff;
+            border-color: #0d6efd;
+        }
+
+        .calendar-day.weekend {
+            background-color: #f8f9fa;
+        }
+
+        .calendar-day.empty {
+            background-color: #f8f9fa;
+        }
+
+    .day-number {
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+
+    .cita-item {
+        font-size: 0.75rem;
+        padding: 2px 4px;
+        margin-bottom: 2px;
+        border-radius: 3px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        cursor: pointer;
+    }
+
+    .cita-pendiente {
+        background-color: #fff3cd;
+        color: #664d03;
+    }
+
+    .cita-confirmada {
+        background-color: #d1e7dd;
+        color: #0a3622;
+    }
+
+    .cita-atendida {
+        background-color: #cfe2ff;
+        color: #052c65;
+    }
+
+    .cita-cancelada {
+        background-color: #f8d7da;
+        color: #58151c;
+    }
+</style>
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="bi bi-calendar-week"></i> @ViewData["Title"]</h1>
+        <div>
+            <a asp-action="Index" class="btn btn-secondary me-2">
+                <i class="bi bi-list"></i> Vista Lista
+            </a>
+            <a asp-action="Crear" class="btn btn-success">
+                <i class="bi bi-plus-circle"></i> Nueva Cita
+            </a>
+        </div>
+    </div>
+
+    <!-- Controles del calendario -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <a asp-action="Calendario" asp-route-mes="@mesAnterior.ToString("yyyy-MM-dd")"
+                       class="btn btn-outline-primary">
+                        <i class="bi bi-chevron-left"></i> Mes Anterior
+                    </a>
+                </div>
+
+                <div class="text-center">
+                    <h3 class="mb-0">@nombresMeses[mesActual.Month - 1] @mesActual.Year</h3>
+                </div>
+
+                <div>
+                    <a asp-action="Calendario" asp-route-mes="@mesSiguiente.ToString("yyyy-MM-dd")"
+                       class="btn btn-outline-primary">
+                        Mes Siguiente <i class="bi bi-chevron-right"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leyenda -->
+    <div class="mb-4">
+        <div class="d-flex flex-wrap gap-2">
+            <div class="d-flex align-items-center">
+                <div class="cita-item cita-pendiente me-1" style="width: 20px; height: 20px;"></div>
+                <small>Pendiente</small>
+            </div>
+            <div class="d-flex align-items-center">
+                <div class="cita-item cita-confirmada me-1" style="width: 20px; height: 20px;"></div>
+                <small>Confirmada</small>
+            </div>
+            <div class="d-flex align-items-center">
+                <div class="cita-item cita-atendida me-1" style="width: 20px; height: 20px;"></div>
+                <small>Atendida</small>
+            </div>
+            <div class="d-flex align-items-center">
+                <div class="cita-item cita-cancelada me-1" style="width: 20px; height: 20px;"></div>
+                <small>Cancelada</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Calendario -->
+    <div class="card">
+        <div class="card-body">
+            <div class="row">
+                <!-- Días de la semana -->
+                @for (int i = 0; i < 7; i++)
+                {
+                    <div class="col text-center fw-bold">
+                        @nombresDias[i]
+                    </div>
+                }
+            </div>
+
+            <!-- Días del mes -->
+            @{
+                var diaActual = 1;
+            }
+
+            @for (int semana = 0; semana < 6; semana++)
+            {
+                <div class="row">
+                    @for (int diaSemana = 0; diaSemana < 7; diaSemana++)
+                    {
+                        var diaFecha = inicioMes.AddDays(diaActual - 1);
+                        var esHoy = diaFecha.Date == DateTime.Today;
+                        var esFinSemana = diaSemana == 0 || diaSemana == 6;
+                        var claseCss = $"calendar-day {(esHoy ? "today" : "")} {(esFinSemana ? "weekend" : "")}";
+
+                        if ((semana == 0 && diaSemana < primerDiaSemana) || diaActual > diasEnMes)
+                        {
+                            <div class="col calendar-day empty"></div>
+                        }
+                        else
+                        {
+                            var citasDia = Model?.Where(c => c.FechaHora.Date == diaFecha.Date).ToList() ?? new List<Cita>();
+
+                            <div class="col @claseCss" onclick="verCitasDia('@diaFecha.ToString("yyyy-MM-dd")')" style="cursor: pointer;">
+                                <div class="day-number">@diaActual</div>
+
+                                @foreach (var cita in citasDia.Take(3))
+                                {
+                                    var claseEstado = $"cita-item cita-{cita.Estado.ToLower()}";
+                                    <div class="@claseEstado" title="@cita.ClienteNombre - @cita.FechaHora.ToString("hh:mm tt")">
+                                        @cita.FechaHora.ToString("hh:mm") - @cita.ClienteNombre
+                                    </div>
+                                }
+
+                                @if (citasDia.Count > 3)
+                                {
+                                    <div class="text-muted small">+ @(citasDia.Count - 3) más</div>
+                                }
+                            </div>
+
+                            diaActual++;
+                        }
+                    }
+                </div>
+
+                @if (diaActual > diasEnMes)
+                {
+                    break;
+                }
+            }
+        </div>
+    </div>
+
+    <!-- Modal para citas del día -->
+    <div class="modal fade" id="citasModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Citas del Día</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="citasModalBody">
+                    <!-- Contenido dinámico -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function verCitasDia(fecha) {
+            fetch(`/Citas/CitasPorFecha?fecha=${fecha}`)
+                .then(response => response.text())
+                .then(html => {
+                    document.getElementById('citasModalBody').innerHTML = html;
+                    new bootstrap.Modal(document.getElementById('citasModal')).show();
+                });
+        }
+
+        // También se puede hacer clic en las citas individuales
+        document.querySelectorAll('.cita-item').forEach(item => {
+            item.addEventListener('click', function(e) {
+                e.stopPropagation(); // Evitar que se active el click del día
+                // Aquí podrías redirigir a los detalles de la cita
+            });
+        });
+    </script>
+}

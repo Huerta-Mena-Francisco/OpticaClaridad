@@ -1,0 +1,395 @@
+﻿@using OpticaClaridad.Controllers
+@model IEnumerable<OpticaClaridad.Models.Venta>
+
+@{
+    ViewData["Title"] = "Historial de Ventas";
+    ViewData["Subtitle"] = "Listado completo de transacciones";
+}
+
+<div class="container-fluid px-4">
+    <!-- Encabezado -->
+    <div class="d-flex justify-content-between align-items-center mt-4 mb-4">
+        <div>
+            <h1 class="mt-4">
+                <i class="bi bi-receipt-cutoff me-2 text-primary"></i>
+                @ViewData["Title"]
+            </h1>
+            <ol class="breadcrumb mb-4">
+                <li class="breadcrumb-item">
+                    <a asp-controller="Home" asp-action="Index" class="text-decoration-none">
+                        <i class="bi bi-house me-1"></i>Inicio
+                    </a>
+                </li>
+                <li class="breadcrumb-item active">
+                    <i class="bi bi-receipt me-1"></i>Ventas
+                </li>
+            </ol>
+        </div>
+        <div>
+            <a asp-action="Create" class="btn btn-primary btn-lg shadow-sm">
+                <i class="bi bi-plus-circle me-2"></i>Nueva Venta
+            </a>
+        </div>
+    </div>
+
+    <!-- Mensajes de alerta -->
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i>@TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <!-- Filtros -->
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">
+                <i class="bi bi-filter me-2"></i>Filtros de Búsqueda
+            </h5>
+        </div>
+        <div class="card-body">
+            <form asp-action="Index" method="get" class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label fw-bold">Buscar</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light">
+                            <i class="bi bi-search"></i>
+                        </span>
+                        <input type="text" name="filtro" class="form-control"
+                               placeholder="Número de venta, paciente..." value="@ViewBag.Filtro">  <!-- 🔴 CAMBIO -->
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-bold">Método de Pago</label>
+                    <select name="tipoVenta" class="form-select">
+                        <option value="">Todos</option>
+                        <option value="Efectivo" selected="@(ViewBag.TipoVentaSeleccionado == "Efectivo")">Efectivo</option>
+                        <option value="Tarjeta" selected="@(ViewBag.TipoVentaSeleccionado == "Tarjeta")">Tarjeta</option>
+                        <option value="Credito" selected="@(ViewBag.TipoVentaSeleccionado == "Credito")">Crédito</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-bold">Estado</label>
+                    <select name="estado" class="form-select">
+                        <option value="">Todos</option>
+                        <option value="COMPLETADA" selected="@(ViewBag.EstadoSeleccionado == "COMPLETADA")">Completadas</option>
+                        <option value="CANCELADA" selected="@(ViewBag.EstadoSeleccionado == "CANCELADA")">Canceladas</option>
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-filter me-2"></i>Filtrar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Tarjetas de resumen -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-start border-primary border-4 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="small text-primary fw-bold">TOTAL VENTAS</div>
+                            <div class="h2 fw-bold">@Model.Count()</div>
+                            <span class="text-muted">Transacciones</span>
+                        </div>
+                        <i class="bi bi-receipt fs-1 text-primary opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-start border-success border-4 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="small text-success fw-bold">INGRESOS TOTALES</div>
+                            <div class="h2 fw-bold text-success">@ViewBag.TotalMonto</div>
+                            <span class="text-muted">Ventas completadas</span>
+                        </div>
+                        <i class="bi bi-coin fs-1 text-success opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-start border-warning border-4 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="small text-warning fw-bold">TICKET PROMEDIO</div>
+                            <div class="h2 fw-bold text-warning">
+                                @{
+                                    var promedio = Model.Where(v => v.Estado == "COMPLETADA").Average(v => (decimal?)v.Total) ?? 0;
+                                }
+                                $@promedio.ToString("N2")
+                            </div>
+                            <span class="text-muted">Por transacción</span>
+                        </div>
+                        <i class="bi bi-ticket-perforated fs-1 text-warning opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-start border-info border-4 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="small text-info fw-bold">CRÉDITOS PENDIENTES</div>
+                            <div class="h2 fw-bold text-info">
+                                @Model.Count(v => v.TipoPago == "Credito" && v.Estado == "COMPLETADA")
+                            </div>
+                            <span class="text-muted">Ventas a crédito</span>
+                        </div>
+                        <i class="bi bi-calendar-check fs-1 text-info opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla de ventas -->
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header bg-white">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-table me-2 text-primary"></i>
+                    Historial de Transacciones
+                </h5>
+                <span class="badge bg-primary p-2">
+                    <i class="bi bi-list me-1"></i> @Model.Count() registros
+                </span>
+            </div>
+        </div>
+        <div class="card-body">
+            @if (!Model.Any())
+            {
+                <div class="text-center py-5">
+                    <div class="mb-4">
+                        <i class="bi bi-receipt fs-1 text-muted"></i>
+                    </div>
+                    <h4 class="text-muted">No hay ventas registradas</h4>
+                    <p class="text-muted mb-4">Comienza registrando una nueva venta.</p>
+                    <a asp-action="Create" class="btn btn-primary btn-lg px-5">
+                        <i class="bi bi-plus-circle me-2"></i>Nueva Venta
+                    </a>
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle" id="ventasTable">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>N° Venta</th>
+                                <th>Fecha</th>
+                                <th>Paciente</th>  <!-- 🔴 CAMBIO -->
+                                <th>Método Pago</th>
+                                <th class="text-end">Total</th>
+                                <th class="text-center">Estado</th>
+                                <th class="text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var venta in Model)
+                            {
+                                <tr class="@(venta.Estado == "CANCELADA" ? "table-secondary" : "")">
+                                    <td>
+                                        <span class="fw-bold">@venta.NumeroVenta</span>
+                                        <br>
+                                        <small class="text-muted">ID: @venta.Id.ToString("D4")</small>
+                                    </td>
+                                    <td>
+                                        <span class="fw-bold">@venta.FechaVenta.ToString("dd/MM/yyyy")</span>
+                                        <br>
+                                        <small class="text-muted">@venta.FechaCreacion.ToString("HH:mm")</small>
+                                    </td>
+                                    <td>
+                                        @if (venta.Paciente != null) 
+                                        {
+                                            <div>
+                                                <span class="fw-bold">
+                                                    <i class="bi bi-heart-pulse me-1 text-info"></i>
+                                                    @venta.Paciente.Nombre
+                                                </span>
+                                                <br>
+                                                <small class="text-muted">
+                                                    <i class="bi bi-telephone me-1"></i>@(venta.Paciente.Telefono ?? "Sin teléfono")
+                                                </small>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary bg-opacity-25 text-dark p-2">
+                                                <i class="bi bi-person me-1"></i>
+                                                <strong>Cliente General</strong>
+                                            </span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @switch (venta.TipoPago)
+                                        {
+                                            case "Efectivo":
+                                                <span class="badge bg-success p-2">
+                                                    <i class="bi bi-cash-coin me-1"></i>Efectivo
+                                                </span>
+                                                break;
+                                            case "Tarjeta":
+                                                <span class="badge bg-primary p-2">
+                                                    <i class="bi bi-credit-card me-1"></i>Tarjeta
+                                                </span>
+                                                break;
+                                            case "Credito":
+                                                <span class="badge bg-warning text-dark p-2">
+                                                    <i class="bi bi-calendar-check me-1"></i>Crédito
+                                                </span>
+                                                break;
+                                        }
+                                    </td>
+                                    <td class="text-end fw-bold text-success">
+                                        $@venta.Total.ToString("N2")
+                                    </td>
+                                    <td class="text-center">
+                                        @if (venta.Estado == "COMPLETADA")
+                                        {
+                                            <span class="badge bg-success p-2">
+                                                <i class="bi bi-check-circle me-1"></i>Completada
+                                            </span>
+                                        }
+                                        else if (venta.Estado == "CANCELADA")
+                                        {
+                                            <span class="badge bg-danger p-2">
+                                                <i class="bi bi-x-circle me-1"></i>Cancelada
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary p-2">@venta.Estado</span>
+                                        }
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="d-flex justify-content-center gap-1">
+                                            <a asp-action="Details" asp-route-id="@venta.Id"
+                                               class="btn btn-sm btn-outline-info" title="Ver detalles"
+                                               data-bs-toggle="tooltip">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            <a asp-action="Ticket" asp-route-id="@venta.Id"
+                                               class="btn btn-sm btn-outline-primary" title="Ver ticket"
+                                               data-bs-toggle="tooltip">
+                                                <i class="bi bi-receipt"></i>
+                                            </a>
+                                            @if (venta.Estado != "CANCELADA" && venta.TipoPago != "Credito")
+                                            {
+                                                <a asp-action="Cancel" asp-route-id="@venta.Id"
+                                                   class="btn btn-sm btn-outline-warning" title="Cancelar venta"
+                                                   data-bs-toggle="tooltip">
+                                                    <i class="bi bi-x-circle"></i>
+                                                </a>
+                                            }
+                                            @if (venta.Estado == "CANCELADA" && LoginController.EsAdministrador(Context.Session))
+                                            {
+                                                <a asp-action="Delete" asp-route-id="@venta.Id"
+                                                   class="btn btn-sm btn-outline-danger" title="Eliminar venta"
+                                                   data-bs-toggle="tooltip">
+                                                    <i class="bi bi-trash"></i>
+                                                </a>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Totales y resumen -->
+                <div class="row mt-4">
+                    <div class="col-md-6">
+                        <small class="text-muted">
+                            <i class="bi bi-info-circle me-1"></i>
+                            Mostrando <strong>@Model.Count()</strong> ventas
+                        </small>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="d-flex justify-content-end gap-4">
+                            <div>
+                                <small class="text-muted">Total Efectivo</small>
+                                <h6 class="mb-0 text-success">
+                                    $@Model.Where(v => v.TipoPago == "Efectivo" && v.Estado == "COMPLETADA").Sum(v => v.Total).ToString("N2")
+                                </h6>
+                            </div>
+                            <div>
+                                <small class="text-muted">Total Tarjeta</small>
+                                <h6 class="mb-0 text-primary">
+                                    $@Model.Where(v => v.TipoPago == "Tarjeta" && v.Estado == "COMPLETADA").Sum(v => v.Total).ToString("N2")
+                                </h6>
+                            </div>
+                            <div>
+                                <small class="text-muted">Total Crédito</small>
+                                <h6 class="mb-0 text-warning">
+                                    $@Model.Where(v => v.TipoPago == "Credito" && v.Estado == "COMPLETADA").Sum(v => v.Total).ToString("N2")
+                                </h6>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Estilos personalizados -->
+<style>
+    .border-start {
+        transition: transform 0.2s;
+    }
+
+        .border-start:hover {
+            transform: translateY(-5px);
+        }
+
+    .table-hover tbody tr:hover {
+        background-color: rgba(13, 110, 253, 0.05);
+    }
+
+    .badge {
+        font-weight: 500;
+    }
+</style>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Inicializar DataTable
+            $('#ventasTable').DataTable({
+                pageLength: 25,
+                language: {
+                    url: '//cdn.datatables.net/plug-ins/1.13.4/i18n/es-ES.json'
+                },
+                order: [[1, 'desc']],
+                columnDefs: [
+                    { orderable: false, targets: [6] }
+                ]
+            });
+
+            // Inicializar tooltips
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            var tooltipList = tooltipTriggerList.map(function(tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+        });
+    </script>
+}

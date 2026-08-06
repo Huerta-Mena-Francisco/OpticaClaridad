@@ -1,0 +1,1254 @@
+﻿@model OpticaClaridad.Models.Venta﻿
+@{
+ViewData["Title"] = "Nueva Venta";
+Layout = "~/Views/Shared/_Layout.cshtml";
+// Obtener ID del usuario actual
+var usuarioId = Context.Session.GetString("UsuarioId") ?? "1";
+var nombreUsuario = Context.Session.GetString("NombreCompleto") ?? "Usuario";
+var esAdmin = Context.Session.GetString("EsAdmin") == "True";
+}
+
+<!-- SweetAlert2 -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.js"></script>
+
+<style>
+    .producto-item:hover {
+        background-color: #f8f9fa;
+        cursor: pointer;
+        transform: translateY(-1px);
+        transition: all 0.2s;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    .btn-monto-rapido {
+        min-width: 80px;
+    }
+
+    #resultadosBusqueda {
+        max-height: 400px;
+        overflow-y: auto;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        background: white;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    .cantidad-input {
+        max-width: 100px;
+        margin: 0 auto;
+    }
+
+    .table tbody tr:hover {
+        background-color: #f5f5f5;
+    }
+
+    .sticky-top {
+        z-index: 1020;
+    }
+
+    .paciente-seleccionado {
+        border-left: 4px solid #28a745;
+        background-color: #f8fff8;
+    }
+</style>
+
+<div class="container-fluid mt-3">
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0"><i class="bi bi-cart-plus me-2"></i>Nueva Venta</h4>
+                    <small class="opacity-75">Complete los datos de la venta</small>
+                </div>
+                <div class="card-body">
+                    <form asp-action="Create" id="ventaForm" method="post">
+                        @Html.AntiForgeryToken()
+
+                        <!-- ========================================= -->
+                        <!-- SECCIÓN 1: MÉTODO DE PAGO -->
+                        <!-- ========================================= -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-light">
+                                <h5 class="mb-0"><i class="bi bi-credit-card me-2"></i>1. Método de Pago</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <div class="form-check mb-3">
+                                            <input class="form-check-input" type="radio" name="tipoPago"
+                                                   id="pagoEfectivo" value="Efectivo" checked>
+                                            <label class="form-check-label" for="pagoEfectivo">
+                                                <i class="bi bi-cash-coin me-2 text-success"></i>
+                                                <strong>Efectivo</strong>
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-check mb-3">
+                                            <input class="form-check-input" type="radio" name="tipoPago"
+                                                   id="pagoTarjeta" value="Tarjeta">
+                                            <label class="form-check-label" for="pagoTarjeta">
+                                                <i class="bi bi-credit-card me-2 text-primary"></i>
+                                                <strong>Tarjeta</strong>
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-check mb-3">
+                                            <input class="form-check-input" type="radio" name="tipoPago"
+                                                   id="pagoCredito" value="Credito">
+                                            <label class="form-check-label" for="pagoCredito">
+                                                <i class="bi bi-calendar-check me-2 text-warning"></i>
+                                                <strong>Crédito</strong>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ========================================= -->
+                        <!-- SECCIÓN 2: SELECCIÓN DE PACIENTE (SOLO CRÉDITO) -->
+                        <!-- ========================================= -->
+                        <div class="card mb-4" id="creditoPacienteContainer" style="display: none;">
+                            <div class="card-header bg-warning">
+                                <h5 class="mb-0 text-white">
+                                    <i class="bi bi-person-badge me-2"></i>
+                                    2. Seleccionar Paciente para Crédito
+                                </h5>
+                                <small class="text-white-50">Requerido para ventas a crédito</small>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Buscar Paciente</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light">
+                                            <i class="bi bi-search"></i>
+                                        </span>
+                                        <input type="text" class="form-control" id="buscarPacienteCredito"
+                                               placeholder="Nombre, teléfono o email del paciente">
+                                        <button type="button" class="btn btn-warning" id="btnBuscarPacienteCredito">
+                                            <i class="bi bi-search"></i> Buscar
+                                        </button>
+                                    </div>
+                                    <small class="text-muted">
+                                        <i class="bi bi-info-circle me-1"></i>
+                                        Solo se muestran pacientes con crédito disponible
+                                    </small>
+                                </div>
+
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-hover" id="tablaPacientesCredito">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Paciente</th>
+                                                <th>Teléfono</th>
+                                                <th>Email</th>
+                                                <th width="100">Acción</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="pacientesCreditoBody">
+                                            <tr>
+                                                <td colspan="4" class="text-center text-muted py-4">
+                                                    <i class="bi bi-people fs-1 d-block mb-2"></i>
+                                                    Seleccione "Crédito" para ver pacientes disponibles
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <!-- Paciente seleccionado -->
+                                <div id="pacienteSeleccionadoInfo" class="alert alert-success mt-3" style="display: none;">
+                                    <div class="d-flex align-items-center">
+                                        <i class="bi bi-check-circle-fill me-2 fs-4"></i>
+                                        <div>
+                                            <strong>Paciente seleccionado:</strong>
+                                            <span id="pacienteSeleccionadoNombre" class="fw-bold"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ========================================= -->
+                        <!-- SECCIÓN 3: PRODUCTOS -->
+                        <!-- ========================================= -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-light">
+                                <h5 class="mb-0"><i class="bi bi-box me-2"></i>3. Productos</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-2 mb-3">
+                                    <div class="col-md-7">
+                                        <label class="form-label fw-bold">Buscar Producto</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light">
+                                                <i class="bi bi-search"></i>
+                                            </span>
+                                            <input type="text"
+                                                   class="form-control form-control-lg"
+                                                   id="buscadorProducto"
+                                                   placeholder="Escriba nombre, código o referencia del producto..."
+                                                   autocomplete="off">
+                                            <button class="btn btn-outline-secondary" type="button" id="btnLimpiarBusqueda">
+                                                <i class="bi bi-x-lg"></i>
+                                            </button>
+                                        </div>
+                                        <small class="text-muted">
+                                            <i class="bi bi-info-circle me-1"></i>
+                                            Mínimo 2 caracteres para buscar
+                                        </small>
+                                        <div id="resultadosBusqueda" class="list-group mt-2 shadow" style="position: absolute; z-index: 1000; max-height: 300px; overflow-y: auto; width: 90%; display: none;"></div>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label fw-bold">Cantidad</label>
+                                        <input type="number" class="form-control form-control-lg" id="cantidad"
+                                               min="1" value="1">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label fw-bold">&nbsp;</label>
+                                        <button type="button" class="btn btn-success btn-lg w-100" id="agregarProducto" disabled>
+                                            <i class="bi bi-plus-circle me-2"></i>Agregar
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div id="productoSeleccionadoInfo" class="alert alert-info mb-3" style="display: none;">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                            <strong id="productoSeleccionadoNombre"></strong>
+                                            <br>
+                                            <small id="productoSeleccionadoDetalle" class="text-muted"></small>
+                                        </div>
+                                        <span id="productoSeleccionadoPrecio" class="badge bg-primary fs-6 p-2"></span>
+                                    </div>
+                                </div>
+
+                                <div class="table-responsive">
+                                    <table class="table table-bordered table-hover" id="tablaProductos">
+                                        <thead class="table-dark">
+                                            <tr>
+                                                <th>#</th>
+                                                <th>Producto</th>
+                                                <th width="120">Cantidad</th>
+                                                <th width="150">Precio Unit.</th>
+                                                <th width="150">Subtotal</th>
+                                                <th width="80"></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="productosBody">
+                                            <tr>
+                                                <td colspan="6" class="text-center text-muted py-4">
+                                                    <i class="bi bi-cart fs-1 d-block mb-2"></i>
+                                                    No hay productos agregados
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                        <tfoot>
+                                            <tr class="table-info">
+                                                <td colspan="4" class="text-end fw-bold fs-5">TOTAL VENTA:</td>
+                                                <td colspan="2">
+                                                    <span id="totalVenta" class="fw-bold fs-5 text-success">$0.00</span>
+                                                </td>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
+                                <div id="productosOcultos"></div>
+                            </div>
+                        </div>
+
+                        <!-- ========================================= -->
+                        <!-- SECCIÓN 4: PAGO EN EFECTIVO -->
+                        <!-- ========================================= -->
+                        <div class="card mb-4" id="efectivoContainer">
+                            <div class="card-header bg-success text-white">
+                                <h5 class="mb-0"><i class="bi bi-cash me-2"></i>4. Pago en Efectivo</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-bold">Monto Recibido ($)</label>
+                                        <div class="input-group input-group-lg">
+                                            <span class="input-group-text">$</span>
+                                            <input type="number" class="form-control" id="montoRecibido"
+                                                   min="0" step="0.01" value="0">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-bold">Cambio a Entregar ($)</label>
+                                        <div class="input-group input-group-lg">
+                                            <span class="input-group-text">$</span>
+                                            <input type="text" class="form-control" id="cambioCalculado"
+                                                   readonly value="0.00">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row mt-3">
+                                    <div class="col-12">
+                                        <label class="form-label fw-bold">Monto rápido:</label>
+                                        <div class="d-flex gap-2 flex-wrap">
+                                            <button type="button" class="btn btn-outline-success btn-monto-rapido" data-monto="100">$100</button>
+                                            <button type="button" class="btn btn-outline-success btn-monto-rapido" data-monto="200">$200</button>
+                                            <button type="button" class="btn btn-outline-success btn-monto-rapido" data-monto="500">$500</button>
+                                            <button type="button" class="btn btn-outline-success btn-monto-rapido" data-monto="1000">$1,000</button>
+                                            <button type="button" class="btn btn-outline-success" id="btnMontoExacto">Total Exacto</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ========================================= -->
+                        <!-- SECCIÓN 5: OBSERVACIONES -->
+                        <!-- ========================================= -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Observaciones</label>
+                            <textarea class="form-control" name="Observaciones" rows="2"
+                                      placeholder="Notas adicionales sobre la venta..."></textarea>
+                        </div>
+
+                        <!-- CAMPOS OCULTOS -->
+                        <input type="hidden" asp-for="PacienteId" id="pacienteId" name="PacienteId" value="" />
+                        <input type="hidden" asp-for="FechaVenta" value="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                        <input type="hidden" asp-for="TipoPago" id="tipoPagoHidden" value="Efectivo" />
+                        <input type="hidden" asp-for="Total" id="totalHidden" value="0" />
+                        <input type="hidden" asp-for="MontoPagado" id="montoPagadoHidden" value="0" />
+                        <input type="hidden" asp-for="Cambio" id="cambioHidden" value="0" />
+                        <input type="hidden" asp-for="Estado" value="COMPLETADA" />
+                        <input type="hidden" asp-for="UsuarioId" value="@usuarioId" />
+
+                        <!-- BOTONES DE ACCIÓN -->
+                        <div class="d-flex justify-content-between mt-4">
+                            <a asp-action="Index" class="btn btn-outline-secondary btn-lg">
+                                <i class="bi bi-x-lg me-2"></i>Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary btn-lg" id="btnFinalizar">
+                                <i class="bi bi-check-circle me-2"></i>Finalizar Venta
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- PANEL DE RESUMEN LATERAL -->
+        <div class="col-lg-4">
+            <div class="card shadow-sm sticky-top" style="top: 20px;">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="bi bi-receipt me-2"></i>Resumen de Venta</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-4">
+                        <h6 class="fw-bold">Método de Pago</h6>
+                        <p id="resumenTipoPago" class="fs-5 fw-bold text-primary">Efectivo</p>
+                    </div>
+
+                    <div class="mb-4" id="resumenPacienteContainer" style="display: none;">
+                        <h6 class="fw-bold">Paciente (Crédito)</h6>
+                        <p id="resumenPaciente" class="fw-bold text-warning">-</p>
+                        <p id="resumenContacto" class="small text-muted">-</p>
+                    </div>
+
+                    <div class="mb-4" id="resumenEfectivoContainer">
+                        <h6 class="fw-bold">Detalles de Pago</h6>
+                        <div class="d-flex justify-content-between mb-1">
+                            <span>Recibido:</span>
+                            <span id="resumenRecibido" class="fw-bold">$0.00</span>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span>Cambio:</span>
+                            <span id="resumenCambio" class="fw-bold">$0.00</span>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h6 class="fw-bold">Productos</h6>
+                            <span class="badge bg-secondary" id="cantidadProductos">0</span>
+                        </div>
+                        <div style="max-height: 300px; overflow-y: auto;" id="resumenProductos">
+                            <p class="text-muted small text-center py-3">
+                                <i class="bi bi-cart-x me-2"></i>No hay productos
+                            </p>
+                        </div>
+                    </div>
+
+                    <hr>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="fw-bold mb-0">TOTAL:</h5>
+                        <h4 id="resumenTotal" class="fw-bold text-success mb-0">$0.00</h4>
+                    </div>
+
+                    <hr class="mt-3">
+                    <div class="small text-muted">
+                        <i class="bi bi-person-circle me-1"></i>
+                        Atendido por: <strong>@nombreUsuario</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // ============================================
+        // VARIABLES GLOBALES
+        // ============================================
+        const swalDisponible = typeof Swal !== 'undefined';
+        let productos = [];
+        let total = 0;
+        let pacienteSeleccionado = null;
+        let timeoutBusqueda;
+        let productoSeleccionado = null;
+                 // ============================================
+        // VARIABLES GLOBALES PARA PAGINACIÓN
+        // ============================================
+        let currentPage = 1;
+        let isLoading = false;
+        let hasMorePages = true;
+        let searchTimeout;
+
+        // ============================================
+        // FUNCIÓN DE MENSAJES
+        // ============================================
+        function mostrarMensaje(tipo, titulo, mensaje, callback, esHtml = false) {
+            if (swalDisponible) {
+                let config = {
+                    title: titulo,
+                    icon: tipo === 'error' ? 'error' : (tipo === 'success' ? 'success' : (tipo === 'question' ? 'question' : 'info')),
+                    timer: tipo === 'success' ? 1500 : undefined,
+                    showConfirmButton: tipo !== 'success',
+                    confirmButtonText: tipo === 'question' ? 'Sí, finalizar' : 'Aceptar',
+                    cancelButtonText: 'Cancelar',
+                    reverseButtons: true
+                };
+
+                if (esHtml || (tipo === 'question' && mensaje && mensaje.includes('<div'))) {
+                    config.html = mensaje;
+                } else {
+                    config.text = mensaje;
+                }
+
+                if (tipo === 'question') {
+                    config.showCancelButton = true;
+                }
+
+                Swal.fire(config).then((result) => {
+                    if (callback && result.isConfirmed) callback();
+                });
+            } else {
+                if (tipo === 'question') {
+                    const textoPlano = mensaje ? mensaje.replace(/<[^>]*>/g, '') : '';
+                    if (confirm(`${titulo}\n${textoPlano}`) && callback) callback();
+                } else if (tipo === 'error') {
+                    alert(`Error: ${titulo}\n${mensaje}`);
+                } else if (tipo === 'success') {
+                    alert(`Éxito: ${titulo}\n${mensaje}`);
+                    if (callback) setTimeout(callback, 100);
+                }
+            }
+        }
+
+        // ============================================
+        // FUNCIÓN DE DEBUG
+        // ============================================
+        function actualizarDebug() {
+            const tipoPago = $('input[name="tipoPago"]:checked').val();
+            const pacienteId = $('#pacienteId').val();
+            console.log('=== DEBUG VENTA ===');
+            console.log('PacienteId:', pacienteId || 'null');
+            console.log('TipoPago:', tipoPago);
+            console.log('Total:', total);
+            console.log('Productos:', productos.length);
+            console.log('==================');
+        }
+
+        // ============================================
+        // 1. MANEJO DE MÉTODO DE PAGO
+        // ============================================
+        $('input[name="tipoPago"]').on('change', function() {
+            const tipoPago = $(this).val();
+
+            $('#resumenTipoPago').text(tipoPago);
+            $('#tipoPagoHidden').val(tipoPago);
+            $('#pacienteId').val('');
+            pacienteSeleccionado = null;
+            $('#pacienteSeleccionadoInfo').hide();
+            $('#resumenPaciente').text('-');
+            $('#resumenContacto').text('-');
+
+            if (tipoPago === 'Efectivo') {
+                $('#efectivoContainer').slideDown();
+                $('#creditoPacienteContainer').slideUp();
+                $('#resumenEfectivoContainer').show();
+                $('#resumenPacienteContainer').hide();
+                calcularCambio();
+            } else if (tipoPago === 'Tarjeta') {
+                $('#efectivoContainer').slideUp();
+                $('#creditoPacienteContainer').slideUp();
+                $('#resumenEfectivoContainer').hide();
+                $('#resumenPacienteContainer').hide();
+                $('#montoPagadoHidden').val(total.toFixed(2));
+                $('#cambioHidden').val('0');
+            } else {
+                $('#efectivoContainer').slideUp();
+                $('#creditoPacienteContainer').slideDown();
+                $('#resumenEfectivoContainer').hide();
+                $('#resumenPacienteContainer').show();
+                $('#montoPagadoHidden').val(total.toFixed(2));
+                $('#cambioHidden').val('0');
+                cargarPacientes();  // ← NUEVO
+            }
+            actualizarDebug();
+        });
+
+               // ============================================
+        // 2. CARGAR PACIENTES (TODOS LOS ACTIVOS)
+        // ============================================
+        function cargarPacientes(page = 1, append = false) {
+            if (isLoading) return;
+
+            isLoading = true;
+            currentPage = page;
+
+            if (!append) {
+                $('#pacientesCreditoBody').html(`
+                    <tr>
+                        <td colspan="4" class="text-center py-4">
+                            <div class="spinner-border spinner-border-sm text-warning me-2"></div>
+                            Cargando pacientes...
+                        </td>
+                    </tr>
+                `);
+            }
+
+            $.get('@Url.Action("GetPacientes", "Venta")', { page: page, pageSize: 20 })
+                .done(function(data) {
+                    if (data.success) {
+                        if (!append) {
+                            $('#pacientesCreditoBody').empty();
+                        } else {
+                            $('#loadMoreRow').remove();
+                        }
+
+                        if (data.pacientes && data.pacientes.length > 0) {
+                            data.pacientes.forEach(paciente => {
+                                $('#pacientesCreditoBody').append(`
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <i class="bi bi-person-circle me-2 text-warning"></i>
+                                                <div>
+                                                    <strong>${paciente.nombre}</strong>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>${paciente.telefono || '-'}</td>
+                                        <td>${paciente.email || '-'}</td>
+                                        <td>
+                                            <button type="button" class="btn btn-sm btn-warning btn-seleccionar-paciente w-100"
+                                                    data-id="${paciente.id}"
+                                                    data-nombre="${paciente.nombre}"
+                                                    data-telefono="${paciente.telefono || ''}"
+                                                    data-email="${paciente.email || ''}">
+                                                <i class="bi bi-check-lg"></i> Seleccionar
+                                            </button>
+                                        </td>
+                                    </tr>
+                                `);
+                            });
+
+                            hasMorePages = data.hasMore;
+
+                            if (hasMorePages) {
+                                $('#pacientesCreditoBody').append(`
+                                    <tr id="loadMoreRow">
+                                        <td colspan="4" class="text-center py-3">
+                                            <button class="btn btn-sm btn-outline-primary" id="btnCargarMas">
+                                                <i class="bi bi-arrow-down-circle me-1"></i>
+                                                Cargar más pacientes (${data.page * data.pageSize} de ${data.total})
+                                            </button>
+                                        </td>
+                                    </tr>
+                                `);
+                            } else if (data.total > 0) {
+                                $('#pacientesCreditoBody').append(`
+                                    <tr>
+                                        <td colspan="4" class="text-center text-muted py-2">
+                                            <small>Total: ${data.total} pacientes</small>
+                                        </td>
+                                    </tr>
+                                `);
+                            }
+                        } else {
+                            if (!append) {
+                                $('#pacientesCreditoBody').html(`
+                                    <tr>
+                                        <td colspan="4" class="text-center text-muted py-4">
+                                            <i class="bi bi-people display-6 d-block mb-2"></i>
+                                            No hay pacientes activos
+                                        </td>
+                                    </tr>
+                                `);
+                            }
+                        }
+                    }
+                })
+                .fail(function() {
+                    if (!append) {
+                        $('#pacientesCreditoBody').html(`
+                            <tr>
+                                <td colspan="4" class="text-center text-danger py-4">
+                                    <i class="bi bi-exclamation-triangle me-2"></i>
+                                    Error al cargar pacientes
+                                </td>
+                            </tr>
+                        `);
+                    }
+                })
+                .always(function() {
+                    isLoading = false;
+                });
+        }
+
+               // ============================================
+        // 3. BUSCAR PACIENTES (TODOS LOS ACTIVOS)
+        // ============================================
+        $('#btnBuscarPacienteCredito').on('click', function() {
+            const termino = $('#buscarPacienteCredito').val().trim();
+
+            if (termino.length < 2) {
+                mostrarMensaje('error', 'Error', 'Ingrese al menos 2 caracteres para buscar');
+                return;
+            }
+
+            const btn = $(this);
+            btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span> Buscando...');
+
+            if (searchTimeout) {
+                clearTimeout(searchTimeout);
+            }
+
+            searchTimeout = setTimeout(() => {
+                $.get('@Url.Action("BuscarPacientes", "Venta")', {
+                    termino: termino,
+                    page: 1,
+                    pageSize: 20
+                })
+                .done(function(data) {
+                    const tbody = $('#pacientesCreditoBody');
+                    tbody.empty();
+
+                    if (data.success && data.pacientes && data.pacientes.length > 0) {
+                        data.pacientes.forEach(paciente => {
+                            tbody.append(`
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <i class="bi bi-person-circle me-2 text-warning"></i>
+                                            <div>
+                                                <strong>${paciente.nombre}</strong>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>${paciente.telefono || '-'}</td>
+                                    <td>${paciente.email || '-'}</td>
+                                    <td>
+                                        <button type="button" class="btn btn-sm btn-warning btn-seleccionar-paciente w-100"
+                                                data-id="${paciente.id}"
+                                                data-nombre="${paciente.nombre}"
+                                                data-telefono="${paciente.telefono || ''}"
+                                                data-email="${paciente.email || ''}">
+                                            <i class="bi bi-check-lg"></i> Seleccionar
+                                        </button>
+                                    </td>
+                                </tr>
+                            `);
+                        });
+
+                        if (data.total > data.pacientes.length) {
+                            tbody.append(`
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted py-2">
+                                        <small>Se muestran ${data.pacientes.length} de ${data.total} resultados</small>
+                                    </td>
+                                </tr>
+                            `);
+                        }
+                    } else {
+                        tbody.append(`
+                            <tr>
+                                <td colspan="4" class="text-center text-muted py-4">
+                                    <i class="bi bi-search display-6 d-block mb-2"></i>
+                                    No se encontraron pacientes para "${termino}"
+                                </td>
+                            </tr>
+                        `);
+                    }
+                })
+                .fail(function() {
+                    $('#pacientesCreditoBody').html(`
+                        <tr>
+                            <td colspan="4" class="text-center text-danger py-4">
+                                <i class="bi bi-exclamation-triangle me-2"></i>
+                                Error en la búsqueda
+                            </td>
+                        </tr>
+                    `);
+                })
+                .always(function() {
+                    btn.prop('disabled', false).html('<i class="bi bi-search"></i> Buscar');
+                });
+            }, 300);
+        });
+
+                // ============================================
+        // 4. CARGAR MÁS PACIENTES (PAGINACIÓN)
+        // ============================================
+        $(document).on('click', '#btnCargarMas', function() {
+            const btn = $(this);
+            btn.prop('disabled', true)
+               .html('<span class="spinner-border spinner-border-sm me-2"></span> Cargando...');
+
+            cargarPacientes(currentPage + 1, true);
+        });
+
+        // ============================================
+        // 5. ENTER EN EL CAMPO DE BÚSQUEDA
+        // ============================================
+        $('#buscarPacienteCredito').on('keypress', function(e) {
+            if (e.which === 13) {
+                e.preventDefault();
+                $('#btnBuscarPacienteCredito').trigger('click');
+            }
+        });
+
+        // ============================================
+        // ACTUALIZAR INICIALIZACIÓN
+        // ============================================
+        // Reemplaza en $(document).ready la línea que llama a cargarPacientesCredito()
+        // Debe quedar así:
+
+        $(document).ready(function() {
+            $('#pacienteId').val('');
+            actualizarVenta();
+            calcularCambio();
+            actualizarDebug();
+            $('#buscadorProducto').trigger('focus');
+
+            // La carga de pacientes se hará cuando se seleccione crédito
+            // No es necesario cargarlos aquí
+        });
+
+        // ============================================
+        // 4. SELECCIONAR PACIENTE (CORREGIDO)
+        // ============================================
+        $(document).on('click', '.btn-seleccionar-paciente', function() {
+            const id = $(this).data('id');
+            const nombre = $(this).data('nombre');
+            const telefono = $(this).data('telefono');
+            const email = $(this).data('email');
+
+            // Guardar paciente seleccionado
+            pacienteSeleccionado = { id, nombre, telefono, email };
+
+            // Asignar ID al campo oculto
+            $('#pacienteId').val(id);
+
+            // Mostrar información del paciente seleccionado
+            $('#pacienteSeleccionadoNombre').text(nombre);
+            $('#pacienteSeleccionadoInfo').fadeIn();
+
+            // Actualizar resumen lateral
+            $('#resumenPaciente').html(`<i class="bi bi-person-badge me-1"></i>${nombre}`);
+            let contactoHtml = '';
+            if (telefono) contactoHtml += `<i class="bi bi-telephone me-1"></i>${telefono}<br>`;
+            if (email) contactoHtml += `<i class="bi bi-envelope me-1"></i>${email}`;
+            $('#resumenContacto').html(contactoHtml || '-');
+
+            // Resetear estilos de todos los botones
+            $('.btn-seleccionar-paciente')
+                .removeClass('btn-success')
+                .addClass('btn-warning')
+                .html('<i class="bi bi-check-lg"></i> Seleccionar');
+
+            // Marcar el botón seleccionado
+            $(this)
+                .removeClass('btn-warning')
+                .addClass('btn-success')
+                .html('<i class="bi bi-check-lg"></i> Seleccionado');
+
+            actualizarDebug();
+            mostrarMensaje('success', 'Paciente seleccionado', `Paciente: ${nombre}`);
+        });
+
+        // ============================================
+        // 5. MANEJO DE EFECTIVO
+        // ============================================
+        function calcularCambio() {
+            const montoRecibido = parseFloat($('#montoRecibido').val()) || 0;
+            const cambio = montoRecibido - total;
+
+            $('#cambioCalculado').val(cambio.toFixed(2));
+            $('#cambioHidden').val(cambio.toFixed(2));
+            $('#montoPagadoHidden').val(montoRecibido.toFixed(2));
+            $('#resumenRecibido').text('$' + montoRecibido.toFixed(2));
+            $('#resumenCambio').text('$' + cambio.toFixed(2));
+            actualizarDebug();
+        }
+
+        $('#montoRecibido').on('input', calcularCambio);
+
+        $('.btn-monto-rapido').on('click', function() {
+            const monto = $(this).data('monto');
+            $('#montoRecibido').val(monto);
+            calcularCambio();
+        });
+
+        $('#btnMontoExacto').on('click', function() {
+            $('#montoRecibido').val(total.toFixed(2));
+            calcularCambio();
+        });
+
+        // ============================================
+        // 6. BUSCADOR DE PRODUCTOS
+        // ============================================
+        $('#buscadorProducto').on('input', function() {
+            const termino = $(this).val().trim();
+            clearTimeout(timeoutBusqueda);
+
+            if (termino.length < 2) {
+                $('#resultadosBusqueda').hide();
+                productoSeleccionado = null;
+                $('#productoSeleccionadoInfo').hide();
+                $('#agregarProducto').prop('disabled', true);
+                return;
+            }
+
+            timeoutBusqueda = setTimeout(() => {
+                buscarProductos(termino);
+            }, 300);
+        });
+
+        function buscarProductos(termino) {
+            const resultadosDiv = $('#resultadosBusqueda');
+            resultadosDiv.html(`
+                <div class="list-group-item text-center py-3">
+                    <div class="spinner-border spinner-border-sm text-primary me-2"></div>
+                    Buscando productos...
+                </div>
+            `).show();
+
+            $.get('@Url.Action("BuscarProductos", "Venta")', { termino: termino })
+                .done(function(data) {
+                    resultadosDiv.empty();
+                    if (data.success && data.productos && data.productos.length > 0) {
+                        data.productos.forEach(p => {
+                            resultadosDiv.append(`
+                                <button type="button"
+                                        class="list-group-item list-group-item-action producto-item"
+                                        data-id="${p.id}"
+                                        data-nombre="${p.nombre}"
+                                        data-precio="${p.precioVenta}"
+                                        data-stock="${p.stock}"
+                                        data-codigo="${p.codigo}">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <strong>${p.nombre}</strong>
+                                            <br>
+                                            <small class="text-muted">
+                                                <i class="bi bi-upc-scan me-1"></i>${p.codigo}
+                                                ${p.marca ? ` | <i class="bi bi-tag me-1"></i>${p.marca}` : ''}
+                                            </small>
+                                        </div>
+                                        <div class="text-end">
+                                            <span class="badge bg-primary fs-6">$${p.precioVenta.toFixed(2)}</span>
+                                            <br>
+                                            <small class="${p.stock > 5 ? 'text-success' : 'text-danger'}">
+                                                <i class="bi bi-box me-1"></i>Stock: ${p.stock}
+                                            </small>
+                                        </div>
+                                    </div>
+                                </button>
+                            `);
+                        });
+                    } else {
+                        resultadosDiv.html(`
+                            <div class="list-group-item text-center text-muted py-4">
+                                <i class="bi bi-search display-6 d-block mb-2"></i>
+                                No se encontraron productos para "${termino}"
+                            </div>
+                        `);
+                    }
+                })
+                .fail(function() {
+                    resultadosDiv.html(`
+                        <div class="list-group-item text-center text-danger py-3">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            Error al buscar productos
+                        </div>
+                    `);
+                });
+        }
+
+        // ============================================
+        // 7. SELECCIONAR PRODUCTO
+        // ============================================
+        $(document).on('click', '.producto-item', function() {
+            const id = $(this).data('id');
+            const nombre = $(this).data('nombre');
+            const precio = $(this).data('precio');
+            const stock = $(this).data('stock');
+            const codigo = $(this).data('codigo');
+
+            productoSeleccionado = {
+                id: id,
+                nombre: nombre,
+                precio: precio,
+                stock: stock,
+                codigo: codigo
+            };
+
+            $('#productoSeleccionadoNombre').text(nombre);
+            $('#productoSeleccionadoDetalle').html(`
+                <i class="bi bi-upc-scan me-1"></i>${codigo}
+                | <i class="bi bi-box me-1"></i>Stock: <span class="${stock > 5 ? 'text-success' : 'text-danger'}">${stock}</span>
+            `);
+            $('#productoSeleccionadoPrecio').text('$' + precio.toFixed(2));
+            $('#productoSeleccionadoInfo').show();
+
+            $('#cantidad').attr('max', stock).val(1);
+            $('#agregarProducto').prop('disabled', false);
+            $('#resultadosBusqueda').hide();
+            $('#buscadorProducto').val(nombre);
+            $('#cantidad').trigger('focus');
+        });
+
+        // ============================================
+        // 8. LIMPIAR BÚSQUEDA
+        // ============================================
+        $('#btnLimpiarBusqueda').on('click', function() {
+            $('#buscadorProducto').val('');
+            $('#resultadosBusqueda').hide();
+            productoSeleccionado = null;
+            $('#productoSeleccionadoInfo').hide();
+            $('#agregarProducto').prop('disabled', true);
+            $('#buscadorProducto').trigger('focus');
+        });
+
+        $(document).on('click', function(e) {
+            if (!$(e.target).closest('#buscadorProducto').length &&
+                !$(e.target).closest('#resultadosBusqueda').length) {
+                $('#resultadosBusqueda').hide();
+            }
+        });
+
+        // ============================================
+        // 9. AGREGAR PRODUCTO
+        // ============================================
+        $('#agregarProducto').on('click', function() {
+            if (!productoSeleccionado) {
+                mostrarMensaje('error', 'Error', 'Seleccione un producto de la lista');
+                return;
+            }
+
+            const id = productoSeleccionado.id;
+            const nombre = productoSeleccionado.nombre;
+            const precio = productoSeleccionado.precio;
+            const stock = productoSeleccionado.stock;
+            let cantidad = parseInt($('#cantidad').val());
+
+            if (!cantidad || cantidad < 1) {
+                mostrarMensaje('error', 'Error', 'Cantidad inválida');
+                return;
+            }
+
+            if (cantidad > stock) {
+                mostrarMensaje('error', 'Error', `Stock insuficiente. Disponible: ${stock}`);
+                return;
+            }
+
+            const existente = productos.find(p => p.id == id);
+            const totalCantidad = (existente?.cantidad || 0) + cantidad;
+
+            if (totalCantidad > stock) {
+                mostrarMensaje('error', 'Error', `Stock insuficiente. Ya tiene ${existente?.cantidad || 0} en carrito. Máximo: ${stock}`);
+                return;
+            }
+
+            if (existente) {
+                existente.cantidad += cantidad;
+                existente.subtotal = existente.cantidad * precio;
+            } else {
+                productos.push({
+                    id: id,
+                    nombre: nombre,
+                    precio: precio,
+                    cantidad: cantidad,
+                    subtotal: cantidad * precio,
+                    stock: stock
+                });
+            }
+
+            actualizarVenta();
+            productoSeleccionado = null;
+            $('#productoSeleccionadoInfo').hide();
+            $('#buscadorProducto').val('');
+            $('#cantidad').val(1);
+            $('#agregarProducto').prop('disabled', true);
+            $('#buscadorProducto').trigger('focus');
+        });
+
+        $('#cantidad').on('keypress', function(e) {
+            if (e.which === 13) {
+                e.preventDefault();
+                $('#agregarProducto').trigger('click');
+            }
+        });
+
+        // ============================================
+        // 10. ELIMINAR PRODUCTO
+        // ============================================
+        $(document).on('click', '.eliminar-producto', function() {
+            const id = $(this).data('id');
+            const nombre = $(this).data('nombre');
+
+            mostrarMensaje('question', '¿Eliminar producto?', `${nombre} será removido de la venta`, function() {
+                productos = productos.filter(p => p.id != id);
+                actualizarVenta();
+            });
+        });
+
+        // ============================================
+        // 11. ACTUALIZAR CANTIDAD
+        // ============================================
+        $(document).on('change', '.cantidad-input', function() {
+            const id = $(this).data('id');
+            const precio = $(this).data('precio');
+            const stock = parseInt($(this).attr('max'));
+            let nuevaCantidad = parseInt($(this).val());
+
+            if (isNaN(nuevaCantidad) || nuevaCantidad < 1) {
+                $(this).val(1);
+                nuevaCantidad = 1;
+            }
+
+            if (nuevaCantidad > stock) {
+                mostrarMensaje('error', 'Error', `Stock máximo: ${stock}`);
+                $(this).val(stock);
+                nuevaCantidad = stock;
+            }
+
+            const producto = productos.find(p => p.id == id);
+            if (producto) {
+                producto.cantidad = nuevaCantidad;
+                producto.subtotal = nuevaCantidad * precio;
+                actualizarVenta();
+            }
+        });
+
+        // ============================================
+        // 12. ACTUALIZAR VENTA
+        // ============================================
+        function actualizarVenta() {
+            total = productos.reduce((sum, p) => sum + p.subtotal, 0);
+
+            const tbody = $('#productosBody');
+            tbody.empty();
+            $('#productosOcultos').empty();
+
+            if (productos.length === 0) {
+                tbody.append(`
+                    <tr>
+                        <td colspan="6" class="text-center text-muted py-4">
+                            <i class="bi bi-cart fs-1 d-block mb-2"></i>
+                            No hay productos agregados
+                        </td>
+                    </tr>
+                `);
+            } else {
+                productos.forEach((p, index) => {
+                    tbody.append(`
+                        <tr>
+                            <td class="text-center align-middle fw-bold">${index + 1}</td>
+                            <td class="align-middle">
+                                <div>
+                                    <strong>${p.nombre}</strong>
+                                    <br><small class="text-muted">Stock: ${p.stock}</small>
+                                </div>
+                            </td>
+                            <td class="align-middle">
+                                <input type="number" class="form-control form-control-sm cantidad-input"
+                                       value="${p.cantidad}" min="1" max="${p.stock}"
+                                       data-id="${p.id}" data-precio="${p.precio}">
+                            </td>
+                            <td class="align-middle text-end">$${p.precio.toFixed(2)}</td>
+                            <td class="align-middle text-end fw-bold">$${p.subtotal.toFixed(2)}</td>
+                            <td class="align-middle text-center">
+                                <button type="button" class="btn btn-sm btn-outline-danger eliminar-producto"
+                                        data-id="${p.id}" data-nombre="${p.nombre}">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `);
+
+                    $('#productosOcultos').append(`
+                        <input type="hidden" name="productoIds" value="${p.id}">
+                        <input type="hidden" name="cantidades" value="${p.cantidad}">
+                    `);
+                });
+            }
+
+            $('#totalVenta').text('$' + total.toFixed(2));
+            $('#totalHidden').val(total.toFixed(2));
+            $('#resumenTotal').text('$' + total.toFixed(2));
+
+            const totalProductos = productos.reduce((sum, p) => sum + p.cantidad, 0);
+            $('#cantidadProductos').text(totalProductos);
+
+            let resumenHtml = '';
+            if (productos.length === 0) {
+                resumenHtml = '<p class="text-muted small text-center py-3"><i class="bi bi-cart-x me-2"></i>No hay productos</p>';
+            } else {
+                productos.forEach((p, index) => {
+                    resumenHtml += `
+                        <div class="d-flex justify-content-between align-items-start mb-2 pb-2 border-bottom">
+                            <div>
+                                <span class="badge bg-secondary me-1">${index + 1}</span>
+                                <span class="small fw-bold">${p.nombre}</span>
+                                <br><small class="text-muted">${p.cantidad} x $${p.precio.toFixed(2)}</small>
+                            </div>
+                            <span class="fw-bold">$${p.subtotal.toFixed(2)}</span>
+                        </div>
+                    `;
+                });
+            }
+            $('#resumenProductos').html(resumenHtml);
+
+            const tipoPago = $('input[name="tipoPago"]:checked').val();
+            if (tipoPago === 'Efectivo') {
+                calcularCambio();
+            } else {
+                $('#montoPagadoHidden').val(total.toFixed(2));
+                $('#cambioHidden').val('0');
+            }
+            actualizarDebug();
+        }
+
+        // ============================================
+        // 13. ENVÍO DEL FORMULARIO (CORREGIDO)
+        // ============================================
+        $('#ventaForm').on('submit', function(e) {
+            e.preventDefault();
+
+            if (productos.length === 0) {
+                mostrarMensaje('error', 'Error', 'Debe agregar al menos un producto');
+                return false;
+            }
+
+            const tipoPago = $('input[name="tipoPago"]:checked').val();
+            const pacienteId = $('#pacienteId').val();
+
+            if (tipoPago === 'Efectivo') {
+                const montoRecibido = parseFloat($('#montoRecibido').val()) || 0;
+                if (montoRecibido < total) {
+                    const faltante = total - montoRecibido;
+                    mostrarMensaje('error', 'Error', `Monto insuficiente. Faltan: $${faltante.toFixed(2)}`);
+                    $('#montoRecibido').trigger('focus');
+                    return false;
+                }
+                $('#montoPagadoHidden').val(montoRecibido.toFixed(2));
+            }
+
+            if (tipoPago === 'Tarjeta') {
+                $('#montoPagadoHidden').val(total.toFixed(2));
+                $('#cambioHidden').val('0');
+            }
+
+            if (tipoPago === 'Credito') {
+                console.log('Validando crédito - PacienteId:', pacienteId);
+
+                if (!pacienteId || pacienteId === '' || pacienteId === '0') {
+                    mostrarMensaje('error', 'Error', 'Debe seleccionar un paciente para venta a crédito');
+                    return false;
+                }
+                $('#montoPagadoHidden').val(total.toFixed(2));
+                $('#cambioHidden').val('0');
+            }
+
+            // Construir resumen HTML
+            let resumenHtml = `
+                <div class="text-start">
+                    <div class="alert alert-primary py-2 mb-3">
+                        <i class="bi bi-person-circle me-2"></i>
+                        <strong>Atendido por:</strong> @nombreUsuario
+                    </div>
+                    <div class="bg-light p-3 rounded">
+                        <div class="d-flex justify-content-between border-bottom pb-2 mb-2">
+                            <span class="fw-bold">TOTAL:</span>
+                            <span class="fs-4 fw-bold text-success">$${total.toFixed(2)}</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-1">
+                            <span class="text-muted">Método de pago:</span>
+                            <span class="fw-bold">${tipoPago}</span>
+                        </div>
+            `;
+
+            if (tipoPago === 'Credito' && pacienteSeleccionado) {
+                resumenHtml += `
+                        <div class="d-flex justify-content-between mb-1">
+                            <span class="text-muted">Paciente:</span>
+                            <span class="fw-bold">${pacienteSeleccionado.nombre}</span>
+                        </div>
+                `;
+            }
+
+            if (tipoPago === 'Efectivo') {
+                const montoRecibido = parseFloat($('#montoRecibido').val()) || 0;
+                const cambio = parseFloat($('#cambioCalculado').val()) || 0;
+                resumenHtml += `
+                        <div class="d-flex justify-content-between mb-1">
+                            <span class="text-muted">Recibido:</span>
+                            <span>$${montoRecibido.toFixed(2)}</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-1">
+                            <span class="text-muted">Cambio:</span>
+                            <span>$${cambio.toFixed(2)}</span>
+                        </div>
+                `;
+            }
+
+            resumenHtml += `
+                        <div class="d-flex justify-content-between mt-2 pt-2 border-top">
+                            <span class="text-muted">Productos:</span>
+                            <span>${productos.reduce((sum, p) => sum + p.cantidad, 0)} unidades</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            mostrarMensaje('question', '¿Finalizar venta?', resumenHtml, function() {
+                const btn = $('#btnFinalizar');
+                btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span> Procesando venta...');
+                document.getElementById('ventaForm').submit();
+            }, true);
+        });
+
+        // ============================================
+        // 14. INICIALIZACIÓN
+        // ============================================
+        $(document).ready(function() {
+            $('#pacienteId').val('');
+            actualizarVenta();
+            calcularCambio();
+            actualizarDebug();
+            $('#buscadorProducto').trigger('focus');
+        });
+    </script>
+}

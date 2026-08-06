@@ -1,0 +1,112 @@
+﻿@model OpticaClaridad.Models.CategoriaProducto
+
+@{
+    ViewData["Title"] = "Nueva Categoría";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-lg-6 mx-auto">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-primary text-white py-3">
+                    <h4 class="mb-0">
+                        <i class="bi bi-tags me-2"></i>Crear Nueva Categoría
+                    </h4>
+                </div>
+                <div class="card-body p-4">
+                    <form asp-action="Create">
+                        @Html.AntiForgeryToken()
+
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+                        <div class="mb-3">
+                            <label asp-for="Nombre" class="form-label fw-semibold">
+                                <i class="bi bi-card-heading me-1"></i>Nombre de la Categoría
+                            </label>
+                            <input asp-for="Nombre" class="form-control"
+                                   placeholder="Ej: Lentes Graduados, Armazones, Accesorios..."
+                                   autofocus />
+                            <div class="form-text">Nombre descriptivo de la categoría (3-50 caracteres)</div>
+                            <span asp-validation-for="Nombre" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-4">
+                            <label asp-for="Descripcion" class="form-label fw-semibold">
+                                <i class="bi bi-text-paragraph me-1"></i>Descripción (Opcional)
+                            </label>
+                            <textarea asp-for="Descripcion" class="form-control"
+                                      rows="3"
+                                      placeholder="Ej: Lentes con graduación para corrección visual..."></textarea>
+                            <div class="form-text">Descripción detallada de la categoría (máximo 200 caracteres)</div>
+                            <span asp-validation-for="Descripcion" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-4">
+                            <div class="form-check form-switch">
+                                <input asp-for="Activo" class="form-check-input" type="checkbox" checked id="activoSwitch">
+                                <label class="form-check-label fw-semibold" for="activoSwitch">
+                                    Categoría Activa
+                                </label>
+                            </div>
+                            <div class="form-text">
+                                Las categorías inactivas no estarán disponibles para nuevos productos
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between mt-4">
+                            <a asp-action="Index" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left me-1"></i>Volver al Listado
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save me-1"></i>Crear Categoría
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card border-info mt-4">
+                <div class="card-header bg-info text-white">
+                    <i class="bi bi-lightbulb me-2"></i>Ejemplos de Categorías
+                </div>
+                <div class="card-body">
+                    <ul class="mb-0">
+                        <li><strong>Lentes Graduados</strong> - Lentes con graduación para corrección visual</li>
+                        <li><strong>Lentes de Sol</strong> - Lentes con protección UV y estilo</li>
+                        <li><strong>Armazones</strong> - Armazones para lentes de diferentes materiales</li>
+                        <li><strong>Accesorios</strong> - Estuches, líquidos de limpieza, paños</li>
+                        <li><strong>Lentes para Computadora</strong> - Lentes con filtro de luz azul</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+    <script>
+        $(document).ready(function() {
+            // Contador de caracteres para descripción
+            $('#Descripcion').on('input', function() {
+                var length = $(this).val().length;
+                var maxLength = 200;
+
+                if (length > maxLength) {
+                    $(this).val($(this).val().substring(0, maxLength));
+                    length = maxLength;
+                }
+
+                // Mostrar contador
+                var counter = $(this).next('.form-text');
+                if (!counter.find('.char-counter').length) {
+                    counter.append('<span class="char-counter float-end"></span>');
+                }
+                counter.find('.char-counter').text(length + '/' + maxLength + ' caracteres');
+            }).trigger('input');
+        });
+    </script>
+}

@@ -1,0 +1,411 @@
+﻿@model OpticaClaridad.Models.ReporteInventario
+@{
+    ViewData["Title"] = "Estado de Inventario";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var categorias = ViewBag.Categorias as List<CategoriaProducto> ?? new List<CategoriaProducto>();
+}
+
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0"><i class="bi bi-box-seam me-2"></i> Estado de Inventario</h1>
+        <div>
+            <a href="@Url.Action("Dashboard")" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-arrow-left"></i> Volver al Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary"><i class="bi bi-funnel me-2"></i> Filtros</h6>
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <!-- Categoría -->
+                <div class="col-md-3">
+                    <label class="form-label">Categoría</label>
+                    <select class="form-select" name="CategoriaId">
+                        <option value="">Todas</option>
+                        @foreach (var categoria in categorias)
+                        {
+                            <option value="@categoria.Id" selected="@(Model.CategoriaId == categoria.Id)">
+                                @categoria.Nombre
+                            </option>
+                        }
+                    </select>
+                </div>
+
+                <!-- Estado de Stock -->
+                <div class="col-md-3">
+                    <label class="form-label">Estado de Stock</label>
+                    <select class="form-select" name="EstadoStock">
+                        <option value="TODOS" selected="@(Model.EstadoStock == "TODOS")">Todos</option>
+                        <option value="NORMAL" selected="@(Model.EstadoStock == "NORMAL")">Normal</option>
+                        <option value="BAJO" selected="@(Model.EstadoStock == "BAJO")">Bajo</option>
+                        <option value="AGOTADO" selected="@(Model.EstadoStock == "AGOTADO")">Agotado</option>
+                    </select>
+                </div>
+
+                <!-- Ordenar por -->
+                <div class="col-md-3">
+                    <label class="form-label">Ordenar por</label>
+                    <select class="form-select" name="OrdenarPor">
+                        <option value="Nombre" selected="@(Model.OrdenarPor == "Nombre")">Nombre</option>
+                        <option value="StockAsc" selected="@(Model.OrdenarPor == "StockAsc")">Stock (bajo a alto)</option>
+                        <option value="StockDesc" selected="@(Model.OrdenarPor == "StockDesc")">Stock (alto a bajo)</option>
+                        <option value="ValorDesc" selected="@(Model.OrdenarPor == "ValorDesc")">Valor (alto a bajo)</option>
+                        <option value="DiasSinMovimientoDesc" selected="@(Model.OrdenarPor == "DiasSinMovimientoDesc")">Sin movimiento (más días)</option>
+                    </select>
+                </div>
+
+                <!-- Mostrar solo activos -->
+                <div class="col-md-3">
+                    <label class="form-label">Mostrar</label>
+                    <div class="form-check mt-2">
+                        <input class="form-check-input" type="checkbox" name="SoloActivos"
+                               value="true" checked="@Model.SoloActivos" id="soloActivos">
+                        <label class="form-check-label" for="soloActivos">
+                            Solo productos activos
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Botones -->
+                <div class="col-12">
+                    <div class="d-flex justify-content-between">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-search me-2"></i> Aplicar Filtros
+                        </button>
+                        <a href="@Url.Action("Inventario")" class="btn btn-outline-secondary">
+                            <i class="bi bi-x-circle me-2"></i> Limpiar Filtros
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Resumen -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Total Productos
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.TotalProductos</div>
+                            <div class="mt-2 mb-0 text-muted text-xs">
+                                <span>Valor: @Model.ValorTotalInventario.ToString("C2")</span>
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-box fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Stock Normal
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                @(Model.TotalProductos - Model.ProductosBajoStock - Model.ProductosAgotados)
+                            </div>
+                            <div class="mt-2 mb-0 text-muted text-xs">
+                                <span class="text-success">Disponibles</span>
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-check-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Stock Bajo
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.ProductosBajoStock</div>
+                            <div class="mt-2 mb-0">
+                                <span class="badge bg-warning text-dark">Necesita reabastecimiento</span>
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-exclamation-triangle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-left-danger shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
+                                Agotados
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.ProductosAgotados</div>
+                            <div class="mt-2 mb-0">
+                                <span class="badge bg-danger">Sin stock</span>
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-x-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla de Inventario -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+            <h6 class="m-0 font-weight-bold text-primary">Detalles de Inventario</h6>
+            <div>
+                <span class="badge bg-primary">@Model.Resultados.Count productos</span>
+            </div>
+        </div>
+        <div class="card-body">
+            @if (Model.Resultados.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover" id="inventarioTable" width="100%" cellspacing="0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Código</th>
+                                <th>Producto</th>
+                                <th>Categoría</th>
+                                <th class="text-end">Stock</th>
+                                <th class="text-end">Mínimo</th>
+                                <th>Estado</th>
+                                <th class="text-end">P. Compra</th>
+                                <th class="text-end">P. Venta</th>
+                                <th class="text-end">Valor Inv.</th>
+                                <th class="text-end">Margen</th>
+                                <th>Última Venta</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var producto in Model.Resultados)
+                            {
+                                <tr class="@(!producto.Activo ? "table-secondary" : "")">
+                                    <td>
+                                        <strong>@producto.Codigo</strong>
+                                    </td>
+                                    <td>
+                                        <strong>@producto.Nombre</strong>
+                                        <small class="text-muted d-block">@producto.Marca @producto.Modelo</small>
+                                    </td>
+                                    <td>@producto.Categoria</td>
+                                    <td class="text-end">
+                                        <strong>@producto.Stock</strong>
+                                    </td>
+                                    <td class="text-end">@producto.StockMinimo</td>
+                                    <td>
+                                        @if (producto.EstadoStock == "NORMAL")
+                                        {
+                                            <span class="badge bg-success">NORMAL</span>
+                                        }
+                                        else if (producto.EstadoStock == "BAJO")
+                                        {
+                                            <span class="badge bg-warning">BAJO</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-danger">AGOTADO</span>
+                                        }
+                                    </td>
+                                    <td class="text-end">@producto.PrecioCompra.ToString("C2")</td>
+                                    <td class="text-end">
+                                        <strong>@producto.PrecioVenta.ToString("C2")</strong>
+                                        <small class="text-muted d-block">Gan: @producto.GananciaUnidad.ToString("C2")</small>
+                                    </td>
+                                    <td class="text-end">
+                                        <strong>@producto.ValorInventario.ToString("C2")</strong>
+                                    </td>
+                                    <td class="text-end">
+                                        <span class="badge @(producto.MargenPorcentaje >= 50 ? "bg-success" :
+                                                                                                          producto.MargenPorcentaje >= 30 ? "bg-info" : "bg-warning")">
+                                            @producto.MargenPorcentaje.ToString("0.0")%
+                                        </span>
+                                    </td>
+                                    <td>
+                                        @if (producto.FechaUltimaVenta.HasValue)
+                                        {
+                                            <span>@producto.FechaUltimaVenta.Value.ToString("dd/MM/yyyy")</span>
+                                            <small class="text-muted d-block">
+                                                @producto.DiasSinMovimiento días sin movimiento
+                                            </small>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">Sin ventas</span>
+                                            <small class="text-muted d-block">
+                                                @producto.DiasSinMovimiento días sin movimiento
+                                            </small>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (producto.Activo)
+                                        {
+                                            <span class="badge bg-success">ACTIVO</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary">INACTIVO</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                        <tfoot class="table-light">
+                            <tr>
+                                <td colspan="8" class="text-end"><strong>Valor Total Inventario:</strong></td>
+                                <td colspan="4" class="text-start">
+                                    <strong class="text-primary">@Model.ValorTotalInventario.ToString("C2")</strong>
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-info text-center py-4">
+                    <i class="bi bi-info-circle display-4 d-block mb-3"></i>
+                    <h4>No se encontraron productos</h4>
+                    <p class="mb-0">No hay registros que coincidan con los filtros aplicados.</p>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Alertas -->
+    @{
+        var productosBajoStock = Model.Resultados.Where(p => p.EstadoStock == "BAJO").ToList();
+        var productosAgotados = Model.Resultados.Where(p => p.EstadoStock == "AGOTADO").ToList();
+        var productosSinMovimiento = Model.Resultados.Where(p => p.DiasSinMovimiento > 90).ToList();
+    }
+
+    @if (productosBajoStock.Any() || productosAgotados.Any() || productosSinMovimiento.Any())
+    {
+        <div class="row">
+            <div class="col-12">
+                <div class="card shadow mb-4 border-left-danger">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-danger"><i class="bi bi-exclamation-triangle me-2"></i> Alertas de Inventario</h6>
+                    </div>
+                    <div class="card-body">
+                        <!-- Productos con stock bajo -->
+                        @if (productosBajoStock.Any())
+                        {
+                            <div class="alert alert-warning mb-3">
+                                <h6 class="alert-heading">
+                                    <i class="bi bi-exclamation-circle me-2"></i>
+                                    Productos con Stock Bajo (@productosBajoStock.Count)
+                                </h6>
+                                <div class="row mt-2">
+                                    @foreach (var producto in productosBajoStock.Take(5))
+                                    {
+                                        <div class="col-md-4 mb-2">
+                                            <div class="d-flex justify-content-between">
+                                                <span>@producto.Nombre</span>
+                                                <span class="badge bg-warning text-dark">@producto.Stock unidades</span>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        }
+
+                        <!-- Productos agotados -->
+                        @if (productosAgotados.Any())
+                        {
+                            <div class="alert alert-danger mb-3">
+                                <h6 class="alert-heading">
+                                    <i class="bi bi-x-circle me-2"></i>
+                                    Productos Agotados (@productosAgotados.Count)
+                                </h6>
+                                <div class="row mt-2">
+                                    @foreach (var producto in productosAgotados.Take(5))
+                                    {
+                                        <div class="col-md-4 mb-2">
+                                            <div class="d-flex justify-content-between">
+                                                <span>@producto.Nombre</span>
+                                                <span class="badge bg-danger">AGOTADO</span>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        }
+
+                        <!-- Productos sin movimiento -->
+                        @if (productosSinMovimiento.Any())
+                        {
+                            <div class="alert alert-info mb-0">
+                                <h6 class="alert-heading">
+                                    <i class="bi bi-clock-history me-2"></i>
+                                    Productos sin Movimiento (@productosSinMovimiento.Count)
+                                </h6>
+                                <p>Productos sin ventas por más de 90 días</p>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        // Inicializar DataTable para inventario
+        $(document).ready(function() {
+            $('#inventarioTable').DataTable({
+                language: {
+                    url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json'
+                },
+                order: [], // Deshabilitar orden inicial
+                pageLength: 25,
+                dom: '<"row"<"col-md-6"l><"col-md-6"f>>rt<"row"<"col-md-6"i><"col-md-6"p>>',
+                columnDefs: [
+                    { orderable: true, targets: '_all' }
+                ]
+            });
+        });
+
+        // Resaltar filas según estado de stock
+        document.addEventListener('DOMContentLoaded', function() {
+            const rows = document.querySelectorAll('#inventarioTable tbody tr');
+            rows.forEach(row => {
+                const estadoCell = row.querySelector('td:nth-child(6)');
+                if (estadoCell) {
+                    const estado = estadoCell.textContent.trim();
+                    if (estado === 'BAJO') {
+                        row.classList.add('table-warning');
+                    } else if (estado === 'AGOTADO') {
+                        row.classList.add('table-danger');
+                    }
+                }
+            });
+        });
+    </script>
+}

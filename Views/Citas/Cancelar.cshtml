@@ -1,0 +1,63 @@
+﻿@model OpticaClaridad.Models.Cita
+
+@{
+    ViewData["Title"] = "Cancelar Cita";
+}
+
+<div class="container mt-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-action="Index">Citas</a></li>
+            <li class="breadcrumb-item active">Cancelar Cita</li>
+        </ol>
+    </nav>
+
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h4><i class="bi bi-calendar-x"></i> @ViewData["Title"]</h4>
+                </div>
+                <div class="card-body">
+                    <h5 class="text-danger mb-4">¿Está seguro que desea cancelar esta cita?</h5>
+
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <h6>@Model.ClienteNombre</h6>
+                            <p class="mb-1">
+                                <i class="bi bi-calendar"></i>
+                                @Model.FechaHora.ToString("dd/MM/yyyy HH:mm")
+                            </p>
+                            <p class="mb-1">
+                                <i class="bi bi-telephone"></i> @Model.Telefono
+                            </p>
+                            <p class="mb-0">
+                                <i class="bi bi-clipboard"></i> @Model.TipoCita
+                            </p>
+                            @if (!string.IsNullOrEmpty(Model.Motivo))
+                            {
+                                <p class="mt-2 text-muted"><small>@Model.Motivo</small></p>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        <strong>Esta acción no se puede deshacer.</strong>
+                        La cita será marcada como cancelada y el cliente deberá programar una nueva cita si es necesario.
+                    </div>
+
+                    <form asp-action="Cancelar">
+                        <input type="hidden" asp-for="Id" />
+                        <div class="d-flex justify-content-between">
+                            <a asp-action="Index" class="btn btn-secondary">Volver</a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="bi bi-x-circle"></i> Sí, Cancelar Cita
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

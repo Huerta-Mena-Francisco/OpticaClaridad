@@ -1,0 +1,294 @@
+﻿﻿
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Óptica Claridad</title>
+    <link rel="icon" href="~/Optica.jpg" type="image/jpeg" />
+
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+
+    <style>
+        :root {
+            --primary: #4a6fa5;
+            --secondary: #166088;
+            --accent: #ffc107;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: #f8f9fa;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Navbar para vendedor */
+        .navbar-vendedor {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            box-shadow: 0 3px 15px rgba(0, 0, 0, 0.1);
+            padding: 10px 0;
+        }
+
+        .logo-vendedor {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid rgba(255, 255, 255, 0.8);
+            margin-right: 12px;
+        }
+
+        /* Sidebar fijo */
+        .sidebar-vendedor {
+            background: linear-gradient(180deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            min-height: 100vh;
+            position: sticky;
+            top: 0;
+            padding-top: 20px;
+            box-shadow: 3px 0 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .menu-item-vendedor {
+            color: rgba(255, 255, 255, 0.9);
+            padding: 12px 20px;
+            display: block;
+            text-decoration: none;
+            border-left: 4px solid transparent;
+            transition: all 0.3s;
+            margin: 3px 15px;
+            border-radius: 8px;
+        }
+
+            .menu-item-vendedor:hover {
+                background: rgba(255, 255, 255, 0.1);
+                color: white;
+                border-left: 4px solid var(--accent);
+                text-decoration: none;
+            }
+
+            .menu-item-vendedor.active {
+                background: rgba(255, 255, 255, 0.15);
+                color: white;
+                border-left: 4px solid var(--accent);
+                font-weight: 600;
+            }
+
+            .menu-item-vendedor i {
+                width: 24px;
+                text-align: center;
+                margin-right: 12px;
+                font-size: 1.1rem;
+            }
+
+        .section-title {
+            margin-top: 25px;
+            margin-bottom: 10px;
+            padding: 0 20px;
+        }
+
+            .section-title small {
+                font-size: 0.75rem;
+                letter-spacing: 0.5px;
+                opacity: 0.7;
+            }
+
+        /* Contenido principal */
+        .main-content-vendedor {
+            padding: 25px;
+            min-height: 100vh;
+            background: #f8f9fa;
+        }
+
+        /* Info usuario */
+        .user-info-vendedor {
+            padding: 15px 20px;
+            background: rgba(255, 255, 255, 0.1);
+            margin: 15px;
+            border-radius: 8px;
+            border-left: 4px solid var(--accent);
+        }
+
+        .user-avatar-vendedor {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: white;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1rem;
+        }
+
+        /* Responsive */
+        @@media (max-width: 768px) {
+            .sidebar-vendedor {
+                min-height: auto;
+                position: static;
+                padding-bottom: 20px;
+            }
+
+            .main-content-vendedor {
+                padding: 15px;
+            }
+        }
+    </style>
+
+    @RenderSection("Styles", required: false)
+</head>
+<body>
+    <!-- Navbar Superior -->
+    <nav class="navbar navbar-vendedor navbar-expand-lg">
+        <div class="container-fluid">
+            <a class="navbar-brand d-flex align-items-center text-white" asp-controller="Home" asp-action="Index">
+                <img src="~/Optica.jpg" alt="Óptica Claridad" class="logo-vendedor" />
+                <span style="font-weight: 600; font-size: 1.2rem">Óptica Claridad</span>
+            </a>
+
+            <div class="d-flex align-items-center">
+                <div class="text-end d-none d-md-block me-3">
+                    <div class="small">@Context.Session.GetString("NombreCompleto")</div>
+                    <span class="badge bg-warning">Vendedor</span>
+                </div>
+                <a asp-controller="Login" asp-action="Logout" class="btn btn-outline-light btn-sm">
+                    <i class="bi bi-box-arrow-left me-1"></i> Salir
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar Vendedor -->
+            <div class="col-lg-2 col-md-3 sidebar-vendedor">
+                <!-- Información del usuario -->
+                <div class="user-info-vendedor">
+                    <div class="d-flex align-items-center">
+                        <div class="user-avatar-vendedor me-3">
+                            @{
+                                var inicial = Context.Session.GetString("NombreCompleto")?.FirstOrDefault() ?? 'V';
+                            }
+                            @inicial
+                        </div>
+                        <div>
+                            <strong>@Context.Session.GetString("NombreCompleto")</strong>
+                            <div class="small">Vendedor</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dashboard -->
+                <a asp-controller="Home" asp-action="Index"
+                   class="menu-item-vendedor @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Home" && ViewContext.RouteData.Values["Action"]?.ToString() == "Index" ? "active" : "")">
+                    <i class="bi bi-speedometer2"></i> Mi Dashboard
+                </a>
+
+                <!-- Sección: Ventas -->
+                <div class="section-title">
+                    <small class="text-uppercase">VENTAS</small>
+                </div>
+
+                <a asp-controller="Venta" asp-action="Create"
+                   class="menu-item-vendedor @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Venta" && ViewContext.RouteData.Values["Action"]?.ToString() == "Create" ? "active" : "")">
+                    <i class="bi bi-cart-plus"></i> Nueva Venta
+                </a>
+
+                <a asp-controller="Venta" asp-action="Index"
+                   class="menu-item-vendedor @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Venta" && ViewContext.RouteData.Values["Action"]?.ToString() == "Index" ? "active" : "")">
+                    <i class="bi bi-receipt"></i> Mis Ventas
+                </a>
+
+                <!-- Sección: Gestión -->
+                <div class="section-title">
+                    <small class="text-uppercase">GESTIÓN</small>
+                </div>
+
+                <a asp-controller="Citas" asp-action="Index"
+                   class="menu-item-vendedor @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Citas" ? "active" : "")">
+                    <i class="bi bi-calendar-check"></i> Citas
+                </a>
+
+                <a asp-controller="Pacientes" asp-action="Index"
+                   class="menu-item-vendedor @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Pacientes" ? "active" : "")">
+                    <i class="bi bi-person-badge"></i> Pacientes
+                </a>
+
+                <a asp-controller="Productos" asp-action="Index"
+                   class="menu-item-vendedor @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Productos" ? "active" : "")">
+                    <i class="bi bi-box"></i> Productos
+                </a>
+
+                <a asp-controller="Catalogo" asp-action="Index"
+                   class="menu-item-vendedor @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Catalogo" ? "active" : "")">
+                    <i class="bi bi-shop"></i> Catálogo
+                </a>
+
+                <!-- Sección: Reportes -->
+                <div class="section-title">
+                    <small class="text-uppercase">REPORTES</small>
+                </div>
+
+                <a asp-controller="Reportes" asp-action="Inventario"
+                   class="menu-item-vendedor @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Reportes" && ViewContext.RouteData.Values["Action"]?.ToString() == "Inventario" ? "active" : "")">
+                    <i class="bi bi-clipboard-data"></i> Inventario
+                </a>
+
+                <!-- Separador -->
+                <div class="mt-5"></div>
+
+                <!-- Cerrar sesión en sidebar (móvil) -->
+                <div class="d-md-none px-3">
+                    <a asp-controller="Login" asp-action="Logout" class="btn btn-outline-light btn-sm w-100">
+                        <i class="bi bi-box-arrow-left me-2"></i> Cerrar Sesión
+                    </a>
+                </div>
+            </div>
+
+            <!-- Contenido Principal -->
+            <div class="col-lg-10 col-md-9 main-content-vendedor">
+                @RenderBody()
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // Marcar item activo en sidebar
+        document.addEventListener('DOMContentLoaded', function() {
+            const currentPath = window.location.pathname;
+            const menuItems = document.querySelectorAll('.menu-item-vendedor');
+
+            menuItems.forEach(item => {
+                if (item.getAttribute('href') && currentPath.includes(item.getAttribute('href'))) {
+                    item.classList.add('active');
+                }
+            });
+        });
+
+        // Smooth scroll para mobile
+        if (window.innerWidth <= 768) {
+            document.querySelectorAll('.menu-item-vendedor').forEach(item => {
+                item.addEventListener('click', function() {
+                    const sidebar = document.querySelector('.sidebar-vendedor');
+                    if (sidebar) {
+                        setTimeout(() => {
+                            sidebar.scrollIntoView({ behavior: 'smooth' });
+                        }, 100);
+                    }
+                });
+            });
+        }
+    </script>
+
+    @RenderSection("Scripts", required: false)
+</body>
+</html>

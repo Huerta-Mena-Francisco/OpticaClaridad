@@ -1,0 +1,392 @@
+﻿﻿@using System.IO
+@model OpticaClaridad.Models.Producto
+
+@{
+    ViewData["Title"] = Model.Nombre;
+}
+
+@functions {
+    // Función para convertir ruta relativa a URL pública
+    string ObtenerUrlImagen(string rutaImagen)
+    {
+        var imagenDefault = "/Optica.jpg";
+        
+        if (string.IsNullOrEmpty(rutaImagen))
+            return imagenDefault;
+        
+        // Si ya es una URL absoluta o empieza con /archivos/, mantenerla
+        if (rutaImagen.StartsWith("/archivos/") || rutaImagen.StartsWith("http"))
+            return rutaImagen;
+        
+        // Si es ruta antigua (empieza con /img/), intentar convertir
+        if (rutaImagen.StartsWith("/img/"))
+        {
+            var fileName = System.IO.Path.GetFileName(rutaImagen);
+            return $"/archivos/Imagenes/Productos/{fileName}";
+        }
+        
+        // Si es ruta relativa del nuevo formato (sin /archivos/)
+        if (!rutaImagen.StartsWith("/"))
+        {
+            return $"/archivos/{rutaImagen.Replace('\\', '/')}";
+        }
+        
+        return imagenDefault;
+    }
+}
+
+<style>
+    .product-image {
+        max-height: 400px;
+        object-fit: contain;
+        cursor: pointer;
+        transition: transform 0.3s;
+    }
+
+        .product-image:hover {
+            transform: scale(1.05);
+        }
+
+    .thumbnail-container {
+        display: flex;
+        gap: 10px;
+        margin-top: 15px;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .thumbnail {
+        width: 80px;
+        height: 80px;
+        object-fit: cover;
+        border: 2px solid #dee2e6;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+        .thumbnail:hover {
+            border-color: #0d6efd;
+            transform: scale(1.1);
+        }
+
+        .thumbnail.active {
+            border-color: #0d6efd;
+            border-width: 3px;
+        }
+
+    .carousel-control-prev,
+    .carousel-control-next {
+        width: 5%;
+    }
+
+    .specs-table {
+        background-color: #f8f9fa;
+        border-radius: 5px;
+        padding: 15px;
+    }
+
+    .no-images {
+        min-height: 300px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #f8f9fa;
+        border-radius: 5px;
+    }
+</style>
+
+<div class="container mt-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-action="Index">Catálogo</a></li>
+            <li class="breadcrumb-item active" aria-current="page">@Model.Nombre</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <!-- Imágenes -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    @{
+                        var imagenesActivas = Model.Imagenes != null && Model.Imagenes.Any(i => i.Activa) 
+                            ? Model.Imagenes.Where(i => i.Activa).OrderBy(i => i.Orden).ToList() 
+                            : new List<ProductoImagen>();
+                        var tieneImagenes = imagenesActivas.Any();
+                        var tieneMultipleImagenes = imagenesActivas.Count > 1;
+                    }
+
+                    @if (tieneImagenes)
+                    {
+                        <!-- Carousel para múltiples imágenes -->
+                        <div id="productCarousel" class="carousel slide" data-bs-ride="carousel">
+                            <div class="carousel-inner">
+                                @for (int i = 0; i < imagenesActivas.Count(); i++)
+                                {
+                                    var imagen = imagenesActivas[i];
+                                    var imagenUrl = ObtenerUrlImagen(imagen.ImagenUrl);
+                                    <div class="carousel-item @(i == 0 ? "active" : "")">
+                                        <div class="text-center">
+                                            <img src="@imagenUrl"
+                                                 class="product-image img-fluid"
+                                                 alt="@(!string.IsNullOrEmpty(imagen.Descripcion) ? imagen.Descripcion : Model.Nombre)"
+                                                 data-bs-toggle="modal"
+                                                 data-bs-target="#imageModal"
+                                                 data-image-src="@imagenUrl"
+                                                 onerror="this.src='/Optica.jpg'">
+                                        </div>
+                                        @if (!string.IsNullOrEmpty(imagen.Descripcion))
+                                        {
+                                            <div class="text-center mt-2">
+                                                <small class="text-muted">@imagen.Descripcion</small>
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                            </div>
+
+                            @if (tieneMultipleImagenes)
+                            {
+                                <button class="carousel-control-prev" type="button" data-bs-target="#productCarousel" data-bs-slide="prev">
+                                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                                    <span class="visually-hidden">Anterior</span>
+                                </button>
+                                <button class="carousel-control-next" type="button" data-bs-target="#productCarousel" data-bs-slide="next">
+                                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                                    <span class="visually-hidden">Siguiente</span>
+                                </button>
+                            }
+                        </div>
+
+                        <!-- Miniaturas -->
+                        @if (tieneMultipleImagenes)
+                        {
+                            <div class="thumbnail-container">
+                                @for (int i = 0; i < imagenesActivas.Count(); i++)
+                                {
+                                    var imagen = imagenesActivas[i];
+                                    var imagenUrl = ObtenerUrlImagen(imagen.ImagenUrl);
+                                    <img src="@imagenUrl"
+                                         class="thumbnail @(i == 0 ? "active" : "")"
+                                         alt="Miniatura @(i + 1)"
+                                         data-bs-target="#productCarousel"
+                                         data-bs-slide-to="@i"
+                                         onerror="this.src='/Optica.jpg'">
+                                }
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <!-- Imagen por defecto -->
+                        <div class="no-images">
+                            <div class="text-center">
+                                <div class="d-flex flex-column align-items-center justify-content-center"
+                                     style="height: 200px;">
+                                    <img src="/Optica.jpg"
+                                         class="img-fluid"
+                                         style="max-height: 150px;"
+                                         alt="Sin imagen">
+                                    <p class="text-muted mt-2">No hay imágenes disponibles</p>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Información del producto -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <!-- Nombre y código -->
+                    <h1 class="h3">@Model.Nombre</h1>
+                    <p class="text-muted">Código: @Model.Codigo</p>
+
+                    <!-- Precio -->
+                    <div class="mb-3">
+                        <h2 class="text-primary">@Model.PrecioVenta.ToString("C")</h2>
+                    </div>
+
+                    <!-- Stock -->
+                    <div class="mb-3">
+                        @if (Model.Stock > 0)
+                        {
+                            <span class="badge bg-success">
+                                <i class="bi bi-check-circle"></i> Disponible
+                            </span>
+                            <small class="text-muted">(@Model.Stock unidades)</small>
+                        }
+                        else
+                        {
+                            <span class="badge bg-danger">
+                                <i class="bi bi-x-circle"></i> Agotado
+                            </span>
+                        }
+                    </div>
+
+                    <!-- Descripción -->
+                    @if (!string.IsNullOrEmpty(Model.Descripcion))
+                    {
+                        <div class="mb-3">
+                            <h5>Descripción</h5>
+                            <p>@Model.Descripcion</p>
+                        </div>
+                    }
+
+                    <!-- Especificaciones detalladas -->
+                    <div class="mb-4">
+                        <h5>Especificaciones</h5>
+                        <div class="specs-table">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <table class="table table-sm table-borderless">
+                                        <tbody>
+                                            @if (!string.IsNullOrEmpty(Model.TipoLente))
+                                            {
+                                                <tr>
+                                                    <th>Tipo de Lente:</th>
+                                                    <td>@Model.TipoLente</td>
+                                                </tr>
+                                            }
+                                            @if (Model.TieneUV)
+                                            {
+                                                <tr>
+                                                    <th>Protección UV:</th>
+                                                    <td><i class="bi bi-check-circle text-success"></i> Sí</td>
+                                                </tr>
+                                            }
+                                            @if (Model.TieneAntireflejante)
+                                            {
+                                                <tr>
+                                                    <th>Antireflejante:</th>
+                                                    <td><i class="bi bi-check-circle text-success"></i> Sí</td>
+                                                </tr>
+                                            }
+                                            @if (Model.EsFotocromatico)
+                                            {
+                                                <tr>
+                                                    <th>Fotocromático:</th>
+                                                    <td><i class="bi bi-check-circle text-success"></i> Sí</td>
+                                                </tr>
+                                            }
+                                            <tr>
+                                                <th>Categoría:</th>
+                                                <td>@Model.Categoria?.Nombre</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div class="col-md-6">
+                                    <table class="table table-sm table-borderless">
+                                        <tbody>
+                                            @if (!string.IsNullOrEmpty(Model.TipoLente))
+                                            {
+                                                <tr>
+                                                    <th>Tipo de Lente:</th>
+                                                    <td>@Model.TipoLente</td>
+                                                </tr>
+                                            }
+                                            @if (Model.TieneUV)
+                                            {
+                                                <tr>
+                                                    <th>Protección UV:</th>
+                                                    <td><i class="bi bi-check-circle text-success"></i> Sí</td>
+                                                </tr>
+                                            }
+                                            @if (Model.TieneAntireflejante)
+                                            {
+                                                <tr>
+                                                    <th>Antireflejante:</th>
+                                                    <td><i class="bi bi-check-circle text-success"></i> Sí</td>
+                                                </tr>
+                                            }
+                                            @if (Model.EsFotocromatico)
+                                            {
+                                                <tr>
+                                                    <th>Fotocromático:</th>
+                                                    <td><i class="bi bi-check-circle text-success"></i> Sí</td>
+                                                </tr>
+                                            }
+                                            <tr>
+                                                <th>Categoría:</th>
+                                                <td>@Model.Categoria?.Nombre</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Botones -->
+                    <div class="d-grid gap-2 d-md-flex">
+                        <a asp-action="Index" class="btn btn-outline-secondary me-md-2">
+                            <i class="bi bi-arrow-left"></i> Volver al catálogo
+                        </a>
+                        @if (Model.Stock > 0)
+                        {
+                            <button class="btn btn-primary" onclick="agregarAlCarrito()">
+                                <i class="bi bi-cart-plus"></i> Agregar al carrito
+                            </button>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para imagen ampliada -->
+    @if (tieneImagenes)
+    {
+        <div class="modal fade" id="imageModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">@Model.Nombre</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body text-center">
+                        <img id="modalImage" src="" class="img-fluid" alt="" style="max-height: 70vh;" onerror="this.src='/Optica.jpg'">
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        // Activar miniaturas al hacer clic
+        document.querySelectorAll('.thumbnail').forEach(thumbnail => {
+            thumbnail.addEventListener('click', function() {
+                // Remover clase active de todas las miniaturas
+                document.querySelectorAll('.thumbnail').forEach(t => t.classList.remove('active'));
+                // Agregar clase active a la miniatura clickeada
+                this.classList.add('active');
+            });
+        });
+
+        // Manejar el modal de imagen ampliada
+        const imageModal = document.getElementById('imageModal');
+        if (imageModal) {
+            imageModal.addEventListener('show.bs.modal', function(event) {
+                const button = event.relatedTarget;
+                const imageSrc = button.getAttribute('data-image-src');
+                const modalImage = document.getElementById('modalImage');
+                modalImage.src = imageSrc;
+                modalImage.alt = button.alt;
+            });
+        }
+
+        // Función para agregar al carrito (placeholder)
+        function agregarAlCarrito() {
+            // Aquí puedes implementar la lógica para agregar al carrito
+            alert('Producto agregado al carrito');
+            // Ejemplo: window.location.href = '/Carrito/Agregar/@Model.Id';
+        }
+    </script>
+}

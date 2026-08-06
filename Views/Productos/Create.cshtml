@@ -1,0 +1,533 @@
+﻿@model OpticaClaridad.Models.Producto
+
+@{
+    ViewData["Title"] = "Nuevo Producto";
+    ViewData["Subtitle"] = "Agregar nuevo producto al inventario";
+}
+
+@if (!ViewData.ModelState.IsValid)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <h5 class="alert-heading"><i class="bi bi-exclamation-triangle"></i> Errores de validación</h5>
+        <ul class="mb-0">
+            @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+            {
+                <li>@error.ErrorMessage</li>
+            }
+        </ul>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<div class="card">
+    <div class="card-body">
+        <form asp-action="Create" enctype="multipart/form-data" id="productoForm">
+            @Html.AntiForgeryToken()
+
+            <div class="row">
+                <!-- Columna izquierda - Información básica -->
+                <div class="col-md-6">
+                    <h5 class="mb-4"><i class="bi bi-info-circle"></i> Información Básica</h5>
+
+                    <div class="mb-3">
+                        <label asp-for="Codigo" class="form-label">Código *</label>
+                        <input asp-for="Codigo" class="form-control" required>
+                        <span asp-validation-for="Codigo" class="text-danger"></span>
+                        <small class="text-muted">Código único para identificar el producto</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Nombre" class="form-label">Nombre *</label>
+                        <input asp-for="Nombre" class="form-control" required>
+                        <span asp-validation-for="Nombre" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="CategoriaId" class="form-label">Categoría *</label>
+                        <select asp-for="CategoriaId" class="form-select" required>
+                            <option value="">Seleccione una categoría</option>
+                            @if (ViewBag.Categorias != null)
+                            {
+                                foreach (var categoria in ViewBag.Categorias)
+                                {
+                                    <option value="@categoria.Value">@categoria.Text</option>
+                                }
+                            }
+                        </select>
+                        <span asp-validation-for="CategoriaId" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Descripcion" class="form-label">Descripción</label>
+                        <textarea asp-for="Descripcion" class="form-control" rows="3"></textarea>
+                        <span asp-validation-for="Descripcion" class="text-danger"></span>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="Marca" class="form-label">Marca</label>
+                            <input asp-for="Marca" class="form-control">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="Modelo" class="form-label">Modelo</label>
+                            <input asp-for="Modelo" class="form-control">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Columna derecha - Precios y stock -->
+                <div class="col-md-6">
+                    <h5 class="mb-4"><i class="bi bi-currency-dollar"></i> Precios y Stock</h5>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="PrecioVenta" class="form-label">Precio Venta *</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input asp-for="PrecioVenta" class="form-control" type="number" step="0.01" min="0.01" required>
+                            </div>
+                            <span asp-validation-for="PrecioVenta" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="PrecioCompra" class="form-label">Precio Compra</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input asp-for="PrecioCompra" class="form-control" type="number" step="0.01" min="0">
+                            </div>
+                            <span asp-validation-for="PrecioCompra" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="Stock" class="form-label">Stock Inicial *</label>
+                            <input asp-for="Stock" class="form-control" type="number" min="0" required>
+                            <span asp-validation-for="Stock" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="StockMinimo" class="form-label">Stock Mínimo</label>
+                            <input asp-for="StockMinimo" class="form-control" type="number" min="0" value="5">
+                            <small class="text-muted">Alerta cuando el stock llegue a este nivel</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Imágenes del Producto -->
+            <div class="row mt-4">
+                <div class="col-12">
+                    <h5 class="mb-4"><i class="bi bi-images"></i> Imágenes del Producto (Opcional)</h5>
+
+                    <div class="card">
+                        <div class="card-body">
+                            <!-- Selector de imagen principal (se llena dinámicamente) -->
+                            <div class="mb-4" id="selectorPrincipalContainer" style="display: none;">
+                                <label class="form-label">Seleccionar Imagen Principal</label>
+                                <select class="form-select" id="imagenPrincipalSelect">
+                                    <option value="0">La primera imagen será la principal</option>
+                                </select>
+                                <small class="text-muted">Elige cuál imagen será la principal (por defecto: la primera)</small>
+                            </div>
+
+                            <!-- Contenedor para previsualización -->
+                            <div id="imagesPreviewContainer" class="mb-4">
+                                <div class="row g-3" id="imagesPreview">
+                                    <!-- Las imágenes se mostrarán aquí -->
+                                </div>
+                            </div>
+
+                            <!-- Input para archivos -->
+                            <div class="mb-3">
+                                <label class="form-label">Subir imágenes</label>
+                                <input type="file" class="form-control" id="imagenesFiles"
+                                       name="imagenesFiles" multiple accept="image/*">
+                                <small class="text-muted">Formatos: JPG, PNG, GIF, WebP (Máx. 5MB cada una, máximo 10 imágenes)</small>
+                            </div>
+
+                            <!-- Información -->
+                            <div class="alert alert-info">
+                                <i class="bi bi-info-circle"></i>
+                                <span id="imagesInfo">No hay imágenes seleccionadas</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Especificaciones para óptica -->
+            <div class="row mt-4">
+                <div class="col-12">
+                    <h5 class="mb-4"><i class="bi bi-eyeglasses"></i> Especificaciones para Óptica</h5>
+                </div>
+
+                <div class="col-md-3 mb-3">
+                    <label asp-for="TipoLente" class="form-label">Tipo de Lente</label>
+                    <select asp-for="TipoLente" class="form-select">
+                        <option value="">Seleccionar</option>
+                        @if (ViewBag.TiposLente != null)
+                        {
+                            foreach (var tipo in ViewBag.TiposLente)
+                            {
+                                <option value="@tipo.Value">@tipo.Text</option>
+                            }
+                        }
+                    </select>
+                </div>
+
+                <div class="col-md-3 mb-3">
+                    <label asp-for="Genero" class="form-label">Para</label>
+                    <select asp-for="Genero" class="form-select">
+                        <option value="">Seleccionar</option>
+                        @if (ViewBag.Generos != null)
+                        {
+                            foreach (var genero in ViewBag.Generos)
+                            {
+                                <option value="@genero.Value">@genero.Text</option>
+                            }
+                        }
+                    </select>
+                </div>
+
+                <div class="col-md-3 mb-3">
+                    <label asp-for="Color" class="form-label">Color</label>
+                    <input asp-for="Color" class="form-control">
+                </div>
+
+                <div class="col-md-3 mb-3">
+                    <label asp-for="Material" class="form-label">Material</label>
+                    <input asp-for="Material" class="form-control">
+                </div>
+
+                <div class="col-12">
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="checkbox" asp-for="TieneUV">
+                        <label class="form-check-label" asp-for="TieneUV">Protección UV</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="checkbox" asp-for="TieneAntireflejante">
+                        <label class="form-check-label" asp-for="TieneAntireflejante">Antireflejante</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="checkbox" asp-for="EsFotocromatico">
+                        <label class="form-check-label" asp-for="EsFotocromatico">Fotocromático</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Botones de acción -->
+            <div class="row mt-5">
+                <div class="col-12">
+                    <div class="d-flex justify-content-between">
+                        <a asp-action="Index" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Volver al listado
+                        </a>
+                        <div>
+                            <button type="reset" class="btn btn-outline-secondary me-2">
+                                <i class="bi bi-eraser"></i> Limpiar
+                            </button>
+                            <button type="submit" class="btn btn-success" id="btnGuardar">
+                                <i class="bi bi-check-circle"></i> Guardar Producto
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Campo oculto para imagen principal seleccionada -->
+            <input type="hidden" id="imagenPrincipalIndex" name="imagenPrincipalIndex" value="0">
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Array para almacenar las imágenes seleccionadas
+        let imagenesSeleccionadas = [];
+        let imagenPrincipalIndex = 0; // Por defecto, la primera imagen es la principal
+
+        // Manejar selección de múltiples imágenes
+        document.getElementById('imagenesFiles').addEventListener('change', function(e) {
+            const files = Array.from(e.target.files);
+            const previewContainer = document.getElementById('imagesPreview');
+            const infoElement = document.getElementById('imagesInfo');
+            const selectorContainer = document.getElementById('selectorPrincipalContainer');
+            const selector = document.getElementById('imagenPrincipalSelect');
+
+            // Limpiar arrays y vistas anteriores
+            imagenesSeleccionadas = [];
+            previewContainer.innerHTML = '';
+            selector.innerHTML = '<option value="0">La primera imagen será la principal</option>';
+
+            // Validar número máximo
+            if (files.length > 10) {
+                alert('Máximo 10 imágenes permitidas');
+                this.value = '';
+                infoElement.textContent = 'No hay imágenes seleccionadas';
+                selectorContainer.style.display = 'none';
+                return;
+            }
+
+            // Procesar cada archivo
+            files.forEach((file, index) => {
+                // Validar tamaño
+                if (file.size > 5 * 1024 * 1024) {
+                    alert(`La imagen "${file.name}" excede el tamaño máximo de 5MB`);
+                    return;
+                }
+
+                // Validar tipo
+                const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+                if (!validTypes.includes(file.type)) {
+                    alert(`La imagen "${file.name}" no tiene un formato válido`);
+                    return;
+                }
+
+                // Agregar al array
+                imagenesSeleccionadas.push({
+                    file: file,
+                    index: index,
+                    isPrincipal: (index === 0) // La primera es principal por defecto
+                });
+
+                // Crear previsualización
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const col = document.createElement('div');
+                    col.className = 'col-6 col-md-4 col-lg-3';
+
+                    col.innerHTML = `
+                        <div class="card h-100 ${index === 0 ? 'border-primary' : ''}" id="preview-${index}">
+                            <div class="card-body text-center p-2">
+                                <img src="${e.target.result}" class="img-fluid rounded"
+                                     style="height: 120px; object-fit: cover; width: 100%;">
+                                <div class="mt-2">
+                                    <small class="d-block text-truncate">${file.name}</small>
+                                    <small class="text-muted">${(file.size / 1024).toFixed(0)} KB</small>
+                                </div>
+                                ${index === 0 ? '<span class="badge bg-primary mt-1">Principal</span>' : ''}
+                            </div>
+                            <div class="card-footer p-1">
+                                <button type="button" class="btn btn-sm btn-outline-primary w-100"
+                                        onclick="seleccionarComoPrincipal(${index})"
+                                        ${index === 0 ? 'disabled' : ''}>
+                                    <i class="bi bi-star${index === 0 ? '-fill' : ''}"></i> Principal
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-danger w-100 mt-1"
+                                        onclick="eliminarImagen(${index})">
+                                    <i class="bi bi-trash"></i> Eliminar
+                                </button>
+                            </div>
+                        </div>
+                    `;
+
+                    previewContainer.appendChild(col);
+
+                    // Agregar opción al selector
+                    const option = document.createElement('option');
+                    option.value = index;
+                    option.textContent = `Imagen ${index + 1}: ${file.name}`;
+                    if (index === 0) {
+                        option.selected = true;
+                    }
+                    selector.appendChild(option);
+                };
+                reader.readAsDataURL(file);
+            });
+
+            // Actualizar información
+            if (imagenesSeleccionadas.length > 0) {
+                infoElement.textContent = `${imagenesSeleccionadas.length} imagen(es) seleccionada(s). La primera será la principal.`;
+                selectorContainer.style.display = 'block';
+                document.getElementById('imagenPrincipalIndex').value = imagenPrincipalIndex;
+            } else {
+                infoElement.textContent = 'No hay imágenes seleccionadas';
+                selectorContainer.style.display = 'none';
+            }
+        });
+
+        // Función para seleccionar imagen como principal
+        window.seleccionarComoPrincipal = function(index) {
+            // Actualizar estado en el array
+            imagenesSeleccionadas.forEach((img, i) => {
+                img.isPrincipal = (i === index);
+            });
+
+            // Actualizar vista
+            document.querySelectorAll('[id^="preview-"]').forEach(preview => {
+                preview.classList.remove('border-primary');
+                const previewId = preview.id.replace('preview-', '');
+                const btn = preview.querySelector('button.btn-outline-primary');
+
+                if (parseInt(previewId) === index) {
+                    preview.classList.add('border-primary');
+                    btn.innerHTML = '<i class="bi bi-star-fill"></i> Principal';
+                    btn.disabled = true;
+
+                    // Mostrar badge
+                    let badge = preview.querySelector('.badge');
+                    if (!badge) {
+                        badge = document.createElement('span');
+                        badge.className = 'badge bg-primary mt-1';
+                        badge.textContent = 'Principal';
+                        preview.querySelector('.card-body').appendChild(badge);
+                    }
+                } else {
+                    btn.innerHTML = '<i class="bi bi-star"></i> Principal';
+                    btn.disabled = false;
+
+                    // Remover badge
+                    const badge = preview.querySelector('.badge');
+                    if (badge) {
+                        badge.remove();
+                    }
+                }
+            });
+
+            // Actualizar selector
+            document.getElementById('imagenPrincipalSelect').value = index;
+            imagenPrincipalIndex = index;
+            document.getElementById('imagenPrincipalIndex').value = index;
+        };
+
+        // Función para eliminar imagen
+        window.eliminarImagen = function(index) {
+            if (confirm('¿Eliminar esta imagen?')) {
+                // Remover del array
+                imagenesSeleccionadas.splice(index, 1);
+
+                // Actualizar índices del array restante
+                imagenesSeleccionadas.forEach((img, i) => {
+                    img.index = i;
+                    if (i === 0 && !imagenesSeleccionadas.some(img => img.isPrincipal)) {
+                        img.isPrincipal = true;
+                    }
+                });
+
+                // Reconstruir vista completa
+                reconstruirVista();
+            }
+        };
+
+        // Función para reconstruir vista después de eliminar
+        function reconstruirVista() {
+            const previewContainer = document.getElementById('imagesPreview');
+            const selector = document.getElementById('imagenPrincipalSelect');
+            const infoElement = document.getElementById('imagesInfo');
+
+            // Limpiar
+            previewContainer.innerHTML = '';
+            selector.innerHTML = '<option value="0">La primera imagen será la principal</option>';
+
+            // Si no hay imágenes, ocultar selector
+            if (imagenesSeleccionadas.length === 0) {
+                infoElement.textContent = 'No hay imágenes seleccionadas';
+                document.getElementById('selectorPrincipalContainer').style.display = 'none';
+                document.getElementById('imagenPrincipalIndex').value = 0;
+                return;
+            }
+
+            // Reconstruir previsualizaciones
+            imagenesSeleccionadas.forEach((img, index) => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const col = document.createElement('div');
+                    col.className = 'col-6 col-md-4 col-lg-3';
+
+                    col.innerHTML = `
+                        <div class="card h-100 ${img.isPrincipal ? 'border-primary' : ''}" id="preview-${index}">
+                            <div class="card-body text-center p-2">
+                                <img src="${e.target.result}" class="img-fluid rounded"
+                                     style="height: 120px; object-fit: cover; width: 100%;">
+                                <div class="mt-2">
+                                    <small class="d-block text-truncate">${img.file.name}</small>
+                                    <small class="text-muted">${(img.file.size / 1024).toFixed(0)} KB</small>
+                                </div>
+                                ${img.isPrincipal ? '<span class="badge bg-primary mt-1">Principal</span>' : ''}
+                            </div>
+                            <div class="card-footer p-1">
+                                <button type="button" class="btn btn-sm btn-outline-primary w-100"
+                                        onclick="seleccionarComoPrincipal(${index})"
+                                        ${img.isPrincipal ? 'disabled' : ''}>
+                                    <i class="bi bi-star${img.isPrincipal ? '-fill' : ''}"></i> Principal
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-danger w-100 mt-1"
+                                        onclick="eliminarImagen(${index})">
+                                    <i class="bi bi-trash"></i> Eliminar
+                                </button>
+                            </div>
+                        </div>
+                    `;
+
+                    previewContainer.appendChild(col);
+
+                    // Agregar opción al selector
+                    const option = document.createElement('option');
+                    option.value = index;
+                    option.textContent = `Imagen ${index + 1}: ${img.file.name}`;
+                    if (img.isPrincipal) {
+                        option.selected = true;
+                        imagenPrincipalIndex = index;
+                    }
+                    selector.appendChild(option);
+                };
+                reader.readAsDataURL(img.file);
+            });
+
+            // Actualizar información
+            infoElement.textContent = `${imagenesSeleccionadas.length} imagen(es) seleccionada(s).`;
+            document.getElementById('selectorPrincipalContainer').style.display = 'block';
+            document.getElementById('imagenPrincipalIndex').value = imagenPrincipalIndex;
+        }
+
+        // Cambiar imagen principal desde el selector
+        document.getElementById('imagenPrincipalSelect').addEventListener('change', function(e) {
+            const index = parseInt(e.target.value);
+            if (!isNaN(index)) {
+                seleccionarComoPrincipal(index);
+            }
+        });
+
+        // Auto-generar código
+        document.getElementById('Codigo').addEventListener('blur', function() {
+            if (!this.value.trim()) {
+                const nombre = document.getElementById('Nombre').value;
+                if (nombre) {
+                    const codigo = nombre.substring(0, 3).toUpperCase() +
+                                  Math.floor(1000 + Math.random() * 9000);
+                    this.value = codigo;
+                }
+            }
+        });
+
+        // Calcular precio sugerido
+        document.getElementById('PrecioCompra').addEventListener('change', function() {
+            const precioCompra = parseFloat(this.value) || 0;
+            const precioVentaInput = document.getElementById('PrecioVenta');
+
+            if (precioCompra > 0 && (!precioVentaInput.value || precioVentaInput.value == '0.01')) {
+                const precioSugerido = precioCompra * 2;
+                precioVentaInput.value = precioSugerido.toFixed(2);
+            }
+        });
+
+        // Validar formulario antes de enviar
+        document.getElementById('productoForm').addEventListener('submit', function(e) {
+            // Validar código único (simulación)
+            const codigoInput = document.getElementById('Codigo');
+            if (codigoInput && codigoInput.value.trim() === '') {
+                e.preventDefault();
+                alert('El código del producto es obligatorio');
+                codigoInput.focus();
+                return;
+            }
+
+            console.log('Guardando producto...');
+        });
+    </script>
+
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}   

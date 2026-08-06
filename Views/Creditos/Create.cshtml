@@ -1,0 +1,715 @@
+﻿@model OpticaClaridad.Models.Credito
+@{
+    ViewData["Title"] = "Nuevo Crédito";
+    var pacientes = ViewBag.Pacientes as List<Paciente>;
+    <!-- 🔴 CAMBIO: Pacientes en lugar de Clientes -->
+}
+
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header bg-success text-white">
+            <h3 class="card-title">
+                <i class="bi bi-cash-coin"></i> @ViewData["Title"]
+            </h3>
+        </div>
+        <div class="card-body">
+            <form asp-action="Create">
+                <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+                <!-- Campo oculto para FechaCredito -->
+                <input type="hidden" asp-for="FechaCredito" value="@DateTime.Today.ToString("yyyy-MM-dd")" />
+
+                <!-- CAMPO PACIENTE -->
+                <div class="row mb-4">
+                    <div class="col-md-12">
+                        <div class="card">
+                            <div class="card-header bg-primary text-white">
+                                <h6 class="mb-0">
+                                    <i class="bi bi-person"></i> Selección del Paciente  <!-- 🔴 CAMBIO -->
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <label asp-for="PacienteId" class="form-label required">Paciente *</label>  <!-- 🔴 CAMBIO -->
+                                        <select asp-for="PacienteId" class="form-select" id="pacienteSelect" required>
+                                            <!-- 🔴 CAMBIO -->
+                                            <option value="">-- Seleccionar Paciente --</option>  <!-- 🔴 CAMBIO -->
+                                            @if (pacientes != null)
+                                            {
+                                                foreach (var paciente in pacientes)
+                                                {
+                                                    <option value="@paciente.Id" data-telefono="@paciente.Telefono" data-email="@paciente.Email">
+                                                        @paciente.Nombre @(!string.IsNullOrEmpty(paciente.Telefono) ? $" - Tel: {paciente.Telefono}" : "")
+                                                    </option>
+                                                }
+                                            }
+                                        </select>
+                                        <span asp-validation-for="PacienteId" class="text-danger"></span>
+                                        <small class="text-muted">Selecciona el paciente que recibirá el crédito</small>  <!-- 🔴 CAMBIO -->
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="card border-info">
+                                            <div class="card-body">
+                                                <h6 class="card-title text-muted">Información del Paciente</h6>  <!-- 🔴 CAMBIO -->
+                                                <div id="pacienteInfo">
+                                                    <!-- 🔴 CAMBIO -->
+                                                    <p class="text-muted mb-1">Selecciona un paciente para ver su información</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Monto del crédito y observaciones -->
+                <div class="row mb-4">
+                    <div class="col-md-12">
+                        <div class="card">
+                            <div class="card-header bg-warning text-dark">
+                                <h6 class="mb-0">
+                                    <i class="bi bi-currency-dollar"></i> Monto del Crédito
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <!-- MONTO TOTAL -->
+                                    <div class="col-md-6 mb-3">
+                                        <label asp-for="MontoTotal" class="form-label required">Monto Total *</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">$</span>
+                                            <input asp-for="MontoTotal" class="form-control"
+                                                   placeholder="0.00" step="0.01" min="0.01" required
+                                                   id="MontoTotal"
+                                                   value="@(Model.MontoTotal == 0 ? "" : Model.MontoTotal.ToString("F2"))" />
+                                        </div>
+                                        <span asp-validation-for="MontoTotal" class="text-danger"></span>
+                                        <small class="text-muted">Monto total del crédito otorgado</small>
+
+                                        <!-- Botones rápidos para montos comunes -->
+                                        <div class="btn-group btn-group-sm mt-2" role="group">
+                                            <button type="button" class="btn btn-outline-secondary" onclick="setMontoRapido(500)">$500</button>
+                                            <button type="button" class="btn btn-outline-secondary" onclick="setMontoRapido(1000)">$1,000</button>
+                                            <button type="button" class="btn btn-outline-secondary" onclick="setMontoRapido(2000)">$2,000</button>
+                                            <button type="button" class="btn btn-outline-secondary" onclick="setMontoRapido(5000)">$5,000</button>
+                                        </div>
+                                    </div>
+
+                                    <!-- OBSERVACIONES -->
+                                    <div class="col-md-6 mb-3">
+                                        <label asp-for="Observaciones" class="form-label">Observaciones</label>
+                                        <textarea asp-for="Observaciones" class="form-control" rows="3"
+                                                  placeholder="Motivo del crédito, condiciones especiales, etc." maxlength="500">@Model.Observaciones</textarea>
+                                        <span asp-validation-for="Observaciones" class="text-danger"></span>
+                                        <small class="text-muted">Máximo 500 caracteres</small>
+
+                                        <!-- Contador de caracteres -->
+                                        <div class="text-end mt-1">
+                                            <small class="text-muted">
+                                                <span id="contadorCaracteres">@(Model.Observaciones?.Length ?? 0)</span>/500 caracteres
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sistema tradicional y por períodos -->
+                <div class="row mb-4">
+                    <div class="col-md-12">
+                        <div class="card">
+                            <div class="card-header bg-info text-white">
+                                <h6 class="mb-0">
+                                    <i class="bi bi-calendar"></i> Plazo del Crédito
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <!-- Sistema tradicional -->
+                                    <div class="col-md-6 mb-3">
+                                        <label asp-for="DiasCredito" class="form-label">Días de Crédito (Sistema Tradicional)</label>
+                                        <input asp-for="DiasCredito" class="form-control" type="number"
+                                               min="1" max="365" value="30" id="DiasCredito" />
+                                        <span asp-validation-for="DiasCredito" class="text-danger"></span>
+                                        <small class="text-muted">Número de días para pagar (1-365)</small>
+                                    </div>
+
+                                    <!-- Fecha de Vencimiento -->
+                                    <div class="col-md-6 mb-3">
+                                        <label asp-for="FechaVencimiento" class="form-label">Fecha de Vencimiento</label>
+                                        <input asp-for="FechaVencimiento" class="form-control" type="date"
+                                               id="FechaVencimiento" />
+                                        <span asp-validation-for="FechaVencimiento" class="text-danger"></span>
+                                        <small class="text-muted">Fecha límite para pagar el crédito</small>
+                                    </div>
+                                </div>
+
+                                <!-- Sistema de pagos por períodos (Opcional) -->
+                                <div class="row mt-3">
+                                    <div class="col-md-12">
+                                        <h6 class="border-bottom pb-2">
+                                            <i class="bi bi-calendar-week"></i> Sistema de Pagos por Períodos (Opcional)
+                                        </h6>
+                                        <div class="row">
+                                            <div class="col-md-4 mb-3">
+                                                <label asp-for="TipoPeriodo" class="form-label">Tipo de Período</label>
+                                                <select asp-for="TipoPeriodo" class="form-select" id="tipoPeriodoSelect">
+                                                    <option value="">-- Sin período --</option>
+                                                    <option value="SEMANAS">Semanas</option>
+                                                    <option value="MESES">Meses</option>
+                                                </select>
+                                                <span asp-validation-for="TipoPeriodo" class="text-danger"></span>
+                                                <small class="text-muted">Selecciona el tipo de período de pago</small>
+                                            </div>
+
+                                            <div class="col-md-4 mb-3">
+                                                <label asp-for="CantidadPeriodo" class="form-label">Cantidad de Períodos</label>
+                                                <input asp-for="CantidadPeriodo" class="form-control" type="number"
+                                                       min="1" max="52" value="1" id="CantidadPeriodo" />
+                                                <span asp-validation-for="CantidadPeriodo" class="text-danger"></span>
+                                                <small class="text-muted" id="periodoDesc">Número de períodos</small>
+                                            </div>
+
+                                            <div class="col-md-4 mb-3">
+                                                <label asp-for="MontoPeriodo" class="form-label">Monto por Período</label>
+                                                <div class="input-group">
+                                                    <span class="input-group-text">$</span>
+                                                    <input asp-for="MontoPeriodo" class="form-control"
+                                                           placeholder="0.00" step="0.01" min="0"
+                                                           id="MontoPeriodo" />
+                                                </div>
+                                                <span asp-validation-for="MontoPeriodo" class="text-danger"></span>
+                                                <small class="text-muted">Monto a pagar por cada período</small>
+                                            </div>
+                                        </div>
+
+                                        <div class="alert alert-info mt-2" id="periodoCalculo" style="display: none;">
+                                            <i class="bi bi-calculator"></i>
+                                            <strong>Cálculo:</strong>
+                                            <span id="calculoText"></span>
+                                            <br />
+                                            <small>Total estimado: <span id="totalEstimado" class="fw-bold"></span></small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Resumen del crédito -->
+                <div class="row mb-4">
+                    <div class="col-md-12">
+                        <div class="card">
+                            <div class="card-header bg-success text-white">
+                                <h6 class="mb-0">
+                                    <i class="bi bi-card-checklist"></i> Resumen del Crédito
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row text-center" id="resumenCredito">
+                                    <div class="col-md-3">
+                                        <div class="card border-primary">
+                                            <div class="card-body">
+                                                <h6 class="card-title text-muted">Monto Total</h6>
+                                                <h3 class="text-primary" id="resumenMonto">$0.00</h3>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="card border-info">
+                                            <div class="card-body">
+                                                <h6 class="card-title text-muted">Duración</h6>
+                                                <h4 id="resumenDuracion" class="text-info">--</h4>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="card border-warning">
+                                            <div class="card-body">
+                                                <h6 class="card-title text-muted">Fecha Vencimiento</h6>
+                                                <h4 id="resumenVencimiento" class="text-warning">--</h4>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="card border-secondary">
+                                            <div class="card-body">
+                                                <h6 class="card-title text-muted">Sistema</h6>
+                                                <h4 id="resumenSistema" class="text-secondary">--</h4>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Botones de acción -->
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="d-flex justify-content-between">
+                            <a asp-action="Index" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Volver a la Lista
+                            </a>
+                            <div>
+                                <button type="reset" class="btn btn-outline-secondary me-2">
+                                    <i class="bi bi-eraser"></i> Limpiar
+                                </button>
+                                <button type="submit" class="btn btn-success">
+                                    <i class="bi bi-check-circle"></i> Crear Crédito
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css">
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/buttons/2.3.6/css/buttons.bootstrap5.min.css">
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    <script type="text/javascript" src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+    <script type="text/javascript" src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
+    <script type="text/javascript" src="https://cdn.datatables.net/buttons/2.3.6/js/dataTables.buttons.min.js"></script>
+    <script type="text/javascript" src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.bootstrap5.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('=== INICIANDO SCRIPT DE CRÉDITOS ===');
+
+            // ELEMENTOS
+            const pacienteSelect = document.getElementById('pacienteSelect');  // 🔴 CAMBIO
+            const montoTotal = document.getElementById('MontoTotal');
+            const diasCredito = document.getElementById('DiasCredito');
+            const fechaVencimiento = document.getElementById('FechaVencimiento');
+            const tipoPeriodo = document.getElementById('tipoPeriodoSelect');
+            const cantidadPeriodo = document.getElementById('CantidadPeriodo');
+            const montoPeriodo = document.getElementById('MontoPeriodo');
+            const pacienteInfo = document.getElementById('pacienteInfo');  // 🔴 CAMBIO
+            const form = document.querySelector('form');
+
+            // VARIABLES DE CONTROL
+            let usuarioEditoMontoPeriodo = false;
+            let fechaCreditoValor = '@DateTime.Today.ToString("yyyy-MM-dd")';
+
+            // ========== INICIALIZACIÓN ==========
+            function inicializar() {
+                console.log('Inicializando vista de créditos...');
+
+                // Configurar fecha de vencimiento inicial
+                if (fechaVencimiento && !fechaVencimiento.value) {
+                    const hoy = new Date();
+                    hoy.setDate(hoy.getDate() + 30); // 30 días por defecto
+                    fechaVencimiento.value = hoy.toISOString().split('T')[0];
+                }
+
+                // Configurar eventos
+                configurarEventos();
+
+                // Configurar eventos para paciente
+                if (pacienteSelect) {
+                    pacienteSelect.addEventListener('change', actualizarInfoPaciente);  // 🔴 CAMBIO
+                    // Llamar inicialmente
+                    actualizarInfoPaciente();  // 🔴 CAMBIO
+                    console.log('Evento de paciente configurado correctamente');
+                }
+
+                // Configurar contador de observaciones
+                configurarContadorObservaciones();
+
+                // Configurar validación del formulario
+                configurarValidacionFormulario();
+
+                // Calcular inicialmente
+                setTimeout(function() {
+                    calcularTodo();
+                }, 300);
+            }
+
+            // ========== CONFIGURAR EVENTOS ==========
+            function configurarEventos() {
+                console.log('Configurando eventos...');
+
+                // Eventos para montos
+                if (montoTotal) {
+                    montoTotal.addEventListener('input', function() {
+                        console.log('MontoTotal cambiado:', this.value);
+                        calcularMontoPeriodo();
+                        actualizarResumen();
+                    });
+                }
+
+                // Eventos para sistema de períodos
+                if (tipoPeriodo) {
+                    tipoPeriodo.addEventListener('change', function() {
+                        console.log('TipoPeriodo cambiado:', this.value);
+                        usuarioEditoMontoPeriodo = false;
+                        actualizarFechaVencimiento();
+                        calcularMontoPeriodo();
+                        actualizarResumen();
+                    });
+                }
+
+                if (cantidadPeriodo) {
+                    cantidadPeriodo.addEventListener('input', function() {
+                        console.log('CantidadPeriodo cambiada:', this.value);
+                        usuarioEditoMontoPeriodo = false;
+                        actualizarFechaVencimiento();
+                        calcularMontoPeriodo();
+                        actualizarResumen();
+                    });
+                }
+
+                if (montoPeriodo) {
+                    montoPeriodo.addEventListener('input', function() {
+                        console.log('MontoPeriodo editado manualmente:', this.value);
+                        usuarioEditoMontoPeriodo = true;
+                        mostrarBotonRecalcular(true);
+                        calcularTotalEstimado();
+                        actualizarResumen();
+                    });
+
+                    montoPeriodo.addEventListener('focus', function() {
+                        usuarioEditoMontoPeriodo = true;
+                    });
+                }
+
+                // Eventos para sistema tradicional
+                if (diasCredito) {
+                    diasCredito.addEventListener('input', function() {
+                        console.log('DiasCredito cambiado:', this.value);
+                        if (!tipoPeriodo || !tipoPeriodo.value) {
+                            actualizarFechaVencimiento();
+                            actualizarResumen();
+                        }
+                    });
+                }
+            }
+
+            // ========== FUNCIONES PARA PACIENTE ==========
+            function actualizarInfoPaciente() {  // 🔴 CAMBIO
+                if (pacienteSelect && pacienteInfo) {
+                    const selectedOption = pacienteSelect.options[pacienteSelect.selectedIndex];
+
+                    if (pacienteSelect.value && selectedOption) {
+                        const telefono = selectedOption.getAttribute('data-telefono') || 'No especificado';
+                        const email = selectedOption.getAttribute('data-email') || 'No especificado';
+
+                        let nombrePaciente = selectedOption.text;  // 🔴 CAMBIO
+                        const telefonoIndex = nombrePaciente.indexOf(' - Tel:');
+                        if (telefonoIndex !== -1) {
+                            nombrePaciente = nombrePaciente.substring(0, telefonoIndex);
+                        }
+
+                        pacienteInfo.innerHTML = `  <!-- 🔴 CAMBIO -->
+                            <div class="mb-2">
+                                <strong><i class="bi bi-person-check me-1"></i>${nombrePaciente}</strong>
+                            </div>
+                            <div class="text-muted small">
+                                <div><i class="bi bi-telephone me-1"></i> ${telefono}</div>
+                                <div><i class="bi bi-envelope me-1"></i> ${email}</div>
+                            </div>
+                        `;
+                    } else {
+                        pacienteInfo.innerHTML = '<p class="text-muted mb-0"><i class="bi bi-person-x me-1"></i> Selecciona un paciente para ver su información</p>';
+                    }
+                }
+            }
+
+            // ========== FUNCIONES DE CÁLCULO ==========
+            function calcularMontoPeriodo() {
+                console.log('--- calcularMontoPeriodo() ---');
+
+                if (!montoTotal || !cantidadPeriodo || !tipoPeriodo || !montoPeriodo) {
+                    console.log('Error: Faltan elementos');
+                    return;
+                }
+
+                const total = parseFloat(montoTotal.value) || 0;
+                const cantidad = parseInt(cantidadPeriodo.value) || 1;
+                const tipo = tipoPeriodo.value;
+
+                console.log('Datos:', { total, cantidad, tipo, usuarioEditoMontoPeriodo });
+
+                if (tipo && total > 0 && cantidad > 0) {
+                    const montoCalculado = total / cantidad;
+                    console.log('Cálculo:', total, '÷', cantidad, '=', montoCalculado);
+
+                    if (!usuarioEditoMontoPeriodo) {
+                        montoPeriodo.value = montoCalculado.toFixed(2);
+                        console.log('Monto por período actualizado a:', montoPeriodo.value);
+                        mostrarInfoCalculo(total, cantidad, tipo, montoCalculado);
+                    } else {
+                        console.log('No se actualiza porque fue editado manualmente');
+                    }
+                }
+
+                calcularTotalEstimado();
+            }
+
+            function mostrarInfoCalculo(total, cantidad, tipo, montoUnitario) {
+                const esSemanas = tipo === 'SEMANAS';
+                const texto = `$${total.toFixed(2)} ÷ ${cantidad} ${esSemanas ? 'semanas' : 'meses'} = $${montoUnitario.toFixed(2)} por ${esSemanas ? 'semana' : 'mes'}`;
+
+                let infoDiv = document.getElementById('montoAutoInfo');
+                if (!infoDiv) {
+                    infoDiv = document.createElement('div');
+                    infoDiv.id = 'montoAutoInfo';
+                    infoDiv.className = 'alert alert-info mt-2 small';
+                    montoPeriodo.parentNode.appendChild(infoDiv);
+                }
+
+                infoDiv.innerHTML = `<i class="bi bi-calculator"></i> ${texto}`;
+            }
+
+            function calcularTotalEstimado() {
+                if (!tipoPeriodo || !cantidadPeriodo || !montoPeriodo || !montoTotal) return;
+
+                const tipo = tipoPeriodo.value;
+                const cantidad = parseInt(cantidadPeriodo.value) || 1;
+                const montoPeriodoVal = parseFloat(montoPeriodo.value) || 0;
+                const total = parseFloat(montoTotal.value) || 0;
+
+                if (tipo && cantidad > 0 && montoPeriodoVal > 0) {
+                    const totalCalculado = montoPeriodoVal * cantidad;
+
+                    const divCalculo = document.getElementById('periodoCalculo');
+                    const spanCalculo = document.getElementById('calculoText');
+                    const spanTotal = document.getElementById('totalEstimado');
+
+                    if (divCalculo) divCalculo.style.display = 'block';
+                    if (spanCalculo) {
+                        spanCalculo.textContent = `${cantidad} ${tipo === 'SEMANAS' ? 'semanas' : 'meses'} × $${montoPeriodoVal.toFixed(2)}`;
+                    }
+                    if (spanTotal) {
+                        spanTotal.textContent = `$${totalCalculado.toFixed(2)}`;
+                        spanTotal.classList.remove('text-danger');
+
+                        if (Math.abs(totalCalculado - total) > 0.01) {
+                            spanTotal.classList.add('text-danger');
+                            spanTotal.innerHTML += ' <i class="bi bi-exclamation-triangle"></i> <small class="text-danger">(No coincide con el monto total)</small>';
+                        }
+                    }
+                } else {
+                    const divCalculo = document.getElementById('periodoCalculo');
+                    if (divCalculo) divCalculo.style.display = 'none';
+                }
+            }
+
+            function actualizarFechaVencimiento() {
+                const fechaBase = new Date(fechaCreditoValor);
+                let fechaVenc = new Date(fechaBase);
+
+                const tipo = tipoPeriodo ? tipoPeriodo.value : '';
+                const cantidad = cantidadPeriodo ? parseInt(cantidadPeriodo.value) || 1 : 1;
+                const dias = diasCredito ? parseInt(diasCredito.value) || 30 : 30;
+
+                if (tipo === 'SEMANAS') {
+                    fechaVenc.setDate(fechaVenc.getDate() + (cantidad * 7));
+                } else if (tipo === 'MESES') {
+                    fechaVenc.setMonth(fechaVenc.getMonth() + cantidad);
+                } else {
+                    fechaVenc.setDate(fechaVenc.getDate() + dias);
+                }
+
+                if (fechaVencimiento) {
+                    fechaVencimiento.value = fechaVenc.toISOString().split('T')[0];
+                    console.log('Fecha vencimiento actualizada:', fechaVencimiento.value);
+                }
+
+                return fechaVenc;
+            }
+
+            function actualizarResumen() {
+                const total = montoTotal ? parseFloat(montoTotal.value) || 0 : 0;
+                const fechaVenc = actualizarFechaVencimiento();
+                const tipo = tipoPeriodo ? tipoPeriodo.value : '';
+                const cantidad = cantidadPeriodo ? parseInt(cantidadPeriodo.value) || 1 : 1;
+
+                // Monto Total
+                const elemMonto = document.getElementById('resumenMonto');
+                if (elemMonto) elemMonto.textContent = `$${total.toFixed(2)}`;
+
+                // Fecha de Vencimiento
+                const elemFecha = document.getElementById('resumenVencimiento');
+                if (elemFecha && fechaVenc) {
+                    elemFecha.textContent = fechaVenc.toLocaleDateString('es-ES', {
+                        weekday: 'short',
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric'
+                    });
+                }
+
+                // Duración
+                const elemDuracion = document.getElementById('resumenDuracion');
+                const elemSistema = document.getElementById('resumenSistema');
+
+                if (elemDuracion && elemSistema) {
+                    const fechaInicio = new Date(fechaCreditoValor);
+                    const diffDias = Math.ceil((fechaVenc - fechaInicio) / (1000 * 60 * 60 * 24));
+
+                    let textoDuracion = `${diffDias} días`;
+                    let textoSistema = 'Tradicional';
+
+                    if (tipo === 'SEMANAS') {
+                        textoDuracion = `${cantidad} semana${cantidad > 1 ? 's' : ''} (${diffDias} días)`;
+                        textoSistema = 'Semanal';
+                    } else if (tipo === 'MESES') {
+                        textoDuracion = `${cantidad} mes${cantidad > 1 ? 'es' : ''} (${diffDias} días)`;
+                        textoSistema = 'Mensual';
+                    }
+
+                    elemDuracion.textContent = textoDuracion;
+                    elemSistema.textContent = textoSistema;
+                }
+            }
+
+            // ========== FUNCIONES ADICIONALES ==========
+            function mostrarBotonRecalcular(mostrar) {
+                let btn = document.getElementById('btnRecalcular');
+
+                if (!btn && mostrar) {
+                    btn = document.createElement('button');
+                    btn.id = 'btnRecalcular';
+                    btn.type = 'button';
+                    btn.className = 'btn btn-sm btn-outline-primary mt-2';
+                    btn.innerHTML = '<i class="bi bi-arrow-clockwise"></i> Calcular automático';
+                    btn.title = 'Calcular: Monto Total ÷ Cantidad de Períodos';
+
+                    btn.onclick = function() {
+                        usuarioEditoMontoPeriodo = false;
+                        calcularMontoPeriodo();
+                        this.remove();
+                    };
+
+                    montoPeriodo.parentNode.appendChild(btn);
+                } else if (btn && !mostrar) {
+                    btn.remove();
+                }
+            }
+
+            function configurarContadorObservaciones() {
+                const textareaObservaciones = document.querySelector('textarea[name="Observaciones"]');
+                const contador = document.getElementById('contadorCaracteres');
+
+                if (textareaObservaciones && contador) {
+                    contador.textContent = textareaObservaciones.value.length;
+
+                    textareaObservaciones.addEventListener('input', function() {
+                        contador.textContent = this.value.length;
+
+                        if (this.value.length > 450) {
+                            contador.classList.remove('text-muted');
+                            contador.classList.add('text-warning');
+                        } else if (this.value.length > 480) {
+                            contador.classList.remove('text-warning');
+                            contador.classList.add('text-danger');
+                        } else {
+                            contador.classList.remove('text-warning', 'text-danger');
+                            contador.classList.add('text-muted');
+                        }
+                    });
+                }
+            }
+
+            function setMontoRapido(monto) {
+                if (montoTotal) {
+                    montoTotal.value = monto.toFixed(2);
+                    montoTotal.dispatchEvent(new Event('input'));
+                    console.log(`Monto rápido establecido: $${monto.toFixed(2)}`);
+                }
+            }
+
+            function configurarValidacionFormulario() {
+                if (form) {
+                    form.addEventListener('submit', function(e) {
+                        console.log('=== VALIDANDO FORMULARIO ===');
+
+                        // Validar paciente seleccionado
+                        if (pacienteSelect && (!pacienteSelect.value || pacienteSelect.value === '')) {
+                            alert('❌ Debe seleccionar un paciente');
+                            pacienteSelect.focus();
+                            e.preventDefault();
+                            return false;
+                        }
+
+                        // Validar monto total
+                        if (montoTotal && (!montoTotal.value || parseFloat(montoTotal.value) <= 0)) {
+                            alert('❌ El monto total debe ser mayor a $0.00');
+                            montoTotal.focus();
+                            e.preventDefault();
+                            return false;
+                        }
+
+                        // Mostrar mensaje de procesamiento
+                        const btnSubmit = document.querySelector('button[type="submit"]');
+                        if (btnSubmit) {
+                            btnSubmit.disabled = true;
+                            btnSubmit.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Procesando...';
+                        }
+
+                        console.log('✅ Formulario válido, enviando...');
+                        return true;
+                    });
+                }
+
+                // Validación adicional del monto
+                if (montoTotal) {
+                    montoTotal.addEventListener('blur', function() {
+                        const valor = parseFloat(this.value) || 0;
+                        if (valor < 0.01) {
+                            this.classList.add('is-invalid');
+                        } else {
+                            this.classList.remove('is-invalid');
+                        }
+                    });
+                }
+            }
+
+            // ========== FUNCIONES DE DEBUG ==========
+            window.debugForm = function() {
+                console.log('=== DEBUG FORMULARIO ===');
+                console.log('PacienteId:', pacienteSelect?.value);
+                console.log('MontoTotal:', montoTotal?.value);
+                console.log('FechaCredito:', fechaCreditoValor);
+                console.log('TipoPeriodo:', tipoPeriodo?.value);
+                console.log('CantidadPeriodo:', cantidadPeriodo?.value);
+                console.log('MontoPeriodo:', montoPeriodo?.value);
+                console.log('DiasCredito:', diasCredito?.value);
+                console.log('FechaVencimiento:', fechaVencimiento?.value);
+            }
+
+            // ========== FUNCIÓN PRINCIPAL ==========
+            function calcularTodo() {
+                console.log('=== CALCULAR TODO ===');
+                calcularMontoPeriodo();
+                actualizarFechaVencimiento();
+                actualizarResumen();
+                calcularTotalEstimado();
+            }
+
+            // ========== INICIAR ==========
+            inicializar();
+
+            // Forzar cálculo después de que todo cargue
+            window.addEventListener('load', function() {
+                setTimeout(calcularTodo, 500);
+            });
+
+            console.log('=== SCRIPT LISTO ===');
+        });
+    </script>
+}

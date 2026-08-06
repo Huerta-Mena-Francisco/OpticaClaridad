@@ -1,0 +1,912 @@
+﻿@model OpticaClaridad.Models.HistorialClinico
+
+@{
+    ViewData["Title"] = "Editar Historial Clínico";
+    var pacienteNombre = ViewBag.PacienteNombre as string ?? Model.Paciente?.Nombre;
+    var tiposExamen = new List<string> { "Gratis", "Básico", "Completo", "Especializado" };
+}
+
+<div class="container-fluid px-4">
+    <div class="d-flex justify-content-between align-items-center mt-4 mb-4">
+        <div>
+            <h1 class="mt-4">
+                <i class="fas fa-edit me-2"></i>@ViewData["Title"]
+            </h1>
+            <ol class="breadcrumb mb-4">
+                <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index">Inicio</a></li>
+                <li class="breadcrumb-item"><a asp-controller="Pacientes" asp-action="Index">Pacientes</a></li>
+                <li class="breadcrumb-item"><a asp-controller="Pacientes" asp-action="Details" asp-route-id="@Model.PacienteId">@pacienteNombre</a></li>
+                <li class="breadcrumb-item"><a asp-action="Index" asp-route-pacienteId="@Model.PacienteId">Historial</a></li>
+                <li class="breadcrumb-item active">Editar</li>
+            </ol>
+        </div>
+        <div>
+            <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-info me-2">
+                <i class="fas fa-eye me-1"></i>Ver Detalles
+            </a>
+            <a asp-action="Index" asp-route-pacienteId="@Model.PacienteId" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-1"></i>Volver al Historial
+            </a>
+        </div>
+    </div>
+
+    <!-- Información del historial -->
+    <div class="card mb-4 border-warning">
+        <div class="card-header bg-warning text-white">
+            <i class="fas fa-info-circle me-2"></i>Información del Historial
+            <span class="badge bg-dark float-end">ID: @Model.Id</span>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Paciente:</strong> <a asp-controller="Pacientes" asp-action="Details" asp-route-id="@Model.PacienteId" class="text-decoration-none">@pacienteNombre</a></p>
+                    <p><strong>Fecha Registro:</strong> @Model.FechaRegistro.ToString("dd/MM/yyyy HH:mm")</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Última Modificación:</strong> @(Model.FechaModificacion?.ToString("dd/MM/yyyy HH:mm") ?? "No modificado")</p>
+                    <p><strong>Optometrista:</strong> @Model.Optometrista</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <form asp-action="Edit" method="post">
+        <input type="hidden" asp-for="Id" />
+        <input type="hidden" asp-for="PacienteId" />
+        <input type="hidden" asp-for="FechaRegistro" />
+
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+        <!-- Información del Examen -->
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <i class="fas fa-calendar-check me-2"></i>Información del Examen
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label asp-for="FechaExamen" class="form-label fw-bold"></label>
+                            <input asp-for="FechaExamen" type="date" class="form-control" />
+                            <span asp-validation-for="FechaExamen" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label asp-for="HoraExamen" class="form-label fw-bold"></label>
+                            <input asp-for="HoraExamen" type="time" class="form-control" />
+                            <span asp-validation-for="HoraExamen" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label asp-for="Optometrista" class="form-label fw-bold"></label>
+                            <input asp-for="Optometrista" class="form-control" />
+                            <span asp-validation-for="Optometrista" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-3 mt-2">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label asp-for="MotivoExamen" class="form-label fw-bold"></label>
+                            <textarea asp-for="MotivoExamen" class="form-control" rows="2"></textarea>
+                            <span asp-validation-for="MotivoExamen" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label asp-for="TipoExamen" class="form-label fw-bold"></label>
+                            <select asp-for="TipoExamen" class="form-control">
+                                <option value="">Seleccione un tipo</option>
+                                @foreach (var tipo in tiposExamen)
+                                {
+                                    <option value="@tipo">@tipo</option>
+                                }
+                            </select>
+                            <span asp-validation-for="TipoExamen" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-3 mt-2" id="costoSection">
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label asp-for="CostoExamen" class="form-label fw-bold"></label>
+                            <input asp-for="CostoExamen" type="number" step="0.01" class="form-control" />
+                            <span asp-validation-for="CostoExamen" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <div class="form-check form-switch mt-4">
+                                <input class="form-check-input" type="checkbox" asp-for="ExamenPagado" />
+                                <label class="form-check-label" asp-for="ExamenPagado">Examen Pagado</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Antecedentes Médicos -->
+        <div class="card mb-4">
+            <div class="card-header bg-warning text-white">
+                <i class="fas fa-clipboard-list me-2"></i>Antecedentes Médicos
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" asp-for="TieneDiabetes" id="TieneDiabetes" />
+                            <label class="form-check-label" asp-for="TieneDiabetes">¿Tiene Diabetes?</label>
+                        </div>
+                        <div id="diabetesTratamiento" class="mt-2" style="@(Model.TieneDiabetes ? "display:block;" : "display:none;")">
+                            <label asp-for="DiabetesTratamiento" class="form-label small"></label>
+                            <input asp-for="DiabetesTratamiento" class="form-control form-control-sm" />
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" asp-for="TieneHipertension" id="TieneHipertension" />
+                            <label class="form-check-label" asp-for="TieneHipertension">¿Tiene Hipertensión?</label>
+                        </div>
+                        <div id="hipertensionTratamiento" class="mt-2" style="@(Model.TieneHipertension ? "display:block;" : "display:none;")">
+                            <label asp-for="HipertensionTratamiento" class="form-label small"></label>
+                            <input asp-for="HipertensionTratamiento" class="form-control form-control-sm" />
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" asp-for="TieneAlergias" />
+                            <label class="form-check-label" asp-for="TieneAlergias">¿Tiene Alergias?</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-3 mt-3">
+                    <div class="col-12">
+                        <div class="form-group">
+                            <label asp-for="OtrasPatologias" class="form-label fw-bold">Otras Patologías</label>
+                            <textarea asp-for="OtrasPatologias" class="form-control" rows="2"></textarea>
+                            <span asp-validation-for="OtrasPatologias" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-3 mt-3">
+                    <div class="col-md-6">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" asp-for="UsaLentes" id="UsaLentes" />
+                            <label class="form-check-label" asp-for="UsaLentes">¿Usa Lentes Actualmente?</label>
+                        </div>
+                        <div id="tipoLentes" class="mt-2" style="@(Model.UsaLentes ? "display:block;" : "display:none;")">
+                            <label asp-for="TipoLentesActuales" class="form-label small"></label>
+                            <input asp-for="TipoLentesActuales" class="form-control form-control-sm" />
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" asp-for="AntecedentesOculares" id="AntecedentesOculares" />
+                            <label class="form-check-label" asp-for="AntecedentesOculares">¿Antecedentes Oculares?</label>
+                        </div>
+                        <div id="detalleAntecedentes" class="mt-2" style="@(Model.AntecedentesOculares ? "display:block;" : "display:none;")">
+                            <label asp-for="DetalleAntecedentes" class="form-label small"></label>
+                            <textarea asp-for="DetalleAntecedentes" class="form-control form-control-sm" rows="2"></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================================ -->
+        <!-- Graduación Anterior (con valores existentes) -->
+        <!-- ============================================ -->
+        <div class="card mb-4">
+            <div class="card-header bg-secondary text-white">
+                <i class="fas fa-history me-2"></i>Graduación Anterior
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" asp-for="GraduacionAnterior" id="GraduacionAnterior" />
+                            <label class="form-check-label fw-bold" asp-for="GraduacionAnterior">
+                                <i class="fas fa-check-circle me-1"></i>¿El paciente tiene graduación anterior registrada?
+                            </label>
+                            <span class="text-muted d-block small">Active esta opción si desea ingresar o modificar la graduación previa del paciente</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="graduacionAnteriorFields" style="@(Model.GraduacionAnterior ? "display:block;" : "display:none;")">
+                    <div class="alert alert-info small mb-3">
+                        <i class="fas fa-info-circle me-1"></i>
+                        Ingrese los valores de la graduación anterior del paciente (examen previo)
+                    </div>
+
+                    <div class="row">
+                        <!-- Ojo Derecho Anterior -->
+                        <div class="col-md-6">
+                            <div class="card border-secondary">
+                                <div class="card-header bg-secondary text-white py-2">
+                                    <i class="fas fa-eye me-1"></i>Ojo Derecho Anterior (OD)
+                                </div>
+                                <div class="card-body">
+                                    <div class="row g-2">
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label asp-for="ODEsfAnterior" class="form-label small fw-bold">Esfera Anterior</label>
+                                                <div class="input-group input-group-sm">
+                                                    <input asp-for="ODEsfAnterior" type="number" step="0.25" class="form-control" placeholder="Ej: -2.50" />
+                                                    <span class="input-group-text">D</span>
+                                                </div>
+                                                <span asp-validation-for="ODEsfAnterior" class="text-danger small"></span>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label asp-for="ODCilAnterior" class="form-label small fw-bold">Cilindro Anterior</label>
+                                                <div class="input-group input-group-sm">
+                                                    <input asp-for="ODCilAnterior" type="number" step="0.25" class="form-control" placeholder="Ej: -1.25" />
+                                                    <span class="input-group-text">D</span>
+                                                </div>
+                                                <span asp-validation-for="ODCilAnterior" class="text-danger small"></span>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label asp-for="ODEjeAnterior" class="form-label small fw-bold">Eje Anterior</label>
+                                                <input asp-for="ODEjeAnterior" type="number" min="0" max="180" class="form-control form-control-sm" placeholder="0-180°" />
+                                                <span asp-validation-for="ODEjeAnterior" class="text-danger small"></span>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label asp-for="ODAddAnterior" class="form-label small fw-bold">Adición Anterior</label>
+                                                <div class="input-group input-group-sm">
+                                                    <input asp-for="ODAddAnterior" type="number" step="0.25" class="form-control" placeholder="Ej: +2.00" />
+                                                    <span class="input-group-text">D</span>
+                                                </div>
+                                                <span asp-validation-for="ODAddAnterior" class="text-danger small"></span>
+                                                <small class="form-text text-muted d-block">Para lentes progresivos</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Ojo Izquierdo Anterior -->
+                        <div class="col-md-6">
+                            <div class="card border-secondary">
+                                <div class="card-header bg-secondary text-white py-2">
+                                    <i class="fas fa-eye me-1"></i>Ojo Izquierdo Anterior (OI)
+                                </div>
+                                <div class="card-body">
+                                    <div class="row g-2">
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label asp-for="OIEsfAnterior" class="form-label small fw-bold">Esfera Anterior</label>
+                                                <div class="input-group input-group-sm">
+                                                    <input asp-for="OIEsfAnterior" type="number" step="0.25" class="form-control" placeholder="Ej: -2.50" />
+                                                    <span class="input-group-text">D</span>
+                                                </div>
+                                                <span asp-validation-for="OIEsfAnterior" class="text-danger small"></span>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label asp-for="OICilAnterior" class="form-label small fw-bold">Cilindro Anterior</label>
+                                                <div class="input-group input-group-sm">
+                                                    <input asp-for="OICilAnterior" type="number" step="0.25" class="form-control" placeholder="Ej: -1.25" />
+                                                    <span class="input-group-text">D</span>
+                                                </div>
+                                                <span asp-validation-for="OICilAnterior" class="text-danger small"></span>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label asp-for="OIEjeAnterior" class="form-label small fw-bold">Eje Anterior</label>
+                                                <input asp-for="OIEjeAnterior" type="number" min="0" max="180" class="form-control form-control-sm" placeholder="0-180°" />
+                                                <span asp-validation-for="OIEjeAnterior" class="text-danger small"></span>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label asp-for="OIAddAnterior" class="form-label small fw-bold">Adición Anterior</label>
+                                                <div class="input-group input-group-sm">
+                                                    <input asp-for="OIAddAnterior" type="number" step="0.25" class="form-control" placeholder="Ej: +2.00" />
+                                                    <span class="input-group-text">D</span>
+                                                </div>
+                                                <span asp-validation-for="OIAddAnterior" class="text-danger small"></span>
+                                                <small class="form-text text-muted d-block">Para lentes progresivos</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Comparación rápida -->
+                    <div class="alert alert-light mt-3 mb-0 small border" id="comparacionGraduacion" style="display: none;">
+                        <i class="fas fa-chart-line me-1"></i>
+                        <span id="comparacionTexto"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Resultados del Examen - Ojo Derecho (OD) - MEJORADO -->
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card mb-4 h-100">
+                    <div class="card-header bg-info text-white d-flex align-items-center">
+                        <i class="fas fa-eye me-2"></i>
+                        <span>Ojo Derecho (OD)</span>
+                        <span class="ms-auto badge bg-light text-dark">OD</span>
+                    </div>
+                    <div class="card-body">
+                        <!-- Fila 1: Esfera con PL -->
+                        <div class="row g-3 align-items-end mb-3">
+                            <div class="col-12 col-md-6">
+                                <div class="form-group">
+                                    <label asp-for="EsferaOD" class="form-label fw-bold">
+                                        Esfera <span class="text-muted fw-normal">(esférico)</span>
+                                    </label>
+                                    <div class="input-group">
+                                        <input asp-for="EsferaOD" type="number" step="0.25" class="form-control"
+                                               placeholder="Ej: -2.50" id="EsferaOD" />
+                                        <span class="input-group-text">D</span>
+                                    </div>
+                                    <span asp-validation-for="EsferaOD" class="text-danger"></span>
+                                    <small class="form-text text-muted d-block">-2.50 (miopía) / +1.75 (hipermetropía)</small>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div class="form-check form-switch mt-4">
+                                    <input class="form-check-input" type="checkbox" asp-for="EsPlanoOD" id="EsPlanoOD" />
+                                    <label class="form-check-label fw-bold" asp-for="EsPlanoOD">
+                                        PL <span class="fw-normal">(Plano)</span>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div class="form-group">
+                                    <label asp-for="EjeOD" class="form-label fw-bold">Eje</label>
+                                    <input asp-for="EjeOD" type="number" min="0" max="180" class="form-control"
+                                           placeholder="0-180°" id="EjeOD" />
+                                    <span asp-validation-for="EjeOD" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Fila 2: Cilindro con ESF -->
+                        <div class="row g-3 align-items-end mb-3">
+                            <div class="col-12 col-md-6">
+                                <div class="form-group">
+                                    <label asp-for="CilindroOD" class="form-label fw-bold">
+                                        Cilindro <span class="text-muted fw-normal">(astigmatismo)</span>
+                                    </label>
+                                    <div class="input-group">
+                                        <input asp-for="CilindroOD" type="number" step="0.25" class="form-control"
+                                               placeholder="Ej: -1.25" id="CilindroOD" />
+                                        <span class="input-group-text">D</span>
+                                    </div>
+                                    <span asp-validation-for="CilindroOD" class="text-danger"></span>
+                                    <small class="form-text text-muted d-block">Valor negativo para astigmatismo</small>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div class="form-check form-switch mt-4">
+                                    <input class="form-check-input" type="checkbox" asp-for="CilindroPlanoOD" id="CilindroPlanoOD" />
+                                    <label class="form-check-label fw-bold" asp-for="CilindroPlanoOD">
+                                        ESF <span class="fw-normal">(Esférico)</span>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <!-- Espacio vacío para mantener alineación -->
+                            </div>
+                        </div>
+                        <!-- Fila 3: Agudeza Visual -->
+                        <div class="row g-3 mt-3">
+                            <div class="col-12 col-md-6">
+                                <div class="form-group">
+                                    <label asp-for="AgudezaVisualODLejos" class="form-label fw-bold">
+                                        <i class="fas fa-mountain me-1"></i>A.V. Lejos
+                                    </label>
+                                    <input asp-for="AgudezaVisualODLejos" class="form-control" placeholder="Ej: 20/20" />
+                                    <span asp-validation-for="AgudezaVisualODLejos" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <div class="form-group">
+                                    <label asp-for="AgudezaVisualODCerca" class="form-label fw-bold">
+                                        <i class="fas fa-book me-1"></i>A.V. Cerca
+                                    </label>
+                                    <input asp-for="AgudezaVisualODCerca" class="form-control" placeholder="Ej: J1" />
+                                    <span asp-validation-for="AgudezaVisualODCerca" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Badge informativo actualizado -->
+                        <div class="alert alert-info mt-3 mb-0 py-2 small" role="alert">
+                            <i class="fas fa-info-circle me-1"></i>
+                            <strong>OD:</strong> Ojo Derecho. Marca "ESF" cuando el valor sea esférico (sin cilindro).
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card mb-4 h-100">
+                    <div class="card-header bg-info text-white d-flex align-items-center">
+                        <i class="fas fa-eye me-2"></i>
+                        <span>Ojo Izquierdo (OI)</span>
+                        <span class="ms-auto badge bg-light text-dark">OI</span>
+                    </div>
+                    <div class="card-body">
+                        <!-- Fila 1: Esfera con PL -->
+                        <div class="row g-3 align-items-end mb-3">
+                            <div class="col-12 col-md-6">
+                                <div class="form-group">
+                                    <label asp-for="EsferaOI" class="form-label fw-bold">
+                                        Esfera <span class="text-muted fw-normal">(esférico)</span>
+                                    </label>
+                                    <div class="input-group">
+                                        <input asp-for="EsferaOI" type="number" step="0.25" class="form-control"
+                                               placeholder="Ej: -2.50" id="EsferaOI" />
+                                        <span class="input-group-text">D</span>
+                                    </div>
+                                    <span asp-validation-for="EsferaOI" class="text-danger"></span>
+                                    <small class="form-text text-muted d-block">-2.50 (miopía) / +1.75 (hipermetropía)</small>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div class="form-check form-switch mt-4">
+                                    <input class="form-check-input" type="checkbox" asp-for="EsPlanoOI" id="EsPlanoOI" />
+                                    <label class="form-check-label fw-bold" asp-for="EsPlanoOI">
+                                        PL <span class="fw-normal">(Plano)</span>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div class="form-group">
+                                    <label asp-for="EjeOI" class="form-label fw-bold">Eje</label>
+                                    <input asp-for="EjeOI" type="number" min="0" max="180" class="form-control"
+                                           placeholder="0-180°" id="EjeOI" />
+                                    <span asp-validation-for="EjeOI" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Fila 2: Cilindro con ESF -->
+                        <div class="row g-3 align-items-end mb-3">
+                            <div class="col-12 col-md-6">
+                                <div class="form-group">
+                                    <label asp-for="CilindroOI" class="form-label fw-bold">
+                                        Cilindro <span class="text-muted fw-normal">(astigmatismo)</span>
+                                    </label>
+                                    <div class="input-group">
+                                        <input asp-for="CilindroOI" type="number" step="0.25" class="form-control"
+                                               placeholder="Ej: -1.25" id="CilindroOI" />
+                                        <span class="input-group-text">D</span>
+                                    </div>
+                                    <span asp-validation-for="CilindroOI" class="text-danger"></span>
+                                    <small class="form-text text-muted d-block">Valor negativo para astigmatismo</small>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div class="form-check form-switch mt-4">
+                                    <input class="form-check-input" type="checkbox" asp-for="CilindroPlanoOI" id="CilindroPlanoOI" />
+                                    <label class="form-check-label fw-bold" asp-for="CilindroPlanoOI">
+                                        ESF <span class="fw-normal">(Esférico)</span>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <!-- Espacio vacío para mantener alineación -->
+                            </div>
+                        </div>
+
+                        <!-- Fila 3: Agudeza Visual -->
+                        <div class="row g-3 mt-3">
+                            <div class="col-12 col-md-6">
+                                <div class="form-group">
+                                    <label asp-for="AgudezaVisualOILejos" class="form-label fw-bold">
+                                        <i class="fas fa-mountain me-1"></i>A.V. Lejos
+                                    </label>
+                                    <input asp-for="AgudezaVisualOILejos" class="form-control" placeholder="Ej: 20/20" />
+                                    <span asp-validation-for="AgudezaVisualOILejos" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <div class="form-group">
+                                    <label asp-for="AgudezaVisualOICerca" class="form-label fw-bold">
+                                        <i class="fas fa-book me-1"></i>A.V. Cerca
+                                    </label>
+                                    <input asp-for="AgudezaVisualOICerca" class="form-control" placeholder="Ej: J1" />
+                                    <span asp-validation-for="AgudezaVisualOICerca" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Badge informativo actualizado -->
+                        <div class="alert alert-info mt-3 mb-0 py-2 small" role="alert">
+                            <i class="fas fa-info-circle me-1"></i>
+                            <strong>OI:</strong> Ojo Izquierdo. Marca "ESF" cuando el valor sea esférico (sin cilindro).
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Datos adicionales -->
+        <div class="card mb-4">
+            <div class="card-header bg-secondary text-white">
+                <i class="fas fa-ruler-combined me-2"></i>Datos Adicionales
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label asp-for="Adicion" class="form-label fw-bold">Adición</label>
+                            <input asp-for="Adicion" type="number" step="0.25" class="form-control" id="Adicion" />
+                            <span asp-validation-for="Adicion" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label asp-for="DistanciaPupilar" class="form-label fw-bold">Distancia Pupilar (mm)</label>
+                            <input asp-for="DistanciaPupilar" type="number" step="0.1" class="form-control" />
+                            <span asp-validation-for="DistanciaPupilar" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="row mt-2">
+                    <div class="col-12">
+                        <div id="tipoLenteInfo" class="alert alert-info mt-2" style="display:none;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Observaciones y seguimiento -->
+        <div class="card mb-4">
+            <div class="card-header bg-success text-white">
+                <i class="fas fa-sticky-note me-2"></i>Observaciones y Seguimiento
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-12">
+                        <div class="form-group">
+                            <label asp-for="ObservacionesExamen" class="form-label fw-bold">Observaciones del Examen</label>
+                            <textarea asp-for="ObservacionesExamen" class="form-control" rows="3"></textarea>
+                            <span asp-validation-for="ObservacionesExamen" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="col-12">
+                        <div class="form-group">
+                            <label asp-for="Recomendaciones" class="form-label fw-bold">Recomendaciones</label>
+                            <textarea asp-for="Recomendaciones" class="form-control" rows="3"></textarea>
+                            <span asp-validation-for="Recomendaciones" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-3 mt-3">
+                    <div class="col-md-6">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" asp-for="NecesitaSeguimiento" id="NecesitaSeguimiento" />
+                            <label class="form-check-label" asp-for="NecesitaSeguimiento">¿Necesita Seguimiento?</label>
+                        </div>
+                        <div id="fechaSeguimiento" class="mt-2" style="@(Model.NecesitaSeguimiento ? "display:block;" : "display:none;")">
+                            <label asp-for="FechaProximoControl" class="form-label small"></label>
+                            <input asp-for="FechaProximoControl" type="date" class="form-control form-control-sm" />
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" asp-for="InteresEnCompra" id="InteresEnCompra" />
+                            <label class="form-check-label" asp-for="InteresEnCompra">¿Mostró Interés en Compra?</label>
+                        </div>
+                        <div id="observacionesInteres" class="mt-2" style="@(Model.InteresEnCompra ? "display:block;" : "display:none;")">
+                            <label asp-for="ObservacionesInteres" class="form-label small"></label>
+                            <textarea asp-for="ObservacionesInteres" class="form-control form-control-sm" rows="2"></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Botones de acción -->
+        <div class="row mt-4 mb-4">
+            <div class="col-12">
+                <div class="d-flex justify-content-between">
+                    <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-info">
+                        <i class="fas fa-eye me-1"></i>Ver Detalles
+                    </a>
+                    <div>
+                        <a asp-action="Index" asp-route-pacienteId="@Model.PacienteId" class="btn btn-secondary me-2">
+                            <i class="fas fa-times me-1"></i>Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-warning">
+                            <i class="fas fa-save me-1"></i>Guardar Cambios
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+    <script>
+        (function() {
+            // Función para campos condicionales
+            function toggleField(checkboxId, fieldId) {
+                const checkbox = document.getElementById(checkboxId);
+                const field = document.getElementById(fieldId);
+
+                if (checkbox && field) {
+                    checkbox.addEventListener('change', function() {
+                        field.style.display = this.checked ? 'block' : 'none';
+                        if (this.checked) {
+                            const input = field.querySelector('input, textarea');
+                            if (input) input.focus();
+                        }
+                    });
+                }
+            }
+
+            // Configurar campos condicionales
+            toggleField('TieneDiabetes', 'diabetesTratamiento');
+            toggleField('TieneHipertension', 'hipertensionTratamiento');
+            toggleField('UsaLentes', 'tipoLentes');
+            toggleField('AntecedentesOculares', 'detalleAntecedentes');
+            toggleField('NecesitaSeguimiento', 'fechaSeguimiento');
+            toggleField('InteresEnCompra', 'observacionesInteres');
+
+            // ============================================
+            // FUNCIÓN PARA MANEJAR ESF (ESFÉRICO) - ACTUALIZADA
+            // ============================================
+            function setupEsfericoLogic(checkboxId, inputId, ejeId) {
+                const checkbox = document.getElementById(checkboxId);
+                const input = document.getElementById(inputId);
+                const ejeInput = ejeId ? document.getElementById(ejeId) : null;
+
+                if (checkbox && input) {
+                    input.disabled = checkbox.checked;
+                    if (checkbox.checked && ejeInput) {
+                        ejeInput.disabled = true;
+                        ejeInput.value = '';
+                    }
+
+                    checkbox.addEventListener('change', function() {
+                        input.disabled = this.checked;
+                        if (this.checked) {
+                            input.value = '';
+                            if (ejeInput) {
+                                ejeInput.disabled = true;
+                                ejeInput.value = '';
+                            }
+                        } else if (ejeInput) {
+                            ejeInput.disabled = false;
+                        }
+                    });
+                }
+            }
+
+            // Configurar ESF para Ojo Derecho (OD)
+            setupEsfericoLogic('EsPlanoOD', 'EsferaOD', 'EjeOD');
+            setupEsfericoLogic('CilindroPlanoOD', 'CilindroOD', 'EjeOD');
+            
+            // Configurar ESF para Ojo Izquierdo (OI)
+            setupEsfericoLogic('EsPlanoOI', 'EsferaOI', 'EjeOI');
+            setupEsfericoLogic('CilindroPlanoOI', 'CilindroOI', 'EjeOI');
+
+            // Costo según tipo de examen
+            const tipoExamen = document.querySelector('select[name="TipoExamen"]');
+            const costoSec = document.getElementById('costoSection');
+            if (tipoExamen && costoSec) {
+                function actualizarCosto() {
+                    costoSec.style.display = tipoExamen.value === 'Gratis' ? 'none' : 'flex';
+                    if (tipoExamen.value === 'Gratis') {
+                        const costo = document.querySelector('input[name="CostoExamen"]');
+                        if (costo) costo.value = '';
+                    }
+                }
+                actualizarCosto();
+                tipoExamen.addEventListener('change', actualizarCosto);
+            }
+
+            // Tipo de lente sugerido
+            const esfOD = document.getElementById('EsferaOD');
+            const esfOI = document.getElementById('EsferaOI');
+            const add = document.getElementById('Adicion');
+            const esfODCheck = document.getElementById('EsPlanoOD');
+            const esfOICheck = document.getElementById('EsPlanoOI');
+            const infoLente = document.getElementById('tipoLenteInfo');
+
+            function calcularLente() {
+                const odEsferico = esfODCheck ? esfODCheck.checked : false;
+                const oiEsferico = esfOICheck ? esfOICheck.checked : false;
+
+                const valOD = !odEsferico && esfOD ? parseFloat(esfOD.value) || 0 : 0;
+                const valOI = !oiEsferico && esfOI ? parseFloat(esfOI.value) || 0 : 0;
+                const valAdd = add ? parseFloat(add.value) || 0 : 0;
+
+                let tipo = 'Lente Monofocal';
+                if (valAdd > 0) tipo = 'Lente Progresivo';
+                else if (Math.abs(valOD) >= 3 || Math.abs(valOI) >= 3) tipo = 'Lente Alto Índice';
+
+                if (infoLente) {
+                    infoLente.innerHTML = '<strong>Tipo de Lente Sugerido:</strong> ' + tipo;
+                    infoLente.style.display = 'block';
+                }
+            }
+
+            [esfOD, esfOI, add, esfODCheck, esfOICheck].forEach(el => {
+                if (el) {
+                    el.addEventListener('input', calcularLente);
+                    el.addEventListener('change', calcularLente);
+                }
+            });
+            calcularLente();
+
+            // ============================================
+            // VALIDACIÓN: NO PERMITIR ESFERA Y ESF SIMULTÁNEAMENTE
+            // ============================================
+            function validarEsferico(esfericoId, esferaId) {
+                const esferico = document.getElementById(esfericoId);
+                const esfera = document.getElementById(esferaId);
+                if (esferico && esfera) {
+                    esfera.addEventListener('input', function() {
+                        if (this.value && this.value !== '' && esferico.checked) {
+                            esferico.checked = false;
+                            esferico.dispatchEvent(new Event('change'));
+                        }
+                    });
+                }
+            }
+            
+            validarEsferico('EsPlanoOD', 'EsferaOD');
+            validarEsferico('EsPlanoOI', 'EsferaOI');
+
+            // ============================================
+            // MENSAJE DE AYUDA PARA ESF
+            // ============================================
+            function addEsfericoHelpText() {
+                const helpText = document.createElement('small');
+                helpText.className = 'form-text text-muted d-block mt-1';
+                helpText.innerHTML = '<i class="fas fa-info-circle me-1"></i> ESF (Esférico) = sin corrección cilíndrica';
+
+                // Insertar después de los checkboxes de ESF en OD
+                const esfODLabel = document.querySelector('label[for="EsPlanoOD"]');
+                if (esfODLabel) {
+                    const parentDiv = esfODLabel.closest('.col-md-3');
+                    if (parentDiv && !parentDiv.querySelector('.esf-help-text')) {
+                        const helpClone = helpText.cloneNode(true);
+                        helpClone.classList.add('esf-help-text');
+                        parentDiv.appendChild(helpClone);
+                    }
+                }
+
+                // Insertar después de los checkboxes de ESF en OI
+                const esfOILabel = document.querySelector('label[for="EsPlanoOI"]');
+                if (esfOILabel) {
+                    const parentDiv = esfOILabel.closest('.col-md-3');
+                    if (parentDiv && !parentDiv.querySelector('.esf-help-text')) {
+                        const helpClone = helpText.cloneNode(true);
+                        helpClone.classList.add('esf-help-text');
+                        parentDiv.appendChild(helpClone);
+                    }
+                }
+            }
+
+            addEsfericoHelpText();
+        })();
+
+        // ============================================
+        // MOSTRAR/OCULTAR GRADUACIÓN ANTERIOR
+        // ============================================
+        const graduacionAnteriorCheck = document.getElementById('GraduacionAnterior');
+        const graduacionAnteriorFields = document.getElementById('graduacionAnteriorFields');
+
+        function toggleGraduacionAnterior() {
+            if (graduacionAnteriorCheck && graduacionAnteriorFields) {
+                graduacionAnteriorFields.style.display = graduacionAnteriorCheck.checked ? 'block' : 'none';
+            }
+        }
+
+        // Evento change
+        if (graduacionAnteriorCheck) {
+            graduacionAnteriorCheck.addEventListener('change', toggleGraduacionAnterior);
+        }
+
+        // ============================================
+        // COMPARAR GRADUACIÓN ACTUAL VS ANTERIOR
+        // ============================================
+        function compararGraduaciones() {
+            const comparacionDiv = document.getElementById('comparacionGraduacion');
+            const comparacionTexto = document.getElementById('comparacionTexto');
+
+            if (!comparacionDiv || !comparacionTexto) return;
+
+            // Obtener valores actuales
+            const esfActualOD = document.getElementById('EsferaOD')?.value;
+            const esfActualOI = document.getElementById('EsferaOI')?.value;
+            const esfericoActualOD = document.getElementById('EsPlanoOD')?.checked || false;
+            const esfericoActualOI = document.getElementById('EsPlanoOI')?.checked || false;
+
+            // Obtener valores anteriores
+            const esfAnteriorOD = document.querySelector('input[name="ODEsfAnterior"]')?.value;
+            const esfAnteriorOI = document.querySelector('input[name="OIEsfAnterior"]')?.value;
+
+            // Solo mostrar comparación si hay ambos valores
+            const tieneActualOD = (esfActualOD && esfActualOD !== '') || esfericoActualOD;
+            const tieneActualOI = (esfActualOI && esfActualOI !== '') || esfericoActualOI;
+            const tieneAnteriorOD = esfAnteriorOD && esfAnteriorOD !== '';
+            const tieneAnteriorOI = esfAnteriorOI && esfAnteriorOI !== '';
+
+            if ((tieneActualOD && tieneAnteriorOD) || (tieneActualOI && tieneAnteriorOI)) {
+                let mensaje = '📊 Comparación con graduación anterior: ';
+                let cambios = [];
+
+                if (tieneActualOD && tieneAnteriorOD) {
+                    const valorActualOD = esfericoActualOD ? 0 : parseFloat(esfActualOD) || 0;
+                    const valorAnteriorOD = parseFloat(esfAnteriorOD) || 0;
+                    const diffOD = (valorActualOD - valorAnteriorOD).toFixed(2);
+                    const signoOD = diffOD > 0 ? '+' : '';
+                    cambios.push(`OD: ${signoOD}${diffOD} D`);
+                }
+
+                if (tieneActualOI && tieneAnteriorOI) {
+                    const valorActualOI = esfericoActualOI ? 0 : parseFloat(esfActualOI) || 0;
+                    const valorAnteriorOI = parseFloat(esfAnteriorOI) || 0;
+                    const diffOI = (valorActualOI - valorAnteriorOI).toFixed(2);
+                    const signoOI = diffOI > 0 ? '+' : '';
+                    cambios.push(`OI: ${signoOI}${diffOI} D`);
+                }
+
+                comparacionTexto.textContent = mensaje + cambios.join(' | ');
+                comparacionDiv.style.display = 'block';
+            } else {
+                comparacionDiv.style.display = 'none';
+            }
+        }
+
+        // Agregar eventos para comparación
+        const inputsComparacion = [
+            'EsferaOD', 'EsPlanoOD', 'EsferaOI', 'EsPlanoOI',
+            'input[name="ODEsfAnterior"]', 'input[name="OIEsfAnterior"]'
+        ];
+
+        inputsComparacion.forEach(selector => {
+            const elementos = document.querySelectorAll(selector);
+            elementos.forEach(el => {
+                if (el) {
+                    el.addEventListener('input', compararGraduaciones);
+                    el.addEventListener('change', compararGraduaciones);
+                }
+            });
+        });
+
+        // Ejecutar comparación inicial si hay datos
+        compararGraduaciones();
+
+    </script>
+}

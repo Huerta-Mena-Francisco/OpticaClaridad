@@ -1,0 +1,303 @@
+﻿@model IEnumerable<OpticaClaridad.Models.Credito>
+
+@{
+    ViewData["Title"] = "Créditos";
+    var pacienteId = ViewBag.PacienteId as int?;  <!-- 🔴 CAMBIO -->
+    var pacienteNombre = ViewBag.PacienteNombre as string;  <!-- 🔴 CAMBIO -->
+    var estadoSeleccionado = ViewBag.EstadoSeleccionado as string ?? "TODOS";
+}
+
+<div class="container mt-4">
+    <!-- Encabezado -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2>
+                <i class="bi bi-credit-card-2-front"></i>
+                @if (pacienteId.HasValue)  
+                {
+                    <span>Créditos de: @pacienteNombre</span> 
+                }
+                else
+                {
+                    <span>Lista de Créditos</span>
+                }
+            </h2>
+            @if (pacienteId.HasValue) 
+            {
+                <a asp-controller="Pacientes" asp-action="Details" asp-route-id="@pacienteId.Value" 
+                   class="btn btn-sm btn-outline-info">
+                    <i class="bi bi-arrow-left"></i> Volver al paciente  <!-- 🔴 CAMBIO -->
+                </a>
+            }
+        </div>
+        <a asp-action="Create" asp-route-pacienteId="@pacienteId" class="btn btn-success">  <!-- 🔴 CAMBIO -->
+            <i class="bi bi-plus-circle"></i> Nuevo Crédito
+        </a>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form asp-action="Index" method="get" class="row g-3">
+                @if (pacienteId.HasValue) 
+                {
+                    <input type="hidden" name="pacienteId" value="@pacienteId.Value" /> 
+                }
+
+                <div class="col-md-4">
+                    <input type="text" name="searchString" class="form-control"
+                           placeholder="Buscar por paciente, observaciones o ID..."  
+                           value="@ViewData["CurrentFilter"]" />
+                </div>
+
+                <div class="col-md-3">
+                    <select name="estado" class="form-select">
+                        <option value="TODOS" selected="@(estadoSeleccionado == "TODOS")">Todos los estados</option>
+                        <option value="PENDIENTE" selected="@(estadoSeleccionado == "PENDIENTE")">Pendientes</option>
+                        <option value="PAGADO" selected="@(estadoSeleccionado == "PAGADO")">Pagados</option>
+                        <option value="VENCIDO" selected="@(estadoSeleccionado == "VENCIDO")">Vencidos</option>
+                        <option value="MOROSO" selected="@(estadoSeleccionado == "MOROSO")">Morosos</option>
+                    </select>
+                </div>
+
+                <div class="col-md-5">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-filter"></i> Filtrar
+                    </button>
+                    <a asp-action="Index" class="btn btn-secondary">
+                        <i class="bi bi-x-circle"></i> Limpiar
+                    </a>
+
+                    @if (estadoSeleccionado != "TODOS")
+                    {
+                        <span class="badge bg-info ms-2">
+                            Filtrado por: @estadoSeleccionado
+                        </span>
+                    }
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Resumen -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card border-primary">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Total Pendiente</h5>
+                    <h3 class="text-primary">
+                        @Model.Where(c => c.Estado != "PAGADO").Sum(c => c.Saldo).ToString("C")
+                    </h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-success">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Créditos Activos</h5>
+                    <h3 class="text-success">
+                        @Model.Count(c => c.Estado != "PAGADO")
+                    </h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-warning">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Próximos a Vencer</h5>
+                    <h3 class="text-warning">
+                        @Model.Count(c => c.DiasRestantes.HasValue && c.DiasRestantes <= 7 && c.DiasRestantes > 0)
+                    </h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-danger">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Vencidos</h5>
+                    <h3 class="text-danger">
+                        @Model.Count(c => c.Estado == "VENCIDO" || c.Estado == "MOROSO")
+                    </h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla de créditos -->
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>ID</th>
+                            <th>Paciente</th>  <!-- 🔴 CAMBIO -->
+                            <th>Monto Total</th>
+                            <th>Saldo</th>
+                            <th>% Pagado</th>
+                            <th>Vencimiento</th>
+                            <th>Días Rest.</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td>#@item.Id</td>
+                                <td>
+                                    <a asp-controller="Pacientes" asp-action="Details" asp-route-id="@item.PacienteId">  <!-- 🔴 CAMBIO -->
+                                        @item.Paciente?.Nombre  <!-- 🔴 CAMBIO -->
+                                    </a>
+                                </td>
+                                <td>@item.MontoTotal.ToString("C")</td>
+                                <td>
+                                    <span class="@(item.Saldo > 0 ? "text-danger fw-bold" : "text-success")">
+                                        @item.Saldo.ToString("C")
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="progress" style="height: 20px;">
+                                        <div class="progress-bar @GetProgressBarClass(item.PorcentajePagado)"
+                                             role="progressbar"
+                                             style="width: @item.PorcentajePagado%;"
+                                             aria-valuenow="@item.PorcentajePagado"
+                                             aria-valuemin="0"
+                                             aria-valuemax="100">
+                                            @item.PorcentajePagado.ToString("N1")%
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    @if (item.FechaVencimiento.HasValue)
+                                    {
+                                        <span class="@(item.FechaVencimiento < DateTime.Today ? "text-danger" : "")">
+                                            @item.FechaVencimiento.Value.ToString("dd/MM/yyyy")
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">Sin fecha</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (item.DiasRestantes.HasValue)
+                                    {
+                                        if (item.DiasRestantes < 0)
+                                        {
+                                            <span class="badge bg-danger">
+                                                @Math.Abs(item.DiasRestantes.Value) días venc.
+                                            </span>
+                                        }
+                                        else if (item.DiasRestantes <= 7)
+                                        {
+                                            <span class="badge bg-warning">
+                                                @item.DiasRestantes días
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-success">
+                                                @item.DiasRestantes días
+                                            </span>
+                                        }
+                                    }
+                                </td>
+                                <!-- COLUMNA DE ESTADO -->
+                                <td>
+                                    @GetEstadoBadge(item.Estado)
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <a asp-action="Details" asp-route-id="@item.Id"
+                                           class="btn btn-info" title="Detalles">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        @if (item.Estado != "PAGADO")
+                                        {
+                                            <a asp-controller="AbonosCredito" asp-action="Create" asp-route-creditoId="@item.Id"
+                                               class="btn btn-success" title="Registrar Abono">
+                                                <i class="bi bi-cash-coin"></i>
+                                            </a>
+                                        }
+                                        <a asp-controller="AbonosCredito" asp-action="Index" asp-route-creditoId="@item.Id"
+                                           class="btn btn-primary" title="Historial">
+                                            <i class="bi bi-clock-history"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            @if (!Model.Any())
+            {
+                <div class="text-center py-5">
+                    <i class="bi bi-credit-card display-1 text-muted"></i>
+                    <h4 class="mt-3">No hay créditos registrados</h4>
+                    <p class="text-muted">
+                        @if (pacienteId.HasValue)  
+                        {
+                            <span>Este paciente no tiene créditos registrados</span>  <!-- 🔴 CAMBIO -->
+                        }
+                        else
+                        {
+                            <span>Comienza agregando tu primer crédito</span>
+                        }
+                    </p>
+                    <a asp-action="Create" asp-route-pacienteId="@pacienteId" class="btn btn-primary mt-3">  <!-- 🔴 CAMBIO -->
+                        <i class="bi bi-plus-circle"></i> Nuevo Crédito
+                    </a>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@functions {
+    string GetProgressBarClass(decimal porcentaje)
+    {
+        if (porcentaje >= 100) return "bg-success";
+        if (porcentaje >= 70) return "bg-info";
+        if (porcentaje >= 40) return "bg-warning";
+        return "bg-danger";
+    }
+
+    Microsoft.AspNetCore.Html.IHtmlContent GetEstadoBadge(string estado)
+    {
+        var badgeClass = estado switch
+        {
+            "PAGADO" => "bg-success",
+            "PENDIENTE" => "bg-primary",
+            "VENCIDO" => "bg-danger",
+            "MOROSO" => "bg-dark",
+            _ => "bg-secondary"
+        };
+
+        var icon = estado switch
+        {
+            "PAGADO" => "bi-check-circle",
+            "PENDIENTE" => "bi-clock",
+            "VENCIDO" => "bi-exclamation-triangle",
+            "MOROSO" => "bi-exclamation-octagon",
+            _ => "bi-question-circle"
+        };
+
+        return Html.Raw($"<span class='badge {badgeClass}'><i class='bi {icon}'></i> {estado}</span>");
+    }
+}
+
+@section Styles {
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.11.3/css/jquery.dataTables.min.css" />
+}
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            console.log('Página de créditos cargada correctamente');
+        });
+    </script>
+}

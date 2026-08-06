@@ -1,0 +1,71 @@
+﻿@model OpticaClaridad.Controllers.BackupEstadisticas
+@{
+    ViewData["Title"] = "Estadísticas de Backups";
+}
+
+<div class="container-fluid">
+    <h2>📊 Estadísticas de Backups</h2>
+
+    <div class="row mt-4">
+        <!-- Tarjetas de estadísticas -->
+        <div class="col-md-3">
+            <div class="card text-white bg-primary mb-3">
+                <div class="card-body text-center">
+                    <h1 class="display-4">@Model.TotalBackups</h1>
+                    <p class="card-text">Total de Backups</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card text-white bg-success mb-3">
+                <div class="card-body text-center">
+                    <h1 class="display-4">@Model.TamanoTotalMB.ToString("N2")</h1>
+                    <p class="card-text">MB Totales</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card text-white bg-warning mb-3">
+                <div class="card-body text-center">
+                    <h1 class="display-4">@Model.EspacioDiscoGB.ToString("N2")</h1>
+                    <p class="card-text">GB Disponibles</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Información detallada -->
+    <div class="card">
+        <div class="card-header">
+            <i class="bi bi-info-circle"></i> Información Detallada
+        </div>
+        <div class="card-body">
+            <table class="table">
+                <tr>
+                    <th>Ubicación de Backups:</th>
+                    <td>@Model.RutaBackups</td>
+                </tr>
+                <tr>
+                    <th>Backup más antiguo:</th>
+                    <td>@(Model.BackupMasAntiguo != DateTime.MinValue ? Model.BackupMasAntiguo.ToString("dd/MM/yyyy HH:mm") : "N/A")</td>
+                </tr>
+                <tr>
+                    <th>Backup más reciente:</th>
+                    <td>@(Model.BackupMasReciente != DateTime.MinValue ? Model.BackupMasReciente.ToString("dd/MM/yyyy HH:mm") : "N/A")</td>
+                </tr>
+                <tr>
+                    <th>Espacio en disco total:</th>
+                    <td>@Model.EspacioDiscoGB GB disponibles</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+    <div class="mt-4">
+        <a asp-action="Index" class="btn btn-primary">
+            <i class="bi bi-arrow-left"></i> Volver a Backups
+        </a>
+    </div>
+</div>

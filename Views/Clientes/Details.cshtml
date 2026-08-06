@@ -1,0 +1,244 @@
+﻿@model OpticaClaridad.Models.Cliente
+
+@{
+    ViewData["Title"] = "Detalles del Cliente";
+}
+
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header bg-info text-white">
+            <div class="d-flex justify-content-between align-items-center">
+                <h3 class="card-title mb-0">
+                    <i class="bi bi-person-badge"></i> @ViewData["Title"]
+                </h3>
+                <div class="btn-group">
+                    <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-light btn-sm">
+                        <i class="bi bi-pencil"></i> Editar
+                    </a>
+                    <a asp-action="Index" class="btn btn-light btn-sm">
+                        <i class="bi bi-list"></i> Lista
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <!-- Información básica -->
+                <div class="col-md-6">
+                    <h5 class="border-bottom pb-2 mb-3">
+                        <i class="bi bi-person-circle"></i> Información Personal
+                    </h5>
+                    <dl class="row">
+                        <dt class="col-sm-4">Nombre:</dt>
+                        <dd class="col-sm-8">@Html.DisplayFor(model => model.Nombre)</dd>
+
+                        <dt class="col-sm-4">Teléfono:</dt>
+                        <dd class="col-sm-8">
+                            @if (!string.IsNullOrEmpty(Model.Telefono))
+                            {
+                                @Html.DisplayFor(model => model.Telefono)
+                            }
+                            else
+                            {
+                                <span class="text-muted">No registrado</span>
+                            }
+                        </dd>
+
+                        <dt class="col-sm-4">Email:</dt>
+                        <dd class="col-sm-8">
+                            @if (!string.IsNullOrEmpty(Model.Email))
+                            {
+                                <a href="mailto:@Model.Email">@Model.Email</a>
+                            }
+                            else
+                            {
+                                <span class="text-muted">No registrado</span>
+                            }
+                        </dd>
+
+                        <dt class="col-sm-4">Dirección:</dt>
+                        <dd class="col-sm-8">
+                            @if (!string.IsNullOrEmpty(Model.Direccion))
+                            {
+                                @Html.DisplayFor(model => model.Direccion)
+                            }
+                            else
+                            {
+                                <span class="text-muted">No registrada</span>
+                            }
+                        </dd>
+                    </dl>
+                </div>
+
+                <!-- Información del sistema -->
+                <div class="col-md-6">
+                    <h5 class="border-bottom pb-2 mb-3">
+                        <i class="bi bi-gear"></i> Información del Sistema
+                    </h5>
+                    <dl class="row">
+                        <dt class="col-sm-4">ID Cliente:</dt>
+                        <dd class="col-sm-8">@Model.Id</dd>
+
+                        <dt class="col-sm-4">Fecha Registro:</dt>
+                        <dd class="col-sm-8">@Model.FechaRegistro?.ToString("dd/MM/yyyy")</dd>
+
+                        <dt class="col-sm-4">Estado:</dt>
+                        <dd class="col-sm-8">
+                            @if (Model.Activo)
+                            {
+                                <span class="badge bg-success">
+                                    <i class="bi bi-check-circle"></i> Activo
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-danger">
+                                    <i class="bi bi-x-circle"></i> Inactivo
+                                </span>
+                            }
+                        </dd>
+
+                        <dt class="col-sm-4">Total Ventas:</dt>
+                        <dd class="col-sm-8">
+                            <span class="badge bg-primary">
+                                @(Model.Ventas?.Count() ?? 0) ventas
+                            </span>
+                        </dd>
+                    </dl>
+                </div>
+            </div>
+
+            <!-- Acciones rápidas -->
+            <div class="row mt-4">
+                <div class="col-12">
+                    <h5 class="border-bottom pb-2 mb-3">
+                        <i class="bi bi-lightning"></i> Acciones Rápidas
+                    </h5>
+                    <div class="d-flex flex-wrap gap-2">
+                        <a asp-controller="Creditos" asp-action="Create" asp-route-clienteId="@Model.Id"
+                           class="btn btn-success">
+                            <i class="bi bi-plus-circle"></i> Nuevo Crédito
+                        </a>
+                        <a asp-controller="Creditos" asp-action="Index" asp-route-clienteId="@Model.Id"
+                           class="btn btn-primary">
+                            <i class="bi bi-credit-card"></i> Ver Créditos
+                        </a>
+                        @if (Model.Activo)
+                        {
+                            <a asp-action="Delete" asp-route-id="@Model.Id"
+                               class="btn btn-danger">
+                                <i class="bi bi-trash"></i> Eliminar Cliente
+                            </a>
+                        }
+                        else
+                        {
+                            <a asp-action="Edit" asp-route-id="@Model.Id"
+                               class="btn btn-warning">
+                                <i class="bi bi-toggle-on"></i> Reactivar Cliente
+                            </a>
+                        }
+                        <a href="#" class="btn btn-secondary" onclick="window.print()">
+                            <i class="bi bi-printer"></i> Imprimir
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Historial de ventas (si hay) -->
+            @if (Model.Ventas != null && Model.Ventas.Any())
+            {
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <h5 class="border-bottom pb-2 mb-3">
+                            <i class="bi bi-receipt"></i> Últimas Ventas
+                        </h5>
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th># Venta</th>
+                                        <th>Fecha</th>
+                                        <th>Monto Total</th>
+                                        <th>Método Pago</th>
+                                        <th>Estado</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var venta in Model.Ventas.OrderByDescending(v => v.FechaVenta).Take(5))
+                                    {
+                                        <tr>
+                                            <td>
+                                                <a asp-controller="Venta" asp-action="Details" asp-route-id="@venta.Id"
+                                                   class="fw-bold text-decoration-none">
+                                                    @venta.NumeroVenta
+                                                </a>
+                                                <br>
+                                                <small class="text-muted">ID: @venta.Id</small>
+                                            </td>
+                                            <td>
+                                                @venta.FechaVenta.ToString("dd/MM/yyyy")
+                                                <br>
+                                                <small class="text-muted">@venta.FechaCreacion.ToString("HH:mm")</small>
+                                            </td>
+                                            <td class="fw-bold text-success">@venta.Total.ToString("C")</td>
+                                            <td>
+                                                @switch (venta.TipoPago)
+                                                {
+                                                    case "Efectivo":
+                                                        <span class="badge bg-success">Efectivo</span>
+                                                        break;
+                                                    case "Tarjeta":
+                                                        <span class="badge bg-primary">Tarjeta</span>
+                                                        break;
+                                                    case "Credito":
+                                                        <span class="badge bg-warning text-dark">Crédito</span>
+                                                        break;
+                                                    default:
+                                                        <span class="badge bg-secondary">@venta.TipoPago</span>
+                                                        break;
+                                                }
+                                            </td>
+                                            <td>
+                                                @if (venta.Estado == "COMPLETADA")
+                                                {
+                                                    <span class="badge bg-success">Completada</span>
+                                                }
+                                                else if (venta.Estado == "CANCELADA")
+                                                {
+                                                    <span class="badge bg-danger">Cancelada</span>
+                                                }
+                                                else if (venta.Estado == "PENDIENTE")
+                                                {
+                                                    <span class="badge bg-warning text-dark">Pendiente</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-secondary">@venta.Estado</span>
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                            @if (Model.Ventas.Count() > 5)
+                            {
+                                <div class="text-center mt-2">
+                                    <small class="text-muted">
+                                        Mostrando 5 de @Model.Ventas.Count() ventas
+                                    </small>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+        <div class="card-footer text-muted">
+            <small>
+                <i class="bi bi-info-circle"></i> Cliente registrado el
+                @Model.FechaRegistro?.ToString("dd/MM/yyyy")
+                | ID: @Model.Id
+            </small>
+        </div>
+    </div>
+</div>

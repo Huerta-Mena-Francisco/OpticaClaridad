@@ -1,0 +1,98 @@
+﻿@{
+    ViewData["Title"] = "Acceso para Dispositivos";
+
+    // Si viene del ViewBag, usarlo; si no, valor por defecto
+    string ip = ViewBag.IpServidor ?? "192.168.0.161";
+    int puerto = ViewBag.Puerto ?? 5000;
+    string urlCompleta = ViewBag.UrlCompleta ?? $"http://{ip}:{puerto}/Login";
+}
+
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h4><i class="bi bi-tablet"></i> URL para Tablets/Celulares</h4>
+        </div>
+        <div class="card-body">
+            <div class="alert alert-success">
+                <i class="bi bi-check-circle"></i>
+                <strong>IP detectada automáticamente:</strong> @ip
+                <br>
+                <small class="text-muted">Esta es la dirección IP de esta computadora en la red</small>
+            </div>
+
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle"></i>
+                Usa esta URL en el navegador de tus dispositivos móviles
+            </div>
+
+            <div class="input-group mb-3">
+                <input type="text"
+                       id="loginUrl"
+                       class="form-control"
+                       value="@urlCompleta"
+                       readonly>
+                <button class="btn btn-primary" onclick="copiarUrl()">
+                    <i class="bi bi-copy"></i> Copiar URL
+                </button>
+            </div>
+
+            <div class="d-grid gap-2">
+                <a href="@urlCompleta"
+                   class="btn btn-success"
+                   target="_blank">
+                    <i class="bi bi-box-arrow-up-right"></i> Abrir en navegador
+                </a>
+
+                <a href="@Url.Action("QR")" class="btn btn-warning">
+                    <i class="bi bi-qr-code"></i> Generar Código QR
+                </a>
+            </div>
+
+            <div class="alert alert-warning mt-3">
+                <i class="bi bi-exclamation-triangle"></i>
+                <strong>Requisitos para que funcione:</strong>
+                <ul class="mb-0 mt-2">
+                    <li>Esta computadora debe estar encendida</li>
+                    <li>Todos los dispositivos deben estar en la MISMA red WiFi</li>
+                    <li>El puerto @puerto debe estar abierto en el firewall</li>
+                    <li>La aplicación debe estar ejecutándose</li>
+                </ul>
+            </div>
+
+            <div class="text-center mt-3">
+                <img src="@Url.Action("QRCodeImage", "Acceso")"
+                     alt="Código QR para acceso"
+                     class="img-fluid"
+                     style="max-width: 200px;">
+                <p class="text-muted mt-2">Escanear código QR para acceso rápido</p>
+            </div>
+        </div>
+        <div class="card-footer text-muted">
+            <small>
+                <i class="bi bi-laptop"></i> Servidor: @ip:@puerto |
+                <i class="bi bi-clock"></i> Actualizado: @DateTime.Now.ToString("dd/MM/yyyy HH:mm")
+            </small>
+        </div>
+    </div>
+</div>
+
+<script>
+    function copiarUrl() {
+        var input = document.getElementById('loginUrl');
+        input.select();
+        document.execCommand('copy');
+
+        // Mostrar notificación más bonita
+        var boton = event.target.closest('button');
+        var originalHtml = boton.innerHTML;
+        boton.innerHTML = '<i class="bi bi-check"></i> Copiada!';
+        boton.classList.remove('btn-primary');
+        boton.classList.add('btn-success');
+
+        setTimeout(function() {
+            boton.innerHTML = originalHtml;
+            boton.classList.remove('btn-success');
+            boton.classList.add('btn-primary');
+        }, 2000);
+    }
+</script>

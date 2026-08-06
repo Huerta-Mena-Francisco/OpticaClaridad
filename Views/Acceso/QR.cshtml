@@ -1,0 +1,368 @@
+﻿﻿@{
+ViewData["Title"] = "Acceso por QR";
+Layout = "_Layout";
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-qr-code-scan"></i> Acceso Rápido
+                    </h4>
+                </div>
+                <div class="card-body">
+
+                    <!-- Tabs -->
+                    <ul class="nav nav-tabs mb-4" id="accesoTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="local-tab" data-bs-toggle="tab" data-bs-target="#local" type="button" role="tab">
+                                <i class="bi bi-wifi"></i> Red Local
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="tunel-tab" data-bs-toggle="tab" data-bs-target="#tunel" type="button" role="tab">
+                                <i class="bi bi-cloud-arrow-up"></i> Túnel Cloudflare
+                            </button>
+                        </li>
+                    </ul>
+
+                    <!-- Contenido de Tabs -->
+                    <div class="tab-content">
+
+                        <!-- TAB 1: RED LOCAL -->
+                        <div class="tab-pane fade show active" id="local" role="tabpanel">
+                            <div class="text-center">
+
+                                <!-- Instrucciones -->
+                                <div class="alert alert-info mb-4">
+                                    <h5><i class="bi bi-tablet-landscape"></i> Para Tablets y Celulares en la misma red</h5>
+                                    <p class="mb-0">
+                                        Escanea este código con la cámara de tu dispositivo para abrir la aplicación automáticamente.
+                                    </p>
+                                </div>
+
+                                <!-- QR Code -->
+                                <div class="mb-4 p-3 border rounded bg-light">
+                                    <img src="@Url.Action("QRCodeImage", "Acceso")"
+                                         alt="QR Code para Óptica Claridad"
+                                         class="img-fluid"
+                                         style="max-width: 300px;">
+                                </div>
+
+                                <!-- Información -->
+                                <div class="mb-4">
+                                    <h5><i class="bi bi-link-45deg"></i> URL de Acceso (Red Local):</h5>
+                                    <div class="input-group">
+                                        <input type="text"
+                                               id="appUrl"
+                                               class="form-control text-center"
+                                               value="@ViewBag.AppUrl"
+                                               readonly>
+                                        <button class="btn btn-outline-secondary"
+                                                type="button"
+                                                onclick="copiarUrl('appUrl')">
+                                            <i class="bi bi-copy"></i>
+                                        </button>
+                                    </div>
+                                    <small class="text-muted">Generado: @ViewBag.FechaGeneracion</small>
+                                </div>
+
+                                <!-- Botones -->
+                                <div class="d-grid gap-2 d-md-flex justify-content-center">
+                                    <a href="@ViewBag.AppUrl"
+                                       class="btn btn-success"
+                                       target="_blank">
+                                        <i class="bi bi-box-arrow-up-right"></i> Abrir Aplicación
+                                    </a>
+                                    <button onclick="imprimirQR()"
+                                            class="btn btn-outline-primary">
+                                        <i class="bi bi-printer"></i> Imprimir QR
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- TAB 2: TÚNEL CLOUDFLARE -->
+                        <div class="tab-pane fade" id="tunel" role="tabpanel">
+                            <div class="text-center">
+
+                                <!-- Estado del Túnel -->
+                                <div class="alert alert-warning mb-4" id="tunelEstadoAlerta">
+                                    <div class="d-flex align-items-center justify-content-center">
+                                        <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+                                        <span>Cargando estado del túnel...</span>
+                                    </div>
+                                </div>
+
+                                <!-- QR Code del Túnel (si está activo) -->
+                                <div id="tunelQRContainer" style="display: none;">
+                                    <div class="alert alert-success mb-4">
+                                        <h5><i class="bi bi-globe"></i> Acceso desde cualquier lugar</h5>
+                                        <p class="mb-0">
+                                            Escanea este código para acceder desde fuera de la red local.
+                                        </p>
+                                    </div>
+
+                                    <div class="mb-4 p-3 border rounded bg-light" id="qrCodeContainer">
+                                        <!-- QR se generará dinámicamente -->
+                                        <div id="qrCodeImage" class="d-flex justify-content-center"></div>
+                                    </div>
+
+                                    <div class="mb-4">
+                                        <h5><i class="bi bi-link-45deg"></i> URL Externa (Cloudflare):</h5>
+                                        <div class="input-group">
+                                            <input type="text"
+                                                   id="tunelUrl"
+                                                   class="form-control text-center"
+                                                   readonly>
+                                            <button class="btn btn-outline-secondary"
+                                                    type="button"
+                                                    onclick="copiarUrl('tunelUrl')">
+                                                <i class="bi bi-copy"></i>
+                                            </button>
+                                        </div>
+                                        <small class="text-muted">Válido mientras el túnel esté activo</small>
+                                    </div>
+
+                                    <div class="d-grid gap-2 d-md-flex justify-content-center">
+                                        <a id="tunelLink"
+                                           class="btn btn-success"
+                                           target="_blank">
+                                            <i class="bi bi-box-arrow-up-right"></i> Abrir Aplicación
+                                        </a>
+                                    </div>
+                                </div>
+
+                                <!-- Botones de control del túnel -->
+                                <div class="mt-4">
+                                    <button id="btnIniciarTunel" class="btn btn-primary">
+                                        <i class="bi bi-play-fill"></i> Iniciar Túnel
+                                    </button>
+                                    <button id="btnDetenerTunel" class="btn btn-danger" style="display: none;">
+                                        <i class="bi bi-stop-fill"></i> Detener Túnel
+                                    </button>
+                                    <button id="btnRefrescarTunel" class="btn btn-outline-secondary">
+                                        <i class="bi bi-arrow-repeat"></i> Refrescar
+                                    </button>
+                                </div>
+
+                                <div class="alert alert-info mt-4">
+                                    <i class="bi bi-info-circle"></i>
+                                    <small>
+                                        El túnel permite acceder al sistema desde cualquier lugar fuera de la red local.
+                                        La URL es generada automáticamente por Cloudflare.
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+                <div class="card-footer text-muted text-center">
+                    <small>
+                        <i class="bi bi-exclamation-circle"></i>
+                        Coloca este QR en un lugar visible para acceso rápido
+                    </small>
+                </div>
+            </div>
+
+            <!-- Para administradores -->
+            @if (Context.Session.GetString("EsAdmin") == "True")
+            {
+                <div class="mt-4 text-center">
+                    <a href="@Url.Action("Index", "Tunel")" class="btn btn-sm btn-outline-secondary" target="_blank">
+                        <i class="bi bi-gear"></i> Gestión de Túnel
+                    </a>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+
+    <script>
+        let qrCodeInstance = null;
+        let estadoInterval = null;
+
+        // Copiar URL
+        function copiarUrl(elementId) {
+        var input = document.getElementById(elementId);
+        input.select();
+        input.setSelectionRange(0, 99999);
+        try {
+        document.execCommand('copy');
+        alert('✅ URL copiada al portapapeles');
+        } catch (err) {
+        alert('❌ Error al copiar: ' + err);
+        }
+        }
+
+        function imprimirQR() {
+        window.print();
+        }
+
+        // =============================================
+        // GESTIÓN DEL TÚNEL
+        // =============================================
+
+        async function verificarEstadoTunel() {
+        try {
+        const response = await fetch('@Url.Action("Estado", "Tunel")', {
+        method: 'GET',
+        headers: {
+        'Content-Type': 'application/json'
+        }
+        });
+        const data = await response.json();
+
+        const alerta = document.getElementById('tunelEstadoAlerta');
+        const container = document.getElementById('tunelQRContainer');
+        const btnIniciar = document.getElementById('btnIniciarTunel');
+        const btnDetener = document.getElementById('btnDetenerTunel');
+
+        if (data.active && data.url) {
+        // Túnel activo
+        alerta.className = 'alert alert-success mb-4';
+        alerta.innerHTML = `
+        <div class="d-flex align-items-center justify-content-center">
+        <i class="bi bi-check-circle-fill me-2" style="font-size: 1.2rem;"></i>
+        <span><strong>Túnel ACTIVO</strong> - Acceso externo disponible</span>
+        </div>
+        `;
+        container.style.display = 'block';
+        btnIniciar.style.display = 'none';
+        btnDetener.style.display = 'inline-block';
+
+        // Actualizar inputs
+        document.getElementById('tunelUrl').value = data.url;
+        document.getElementById('tunelLink').href = data.url;
+
+        // Generar QR
+        generarQR(data.url);
+        } else {
+        // Túnel inactivo
+        alerta.className = 'alert alert-secondary mb-4';
+        alerta.innerHTML = `
+        <div class="d-flex align-items-center justify-content-center">
+        <i class="bi bi-x-circle-fill me-2" style="font-size: 1.2rem;"></i>
+        <span><strong>Túnel INACTIVO</strong> - Inicia el túnel para acceder desde fuera</span>
+        </div>
+        `;
+        container.style.display = 'none';
+        btnIniciar.style.display = 'inline-block';
+        btnDetener.style.display = 'none';
+
+        // Limpiar QR
+        if (qrCodeInstance) {
+        qrCodeInstance.clear();
+        qrCodeInstance = null;
+        }
+        document.getElementById('qrCodeImage').innerHTML = '';
+        }
+        } catch (error) {
+        console.error('Error al verificar estado:', error);
+        }
+        }
+
+        function generarQR(url) {
+        const qrContainer = document.getElementById('qrCodeImage');
+        qrContainer.innerHTML = '';
+
+        if (qrCodeInstance) {
+        qrCodeInstance.clear();
+        }
+
+        qrCodeInstance = new QRCode(qrContainer, {
+        text: url,
+        width: 200,
+        height: 200,
+        colorDark: "#000000",
+        colorLight: "#ffffff",
+        correctLevel: QRCode.CorrectLevel.H
+        });
+        }
+
+        async function iniciarTunel() {
+        const btn = document.getElementById('btnIniciarTunel');
+        const originalHtml = btn.innerHTML;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Iniciando...';
+        btn.disabled = true;
+
+        try {
+        const response = await fetch('@Url.Action("Iniciar", "Tunel")', {
+        method: 'POST',
+        headers: {
+        'Content-Type': 'application/json',
+        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+        }
+        });
+        const data = await response.json();
+
+        if (data.success) {
+        alert('✅ Túnel iniciado exitosamente');
+        setTimeout(() => {
+        verificarEstadoTunel();
+        }, 2000);
+        } else {
+        alert('❌ Error: ' + data.message);
+        }
+        } catch (error) {
+        alert('❌ Error al iniciar túnel: ' + error);
+        } finally {
+        btn.innerHTML = originalHtml;
+        btn.disabled = false;
+        }
+        }
+
+        async function detenerTunel() {
+        const btn = document.getElementById('btnDetenerTunel');
+        const originalHtml = btn.innerHTML;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Deteniendo...';
+        btn.disabled = true;
+
+        try {
+        const response = await fetch('@Url.Action("Detener", "Tunel")', {
+        method: 'POST',
+        headers: {
+        'Content-Type': 'application/json',
+        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+        }
+        });
+        const data = await response.json();
+
+        if (data.success) {
+        alert('✅ Túnel detenido');
+        verificarEstadoTunel();
+        } else {
+        alert('❌ Error: ' + data.message);
+        }
+        } catch (error) {
+        alert('❌ Error al detener túnel: ' + error);
+        } finally {
+        btn.innerHTML = originalHtml;
+        btn.disabled = false;
+        }
+        }
+
+        // Eventos
+        document.getElementById('btnIniciarTunel').addEventListener('click', iniciarTunel);
+        document.getElementById('btnDetenerTunel').addEventListener('click', detenerTunel);
+        document.getElementById('btnRefrescarTunel').addEventListener('click', verificarEstadoTunel);
+
+        // Al cargar la página, verificar estado
+        $(document).ready(function() {
+        $('#appUrl').on('click', function() {
+        $(this).select();
+        });
+
+        // Verificar estado al cambiar a la pestaña del túnel
+        document.getElementById('tunel-tab').addEventListener('shown.bs.tab', function() {
+        verificarEstadoTunel();
+        });
+        });
+    </script>
+}

@@ -1,0 +1,181 @@
+﻿@model OpticaClaridad.Models.AbonoCredito
+@{
+    ViewData["Title"] = "Eliminar Abono";
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle-fill"></i> @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="container mt-4">
+    <div class="card border-danger">
+        <div class="card-header bg-danger text-white">
+            <h3 class="card-title">
+                <i class="bi bi-trash3"></i> @ViewData["Title"]
+            </h3>
+        </div>
+        <div class="card-body">
+            <!-- Advertencia -->
+            <div class="alert alert-warning">
+                <h5 class="alert-heading">
+                    <i class="bi bi-exclamation-triangle-fill"></i> ¡ADVERTENCIA!
+                </h5>
+                <p class="mb-0">
+                    Esta acción <strong>ELIMINARÁ PERMANENTEMENTE</strong> este abono.
+                    <br /><span class="text-danger fw-bold">El saldo del crédito se ajustará automáticamente.</span>
+                </p>
+            </div>
+
+            <!-- Información del abono -->
+            <div class="row">
+                <div class="col-md-6">
+                    <h5 class="border-bottom pb-2 mb-3">Información del Abono</h5>
+                    <dl class="row">
+                        <dt class="col-sm-4">ID:</dt>
+                        <dd class="col-sm-8">#@Model.Id</dd>
+
+                        <dt class="col-sm-4">Fecha:</dt>
+                        <dd class="col-sm-8">@Model.FechaAbono.ToString("dd/MM/yyyy")</dd>
+
+                        <dt class="col-sm-4">Monto:</dt>
+                        <dd class="col-sm-8">
+                            <span class="fw-bold text-success">@Model.Monto.ToString("C")</span>
+                        </dd>
+
+                        <dt class="col-sm-4">Usuario:</dt>
+                        <dd class="col-sm-8">
+                            <small class="text-muted">@Model.UsuarioId</small>
+                        </dd>
+                    </dl>
+                </div>
+
+                <div class="col-md-6">
+                    <h5 class="border-bottom pb-2 mb-3">Información del Crédito</h5>
+                    @if (Model.Credito != null)
+                    {
+                        <dl class="row">
+                            <dt class="col-sm-4">Paciente:</dt>  <!-- 🔴 CAMBIO: Paciente -->
+                            <dd class="col-sm-8">
+                                <a asp-controller="Pacientes" asp-action="Details" asp-route-id="@Model.Credito.PacienteId">
+                                    <!-- 🔴 CAMBIO: Pacientes -->
+                                    @Model.Credito.Paciente?.Nombre  <!-- 🔴 CAMBIO: Paciente en lugar de Cliente -->
+                                </a>
+                            </dd>
+
+                            <dt class="col-sm-4">Crédito ID:</dt>
+                            <dd class="col-sm-8">#@Model.Credito.Id</dd>
+
+                            <dt class="col-sm-4">Saldo Actual:</dt>
+                            <dd class="col-sm-8">
+                                <span class="@(Model.Credito.Saldo > 0 ? "text-warning" : "text-success")">
+                                    @Model.Credito.Saldo.ToString("C")
+                                </span>
+                            </dd>
+
+                            <dt class="col-sm-4">Nuevo Saldo:</dt>
+                            <dd class="col-sm-8">
+                                <span class="text-danger fw-bold">
+                                    @((Model.Credito.Saldo + Model.Monto).ToString("C"))
+                                </span>
+                            </dd>
+                        </dl>
+                    }
+                    else
+                    {
+                        <div class="alert alert-danger">
+                            <i class="bi bi-exclamation-circle"></i>
+                            No se encontró información del crédito asociado.
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Observaciones -->
+            @if (!string.IsNullOrEmpty(Model.Observaciones))
+            {
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <h5 class="border-bottom pb-2 mb-3">Observaciones</h5>
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                @Model.Observaciones
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- Confirmación -->
+            <div class="card mt-4">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0">
+                        <i class="bi bi-clipboard-check"></i> Confirmación
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-circle"></i>
+                        <strong>¿Está seguro que desea eliminar este abono?</strong>
+                        <ul class="mt-2 mb-0">
+                            <li>El abono de <strong>@Model.Monto.ToString("C")</strong> será eliminado permanentemente</li>
+                            <li>
+                                El saldo del crédito aumentará de <strong>@Model.Credito?.Saldo.ToString("C")</strong> a
+                                <strong>@((Model.Credito?.Saldo + Model.Monto)?.ToString("C") ?? "N/A")</strong>
+                            </li>
+                            <li>Esta acción NO se puede deshacer</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Formulario de eliminación -->
+            <form asp-action="Delete" method="post">
+                <input type="hidden" asp-for="Id" />
+                <div class="mt-4 d-flex justify-content-between">
+                    <a asp-action="Index" asp-route-creditoId="@Model.CreditoId"
+                       class="btn btn-secondary">
+                        <i class="bi bi-arrow-left"></i> Cancelar
+                    </a>
+                    <div>
+                        <a asp-controller="Creditos" asp-action="Details" asp-route-id="@Model.CreditoId"
+                           class="btn btn-info me-2">
+                            <i class="bi bi-eye"></i> Ver Crédito
+                        </a>
+                        <button type="submit" class="btn btn-danger" id="btnEliminar">
+                            <i class="bi bi-trash3-fill"></i> ELIMINAR ABONO
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const btnEliminar = document.getElementById('btnEliminar');
+            if (btnEliminar) {
+                btnEliminar.addEventListener('click', function(e) {
+                    const confirmacion = confirm(
+                        '¿ESTÁ SEGURO QUE DESEA ELIMINAR ESTE ABONO?\n\n' +
+                        'Monto: @Model.Monto.ToString("C")\n' +
+                        'Fecha: @Model.FechaAbono.ToString("dd/MM/yyyy")\n' +
+                        'Crédito: #@Model.CreditoId\n\n' +
+                        'El saldo del crédito aumentará de @Model.Credito?.Saldo.ToString("C") ' +
+                        'a @((Model.Credito?.Saldo + Model.Monto)?.ToString("C") ?? "N/A")\n\n' +
+                        'Esta acción NO se puede deshacer.'
+                    );
+
+                    if (!confirmacion) {
+                        e.preventDefault();
+                    }
+                });
+            }
+        });
+    </script>
+}

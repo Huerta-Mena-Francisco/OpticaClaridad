@@ -1,0 +1,385 @@
+﻿﻿@using System.IO
+@model OpticaClaridad.Models.Producto
+
+@{
+    ViewData["Title"] = ViewData["Title"] ?? $"Eliminar: {Model.Nombre}";
+}
+
+@functions {
+    // Función para convertir ruta relativa a URL pública
+    string ObtenerUrlImagen(string rutaImagen)
+    {
+        var imagenDefault = "/Optica.jpg";
+
+        if (string.IsNullOrEmpty(rutaImagen))
+            return imagenDefault;
+
+        // Si ya es una URL absoluta o empieza con /archivos/, mantenerla
+        if (rutaImagen.StartsWith("/archivos/") || rutaImagen.StartsWith("http"))
+            return rutaImagen;
+
+        // Si es ruta antigua (empieza con /img/), intentar convertir
+        if (rutaImagen.StartsWith("/img/"))
+        {
+            var fileName = System.IO.Path.GetFileName(rutaImagen);
+            return $"/archivos/Imagenes/Productos/{fileName}";
+        }
+
+        // Si es ruta relativa del nuevo formato (sin /archivos/)
+        if (!rutaImagen.StartsWith("/"))
+        {
+            return $"/archivos/{rutaImagen.Replace('\\', '/')}";
+        }
+
+        return imagenDefault;
+    }
+}
+
+<div class="card">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
+        <div>
+            <h5 class="mb-0 text-danger"><i class="bi bi-exclamation-triangle"></i> @ViewData["Title"]</h5>
+        </div>
+        <div>
+            <a asp-action="Index" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Cancelar
+            </a>
+        </div>
+    </div>
+
+    <div class="card-body">
+        <!-- Mensaje de advertencia -->
+        <div class="alert alert-warning border-2">
+            <div class="d-flex align-items-start">
+                <div class="me-3">
+                    <i class="bi bi-exclamation-octagon-fill" style="font-size: 2rem;"></i>
+                </div>
+                <div>
+                    <h5 class="alert-heading">¡Advertencia!</h5>
+                    <p class="mb-1">
+                        Está a punto de eliminar el producto <strong>"@Model.Nombre"</strong>.
+                    </p>
+                    <p class="mb-0">
+                        <strong>Esta acción no eliminará el producto permanentemente, sino que lo marcará como inactivo.</strong>
+                        El producto dejará de aparecer en las ventas y reportes, pero permanecerá en la base de datos.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Información del producto -->
+        <div class="row">
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body text-center">
+                        @{
+                            var productoImagenUrl = ObtenerUrlImagen(Model.ImagenPrincipalUrl);
+
+                            // Si no hay imagen principal, buscar la primera imagen activa
+                            if (productoImagenUrl == "/Optica.jpg" && Model.Imagenes != null && Model.Imagenes.Any(i => i.Activa))
+                            {
+                                var primeraImagen = Model.Imagenes.FirstOrDefault(i => i.Activa);
+                                if (primeraImagen != null)
+                                {
+                                    productoImagenUrl = ObtenerUrlImagen(primeraImagen.ImagenUrl);
+                                }
+                            }
+                        }
+
+                        @if (productoImagenUrl != "/Optica.jpg")
+                        {
+                            <img src="@productoImagenUrl"
+                                 class="img-fluid rounded mb-3"
+                                 style="max-height: 200px; object-fit: contain;"
+                                 alt="@Model.Nombre"
+                                 onerror="this.src='/Optica.jpg'">
+                        }
+                        else
+                        {
+                            <div class="d-flex flex-column align-items-center justify-content-center"
+                                 style="height: 200px;">
+                                <img src="/Optica.jpg"
+                                     class="img-fluid"
+                                     style="max-height: 150px;"
+                                     alt="Sin imagen">
+                                <p class="text-muted mt-2">Sin imagen</p>
+                            </div>
+                        }
+
+                        <div class="d-flex justify-content-center gap-2 mb-2">
+                            @if (Model.EstadoStock == "AGOTADO")
+                            {
+                                <span class="badge bg-danger">AGOTADO</span>
+                            }
+                            else if (Model.EstadoStock == "BAJO")
+                            {
+                                <span class="badge bg-warning">BAJO</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-success">NORMAL</span>
+                            }
+                            <span class="badge bg-secondary">@Model.Codigo</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Información del Producto</h5>
+                        <table class="table table-sm">
+                            <tbody>
+                                <tr>
+                                    <th width="140">Nombre:</th>
+                                    <td>@Model.Nombre</td>
+                                </tr>
+                                <tr>
+                                    <th>Código:</th>
+                                    <td>@Model.Codigo</td>
+                                </tr>
+                                <tr>
+                                    <th>Categoría:</th>
+                                    <td>
+                                        @if (Model.Categoria != null)
+                                        {
+                                            <span class="badge bg-info">@Model.Categoria.Nombre</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">No asignada</span>
+                                        }
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Stock Actual:</th>
+                                    <td>
+                                        <span class="fw-bold @(Model.Stock == 0 ? "text-danger" : Model.Stock <= Model.StockMinimo ? "text-warning" : "text-success")">
+                                            @Model.Stock unidades
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Precio Venta:</th>
+                                    <td class="fw-bold text-success">@Model.PrecioVenta.ToString("C")</td>
+                                </tr>
+                                <tr>
+                                    <th>Valor en Inventario:</th>
+                                    <td class="fw-bold">
+                                        @((Model.Stock * Model.PrecioVenta).ToString("C"))
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Marca/Modelo:</th>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(Model.Marca) || !string.IsNullOrEmpty(Model.Modelo))
+                                        {
+                                            @:@(string.IsNullOrEmpty(Model.Marca) ? "" : Model.Marca) @(string.IsNullOrEmpty(Model.Modelo) ? "" : $"• {Model.Modelo}")
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">No especificado</span>
+                                        }
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Fecha Creación:</th>
+                                    <td>@Model.FechaCreacion.ToString("dd/MM/yyyy")</td>
+                                </tr>
+                                <tr>
+                                    <th>Disponible:</th>
+                                    <td>
+                                        @if (Model.Disponible)
+                                        {
+                                            <span class="badge bg-success"><i class="bi bi-check-circle"></i> Sí</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-danger"><i class="bi bi-x-circle"></i> No</span>
+                                        }
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Imágenes del producto -->
+        <div class="mt-4">
+            <h6 class="border-bottom pb-2"><i class="bi bi-images"></i> Imágenes del Producto</h6>
+
+            @{
+                var imagenesActivas = Model.Imagenes != null && Model.Imagenes.Any(i => i.Activa)
+                    ? Model.Imagenes.Where(i => i.Activa).OrderBy(i => i.Orden).ToList()
+                    : new List<ProductoImagen>();
+                var tieneImagenes = imagenesActivas.Any();
+            }
+
+            @if (tieneImagenes)
+            {
+                <div class="row g-2">
+                    @foreach (var imagen in imagenesActivas)
+                    {
+                        var imagenActualUrl = ObtenerUrlImagen(imagen.ImagenUrl);
+                        <div class="col-6 col-md-3 col-lg-2">
+                            <div class="card">
+                                <div class="card-body p-2 text-center">
+                                    <img src="@imagenActualUrl"
+                                         class="img-fluid rounded"
+                                         style="height: 80px; object-fit: cover; width: 100%;"
+                                         alt="Imagen producto"
+                                         onerror="this.src='/Optica.jpg'">
+                                    <small class="d-block mt-1">
+                                        @if (imagen.EsPrincipal)
+                                        {
+                                            <span class="badge bg-primary">Principal</span>
+                                        }
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+                <p class="text-muted small mt-2">
+                    <strong>@imagenesActivas.Count() imagen(es)</strong> serán eliminadas permanentemente.
+                </p>
+            }
+            else
+            {
+                <div class="text-center">
+                    <div class="d-flex flex-column align-items-center justify-content-center"
+                         style="height: 200px;">
+                        <i class="bi bi-camera text-secondary" style="font-size: 3rem;"></i>
+                        <p class="text-muted mt-2">No hay imágenes disponibles</p>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <!-- Impacto de la eliminación -->
+        <div class="mt-4">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <i class="bi bi-clipboard-x"></i> Impacto de la Eliminación
+                </div>
+                <div class="card-body">
+                    <ul class="mb-0">
+                        <li>El producto dejará de aparecer en el listado de productos activos</li>
+                        <li>No se podrá seleccionar en nuevas ventas</li>
+                        <li>No aparecerá en los reportes de ventas</li>
+                        <li><strong class="text-danger">TODAS LAS IMÁGENES ASOCIADAS SERÁN ELIMINADAS PERMANENTEMENTE</strong></li>
+                        <li>El historial de ventas anteriores se mantendrá intacto</li>
+                        <li>Puede reactivar el producto posteriormente si es necesario</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Formulario de eliminación -->
+        <div class="row mt-5">
+            <div class="col-12">
+                <form asp-action="Delete" method="post" id="deleteForm">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" asp-for="Id" />
+
+                    <div class="d-flex justify-content-end align-items-center">
+                        <div>
+                            <a asp-action="Index" class="btn btn-secondary me-2">
+                                <i class="bi bi-x-circle"></i> Cancelar
+                            </a>
+                            <button type="button" class="btn btn-danger" id="btnEliminar">
+                                <i class="bi bi-trash"></i> Marcar como Inactivo
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <!-- Incluir SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <script>
+        document.getElementById('btnEliminar').addEventListener('click', function() {
+        const productName = '@Html.Raw(Model.Nombre)';
+        const imagenCount = @(imagenesActivas?.Count() ?? 0);
+
+        Swal.fire({
+        title: '¿Marcar como inactivo?',
+        html: `
+        <div class="text-start">
+        <p>Está a punto de marcar como inactivo el producto:</p>
+        <p><strong class="text-danger">"${productName}"</strong></p>
+
+        <div class="alert alert-warning mt-3 mb-2">
+        <i class="bi bi-exclamation-triangle"></i>
+        <strong>Esta acción hará que:</strong>
+        <ul class="mb-0 mt-2">
+        <li>El producto desaparezca de los listados</li>
+        <li>No pueda usarse en nuevas ventas</li>
+        ${imagenCount > 0 ?
+        `<li><strong class="text-danger">${imagenCount} imágenes serán eliminadas permanentemente</strong></li>`
+        : ''}
+        </ul>
+        </div>
+
+        <p class="text-muted small mt-3">
+        <i class="bi bi-info-circle"></i> El producto permanecerá en la base de datos para mantener el historial de ventas.
+        </p>
+        </div>
+        `,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: '<i class="bi bi-trash"></i> Sí, marcar como inactivo',
+        cancelButtonText: '<i class="bi bi-x-circle"></i> Cancelar',
+        reverseButtons: true,
+        allowOutsideClick: false,
+        showLoaderOnConfirm: true,
+        preConfirm: () => {
+        return new Promise((resolve) => {
+        // Confirmación adicional para mayor seguridad
+        Swal.fire({
+        title: '¿Está completamente seguro?',
+        text: 'Esta acción no se puede deshacer y las imágenes se eliminarán permanentemente.',
+        icon: 'error',
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'SÍ, ELIMINAR',
+        cancelButtonText: 'Cancelar',
+        reverseButtons: true,
+        allowOutsideClick: false
+        }).then((secondResult) => {
+        if (secondResult.isConfirmed) {
+        // Mostrar spinner en el botón
+        const btn = document.getElementById('btnEliminar');
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Procesando...';
+        btn.disabled = true;
+
+        // Enviar formulario después de 1 segundo
+        setTimeout(() => {
+        document.getElementById('deleteForm').submit();
+        resolve();
+        }, 1000);
+        } else {
+        resolve(false);
+        }
+        });
+        });
+        }
+        }).then((result) => {
+        if (result.isConfirmed) {
+        // El formulario ya se envió en preConfirm
+        }
+        });
+        });
+    </script>
+}

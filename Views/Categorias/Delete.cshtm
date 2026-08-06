@@ -1,0 +1,145 @@
+﻿@model OpticaClaridad.Models.CategoriaProducto
+
+@{
+    ViewData["Title"] = "Desactivar Categoría";
+    bool tieneProductos = ViewBag.TieneProductos ?? false;
+    int cantidadProductos = ViewBag.CantidadProductos ?? 0;
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-lg-6 mx-auto">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-danger text-white py-3">
+                    <h4 class="mb-0">
+                        <i class="bi bi-exclamation-triangle me-2"></i>Desactivar Categoría
+                    </h4>
+                </div>
+                <div class="card-body p-4">
+                    
+                    @if (tieneProductos)
+                    {
+                        <div class="alert alert-danger">
+                            <i class="bi bi-x-circle me-2"></i>
+                            <strong>¡No se puede desactivar esta categoría!</strong>
+                            <p class="mb-0 mt-2">
+                                La categoría <strong>"@Model.Nombre"</strong> tiene 
+                                <span class="badge bg-danger">@cantidadProductos producto(s)</span> asociados.
+                            </p>
+                        </div>
+                        
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle me-2"></i>
+                            <strong>Alternativa:</strong> En lugar de desactivar, puede:
+                            <ul class="mb-0 mt-2">
+                                <li>Editar la categoría y marcarla como "Inactiva"</li>
+                                <li>Reasignar los productos a otra categoría primero</li>
+                                <li>Crear una nueva categoría y mover los productos</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            <a asp-action="Index" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left me-1"></i>Volver al Listado
+                            </a>
+                            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">
+                                <i class="bi bi-pencil me-1"></i>Editar Categoría
+                            </a>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            <strong>¿Está seguro de desactivar esta categoría?</strong>
+                            <p class="mb-0 mt-2">
+                                La categoría <strong>"@Model.Nombre"</strong> no podrá ser utilizada 
+                                para nuevos productos hasta que sea reactivada.
+                            </p>
+                        </div>
+                        
+                        <div class="card border-light mb-4">
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label fw-semibold text-muted">Nombre</label>
+                                        <p class="form-control-plaintext fw-semibold">@Model.Nombre</p>
+                                    </div>
+                                    
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label fw-semibold text-muted">Estado Actual</label>
+                                        <p class="form-control-plaintext">
+                                            @if (Model.Activo)
+                                            {
+                                                <span class="badge bg-success">
+                                                    <i class="bi bi-check-circle me-1"></i>Activa
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-danger">
+                                                    <i class="bi bi-x-circle me-1"></i>Inactiva
+                                                </span>
+                                            }
+                                        </p>
+                                    </div>
+                                    
+                                    <div class="col-md-12 mb-3">
+                                        <label class="form-label fw-semibold text-muted">Descripción</label>
+                                        <p class="form-control-plaintext">
+                                            @if (!string.IsNullOrEmpty(Model.Descripcion))
+                                            {
+                                                @Model.Descripcion
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted fst-italic">Sin descripción</span>
+                                            }
+                                        </p>
+                                    </div>
+                                    
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label fw-semibold text-muted">ID</label>
+                                        <p class="form-control-plaintext">@Model.Id</p>
+                                    </div>
+                                    
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label fw-semibold text-muted">Productos</label>
+                                        <p class="form-control-plaintext">
+                                            <span class="badge bg-success">
+                                                0 productos asociados
+                                            </span>
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <form asp-action="DeleteConfirmed">
+                            <input type="hidden" asp-for="Id" />
+                            @Html.AntiForgeryToken()
+                            
+                            <div class="d-flex justify-content-between">
+                                <a asp-action="Index" class="btn btn-outline-secondary">
+                                    <i class="bi bi-arrow-left me-1"></i>Cancelar
+                                </a>
+                                <button type="submit" class="btn btn-danger">
+                                    <i class="bi bi-trash me-1"></i>Sí, Desactivar Categoría
+                                </button>
+                            </div>
+                        </form>
+                    }
+                </div>
+            </div>
+            
+            @if (!tieneProductos)
+            {
+                <div class="alert alert-info mt-4">
+                    <i class="bi bi-info-circle me-2"></i>
+                    <strong>Información:</strong> Las categorías desactivadas no se eliminan permanentemente.
+                    Pueden ser reactivadas en cualquier momento desde la lista de categorías.
+                </div>
+            }
+        </div>
+    </div>
+</div>

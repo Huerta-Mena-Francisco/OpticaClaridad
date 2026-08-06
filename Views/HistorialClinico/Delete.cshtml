@@ -1,0 +1,106 @@
+﻿@model OpticaClaridad.Models.HistorialClinico
+
+@{
+    ViewData["Title"] = "Eliminar Historial Clínico";
+    var fechaExamen = Model.FechaExamen.ToString("dd/MM/yyyy");
+}
+
+<div class="container mt-4">
+    <div class="card border-danger">
+        <div class="card-header bg-danger text-white">
+            <h4><i class="fas fa-trash-alt me-2"></i>@ViewData["Title"]</h4>
+            <span class="badge bg-dark float-end">ID: @Model.Id</span>
+        </div>
+        <div class="card-body">
+            <div class="alert alert-danger">
+                <h5 class="alert-heading">
+                    <i class="fas fa-exclamation-triangle me-2"></i>¡Atención!
+                </h5>
+                <p class="mb-0">
+                    Está a punto de eliminar permanentemente este historial clínico.
+                    <strong>Esta acción no se puede deshacer.</strong>
+                </p>
+            </div>
+
+            <h5>¿Está seguro que desea eliminar este historial clínico?</h5>
+
+            <!-- Información del historial -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p>
+                                <strong>Paciente:</strong>
+                                <a asp-controller="Pacientes" asp-action="Details" asp-route-id="@Model.PacienteId"
+                                   class="text-decoration-none">
+                                    @Model.Paciente?.Nombre
+                                </a>
+                            </p>
+                            <p><strong>Fecha Examen:</strong> @fechaExamen</p>
+                            <p><strong>Optometrista:</strong> @Model.Optometrista</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Tipo de Examen:</strong> @Model.TipoExamen</p>
+                            <p><strong>Graduación O.D.:</strong> @Model.GraduacionODFormateada</p>
+                            <p><strong>Graduación O.I.:</strong> @Model.GraduacionOIFormateada</p>
+                        </div>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(Model.ObservacionesExamen))
+                    {
+                        <div class="mt-3">
+                            <strong>Observaciones:</strong>
+                            <p class="mb-0">@Model.ObservacionesExamen</p>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Formulario de eliminación -->
+            <form asp-action="Delete">
+                <input type="hidden" asp-for="Id" />
+
+                <div class="alert alert-dark">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="confirmDelete" required />
+                        <label class="form-check-label" for="confirmDelete">
+                            Confirmo que deseo ELIMINAR PERMANENTEMENTE este historial clínico
+                        </label>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-between">
+                    <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-info">
+                        <i class="fas fa-eye me-1"></i>Ver Detalles
+                    </a>
+                    <div>
+                        <a asp-action="Index" asp-route-pacienteId="@Model.PacienteId" class="btn btn-secondary me-2">
+                            <i class="fas fa-times me-1"></i>Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-danger" id="btnEliminar" disabled>
+                            <i class="fas fa-trash-alt me-1"></i>Eliminar Permanentemente
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const confirmCheckbox = document.getElementById('confirmDelete');
+            const deleteButton = document.getElementById('btnEliminar');
+
+            if (confirmCheckbox && deleteButton) {
+                confirmCheckbox.addEventListener('change', function() {
+                    deleteButton.disabled = !this.checked;
+                });
+
+                // Enfocar el checkbox automáticamente
+                confirmCheckbox.focus();
+            }
+        });
+    </script>
+}

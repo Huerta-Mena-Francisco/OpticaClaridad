@@ -1,0 +1,670 @@
+﻿@{
+    ViewData["Title"] = "Dashboard - Administrador";
+    var esAdmin = ViewBag.EsAdmin ?? false;
+    var nombreUsuario = ViewBag.NombreUsuario ?? "Usuario";
+    var fechaActual = ViewBag.FechaActual ?? DateTime.Now.ToString("dddd, dd MMMM yyyy");
+    var fechaHoy = DateTime.Now;
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Óptica Claridad</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+
+            body {
+                font-family: 'Inter', sans-serif;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                min-height: 100vh;
+                padding: 20px;
+            }
+
+            /* Dashboard Container */
+            .dashboard-wrapper {
+                max-width: 1400px;
+                margin: 0 auto;
+            }
+
+            /* Header Moderno */
+            .modern-header {
+                background: rgba(255, 255, 255, 0.95);
+                backdrop-filter: blur(10px);
+                border-radius: 24px;
+                padding: 24px 32px;
+                margin-bottom: 32px;
+                box-shadow: 0 20px 35px -10px rgba(0, 0, 0, 0.1);
+                border: 1px solid rgba(255, 255, 255, 0.2);
+            }
+
+            .header-content {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                flex-wrap: wrap;
+                gap: 20px;
+            }
+
+            .logo-area {
+                display: flex;
+                align-items: center;
+                gap: 15px;
+            }
+
+            .logo-icon {
+                width: 50px;
+                height: 50px;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                border-radius: 15px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 24px;
+                color: white;
+            }
+
+            .logo-text h2 {
+                font-size: 1.5rem;
+                font-weight: 700;
+                color: #1a1a2e;
+                margin: 0;
+            }
+
+            .logo-text p {
+                font-size: 0.8rem;
+                color: #666;
+                margin: 0;
+            }
+
+            .user-info {
+                display: flex;
+                align-items: center;
+                gap: 20px;
+            }
+
+            .user-badge {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                padding: 8px 16px;
+                background: #f0f0f0;
+                border-radius: 40px;
+            }
+
+            .user-avatar {
+                width: 40px;
+                height: 40px;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: white;
+                font-weight: bold;
+            }
+
+            .datetime {
+                text-align: right;
+            }
+
+            .date {
+                font-size: 0.85rem;
+                color: #666;
+            }
+
+            .time {
+                font-size: 1.2rem;
+                font-weight: 700;
+                color: #1a1a2e;
+            }
+
+            /* Stats Cards */
+            .stats-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+                gap: 24px;
+                margin-bottom: 32px;
+            }
+
+            .stat-card {
+                background: white;
+                border-radius: 20px;
+                padding: 24px;
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+                transition: all 0.3s ease;
+                position: relative;
+                overflow: hidden;
+            }
+
+                .stat-card::before {
+                    content: '';
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    width: 4px;
+                    height: 100%;
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                }
+
+                .stat-card:hover {
+                    transform: translateY(-5px);
+                    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+                }
+
+            .stat-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 16px;
+            }
+
+            .stat-title {
+                font-size: 0.85rem;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+                color: #888;
+                font-weight: 600;
+            }
+
+            .stat-icon {
+                width: 48px;
+                height: 48px;
+                background: linear-gradient(135deg, #667eea20 0%, #764ba220 100%);
+                border-radius: 15px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 24px;
+            }
+
+            .stat-value {
+                font-size: 2rem;
+                font-weight: 800;
+                color: #1a1a2e;
+                margin-bottom: 8px;
+            }
+
+            .stat-trend {
+                font-size: 0.75rem;
+                display: flex;
+                align-items: center;
+                gap: 5px;
+            }
+
+            .trend-up {
+                color: #10b981;
+            }
+
+            .trend-down {
+                color: #ef4444;
+            }
+
+            /* Secciones */
+            .section-title {
+                font-size: 1.3rem;
+                font-weight: 700;
+                color: white;
+                margin-bottom: 20px;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+
+                .section-title i {
+                    font-size: 1.5rem;
+                }
+
+            /* Módulos Grid */
+            .modules-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+                gap: 20px;
+                margin-bottom: 32px;
+            }
+
+            .module-card {
+                background: white;
+                border-radius: 18px;
+                padding: 20px;
+                transition: all 0.3s ease;
+                cursor: pointer;
+                text-decoration: none;
+                color: inherit;
+                display: flex;
+                align-items: center;
+                gap: 18px;
+                box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+                border: 1px solid #eee;
+            }
+
+                .module-card:hover {
+                    transform: translateY(-3px);
+                    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+                    border-color: #667eea;
+                }
+
+            .module-icon {
+                width: 55px;
+                height: 55px;
+                background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+                border-radius: 16px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 28px;
+                color: #667eea;
+            }
+
+            .module-info h4 {
+                font-size: 1rem;
+                font-weight: 700;
+                margin: 0 0 5px 0;
+                color: #1a1a2e;
+            }
+
+            .module-info p {
+                font-size: 0.75rem;
+                color: #888;
+                margin: 0;
+            }
+
+            /* Acciones Rápidas */
+            .quick-actions {
+                display: flex;
+                gap: 15px;
+                flex-wrap: wrap;
+                margin-bottom: 32px;
+            }
+
+            .action-btn {
+                padding: 12px 24px;
+                border-radius: 40px;
+                font-weight: 600;
+                font-size: 0.9rem;
+                border: none;
+                cursor: pointer;
+                transition: all 0.3s;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+
+            .action-btn-primary {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+            }
+
+                .action-btn-primary:hover {
+                    transform: translateY(-2px);
+                    box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+                }
+
+            .action-btn-secondary {
+                background: white;
+                color: #667eea;
+                border: 2px solid #667eea;
+            }
+
+                .action-btn-secondary:hover {
+                    background: #667eea;
+                    color: white;
+                }
+
+            /* Soporte Button */
+            .support-fab {
+                position: fixed;
+                bottom: 30px;
+                right: 30px;
+                width: 60px;
+                height: 60px;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: white;
+                font-size: 28px;
+                cursor: pointer;
+                box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+                transition: all 0.3s;
+                z-index: 1000;
+                border: none;
+            }
+
+                .support-fab:hover {
+                    transform: scale(1.1);
+                    box-shadow: 0 15px 35px rgba(102, 126, 234, 0.5);
+                }
+
+            /* Modal Moderno */
+            .modal-modern .modal-content {
+                border-radius: 24px;
+                border: none;
+                overflow: hidden;
+            }
+
+            .modal-modern .modal-header {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                border: none;
+                padding: 20px 25px;
+            }
+
+            /* Responsive */
+            @@media (max-width: 768px) {
+                body {
+                    padding: 10px;
+                }
+
+                .header-content {
+                    flex-direction: column;
+                    text-align: center;
+                }
+
+                .user-info {
+                    flex-direction: column;
+                }
+
+                .datetime {
+                    text-align: center;
+                }
+
+                .stats-grid {
+                    grid-template-columns: 1fr;
+                }
+
+                .modules-grid {
+                    grid-template-columns: 1fr;
+                }
+            }
+    </style>
+</head>
+<body>
+    <div class="dashboard-wrapper">
+        <!-- Header Moderno -->
+        <div class="modern-header">
+            <div class="header-content">
+                <div class="logo-area">
+                    <div class="logo-icon">
+                        <i class="bi bi-eye-fill"></i>
+                    </div>
+                    <div class="logo-text">
+                        <h2>Óptica Claridad</h2>
+                        <p>Sistema de Gestión Integral</p>
+                    </div>
+                </div>
+                <div class="user-info">
+                    <div class="user-badge">
+                        <div class="user-avatar">
+                            @nombreUsuario.Substring(0, 1).ToUpper()
+                        </div>
+                        <div>
+                            <div><strong>@nombreUsuario</strong></div>
+                            <small class="text-muted">Administrador</small>
+                        </div>
+                    </div>
+                    <div class="datetime">
+                        <div class="date">@fechaActual</div>
+                        <div class="time" id="horaActual">--:--:--</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Cards -->
+        <!-- Stats Cards -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-header">
+                    <span class="stat-title">VENTAS HOY</span>
+                    <div class="stat-icon"><i class="bi bi-cart"></i></div>
+                </div>
+                <div class="stat-value">$@(ViewBag.VentasHoy?.ToString("N2") ?? "0.00")</div>
+                <div class="stat-trend"><span class="trend-up"><i class="bi bi-arrow-up"></i> Hoy</span></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-header">
+                    <span class="stat-title">PRODUCTOS</span>
+                    <div class="stat-icon"><i class="bi bi-box"></i></div>
+                </div>
+                <div class="stat-value">@(ViewBag.TotalProductos ?? 0)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-header">
+                    <span class="stat-title">PACIENTES</span>
+                    <div class="stat-icon"><i class="bi bi-people"></i></div>
+                </div>
+                <div class="stat-value">@(ViewBag.TotalPacientes ?? 0)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-header">
+                    <span class="stat-title">INGRESOS MES</span>
+                    <div class="stat-icon"><i class="bi bi-currency-dollar"></i></div>
+                </div>
+                <div class="stat-value">$@(ViewBag.VentasMes?.ToString("N2") ?? "0.00")</div>
+            </div>
+        </div>
+
+        <!-- Acciones Rápidas -->
+        <div class="quick-actions">
+            <button class="action-btn action-btn-primary" onclick="location.href='@Url.Action("Create", "Venta")'">
+                <i class="bi bi-cart-plus"></i> Nueva Venta
+            </button>
+            <button class="action-btn action-btn-primary" onclick="location.href='@Url.Action("Create", "Productos")'">
+                <i class="bi bi-box-seam"></i> Nuevo Producto
+            </button>
+            <button class="action-btn action-btn-secondary" onclick="location.href='@Url.Action("QR", "Acceso")'">
+                <i class="bi bi-qr-code"></i> QR de Acceso
+            </button>
+            <button class="action-btn action-btn-secondary" onclick="location.href='@Url.Action("Dashboard", "Reportes")'">
+                <i class="bi bi-graph-up"></i> Ver Reportes
+            </button>
+        </div>
+
+        <!-- Módulos Principales -->
+        <div class="section-title">
+            <i class="bi bi-grid-3x3-gap-fill"></i>
+            <span>Módulos del Sistema</span>
+        </div>
+        <div class="modules-grid">
+            <a href="@Url.Action("Index", "Venta")" class="module-card">
+                <div class="module-icon"><i class="bi bi-cart"></i></div>
+                <div class="module-info">
+                    <h4>Ventas</h4>
+                    <p>Gestión de ventas y transacciones</p>
+                </div>
+            </a>
+            <a href="@Url.Action("Index", "Productos")" class="module-card">
+                <div class="module-icon"><i class="bi bi-box"></i></div>
+                <div class="module-info">
+                    <h4>Productos</h4>
+                    <p>Inventario y catálogo</p>
+                </div>
+            </a>
+            <a href="@Url.Action("Index", "Pacientes")" class="module-card">
+                <div class="module-icon"><i class="bi bi-person-badge"></i></div>
+                <div class="module-info">
+                    <h4>Pacientes</h4>
+                    <p>Expedientes médicos</p>
+                </div>
+            </a>
+            <a href="@Url.Action("Index", "Creditos")" class="module-card">
+                <div class="module-icon"><i class="bi bi-credit-card"></i></div>
+                <div class="module-info">
+                    <h4>Créditos</h4>
+                    <p>Financiamiento y pagos</p>
+                </div>
+            </a>
+            <a href="@Url.Action("Index", "Citas")" class="module-card">
+                <div class="module-icon"><i class="bi bi-calendar-check"></i></div>
+                <div class="module-info">
+                    <h4>Citas</h4>
+                    <p>Agenda y programación</p>
+                </div>
+            </a>
+            <a href="@Url.Action("Index", "Reportes")" class="module-card">
+                <div class="module-icon"><i class="bi bi-file-bar-graph"></i></div>
+                <div class="module-info">
+                    <h4>Reportes</h4>
+                    <p>Estadísticas y análisis</p>
+                </div>
+            </a>
+            <a href="@Url.Action("Index", "Usuarios")" class="module-card">
+                <div class="module-icon"><i class="bi bi-person-gear"></i></div>
+                <div class="module-info">
+                    <h4>Usuarios</h4>
+                    <p>Control de acceso</p>
+                </div>
+            </a>
+            <a href="@Url.Action("Index", "Backup")" class="module-card">
+                <div class="module-icon"><i class="bi bi-database"></i></div>
+                <div class="module-info">
+                    <h4>Backup BD</h4>
+                    <p>Copia de seguridad</p>
+                </div>
+            </a>
+        </div>
+
+        <!-- Sección de Soporte -->
+        <div class="section-title">
+            <i class="bi bi-headset"></i>
+            <span>Soporte y Recursos</span>
+        </div>
+        <div class="modules-grid">
+           <a href="#" onclick="abrirModalSoporte(); return false;" class="module-card">
+                <div class="module-icon"><i class="bi bi-chat-dots"></i></div>
+                <div class="module-info">
+                    <h4>Soporte Técnico</h4>
+                    <p>Ayuda y asistencia</p>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <!-- Botón flotante de soporte -->
+    <button class="support-fab" onclick="abrirModalSoporte()">
+        <i class="bi bi-headset"></i>
+    </button>
+
+    <!-- Modal de Soporte -->
+    <div class="modal fade modal-modern" id="modalSoporte" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-headset me-2"></i>Soporte Técnico</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6><i class="bi bi-whatsapp text-success"></i> WhatsApp</h6>
+                            <p><strong>656 149 3731</strong><br><small>Respuesta inmediata</small></p>
+                            <hr>
+                            <h6><i class="bi bi-envelope text-danger"></i> Correo</h6>
+                            <p><strong>javihuerta335@hotmail.com</strong><br><small>Respuesta en 24h</small></p>
+                            <hr>
+                            <h6><i class="bi bi-clock"></i> Horario</h6>
+                            <p>Lun-Vie: 9:00 - 18:00<br>Sáb: 9:00 - 14:00</p>
+                        </div>
+                        <div class="col-md-6">
+                            <form id="formSoporte">
+                                <div class="mb-3">
+                                    <label class="form-label">Asunto</label>
+                                    <select class="form-select" id="asuntoSoporte" required>
+                                        <option value="">Seleccione...</option>
+                                        <option>Problema con ventas</option>
+                                        <option>Error en inventario</option>
+                                        <option>Problema con pacientes</option>
+                                        <option>Reportes no funcionan</option>
+                                        <option>Otro</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Descripción</label>
+                                    <textarea class="form-control" id="descripcionSoporte" rows="4" required></textarea>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Prioridad</label>
+                                    <select class="form-select" id="prioridadSoporte">
+                                        <option>Baja</option>
+                                        <option selected>Media</option>
+                                        <option>Alta</option>
+                                        <option>Crítica</option>
+                                    </select>
+                                </div>
+                                <button type="button" class="btn btn-primary w-100" onclick="enviarSoporte()">
+                                    <i class="bi bi-send"></i> Enviar Solicitud
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        // Actualizar hora
+        function actualizarHora() {
+        const ahora = new Date();
+        document.getElementById('horaActual').textContent = ahora.toLocaleTimeString('es-MX');
+        }
+        setInterval(actualizarHora, 1000);
+        actualizarHora();
+
+        // Cargar estadísticas
+        async function cargarEstadisticas() {
+        try {
+        const response = await fetch('/Reportes/GetDashboardStats');
+        if (response.ok) {
+        const data = await response.json();
+        const container = document.getElementById('statsContainer');
+        if (container && data) {
+        container.innerHTML = `
+        <div class="stat-card"><div class="stat-header"><span class="stat-title">VENTAS HOY</span><div class="stat-icon"><i class="bi bi-cart"></i></div></div><div class="stat-value">${data.ventasHoy || 0}</div><div class="stat-trend"><span class="trend-up"><i class="bi bi-arrow-up"></i> +12%</span></div></div>
+        <div class="stat-card"><div class="stat-header"><span class="stat-title">PRODUCTOS</span><div class="stat-icon"><i class="bi bi-box"></i></div></div><div class="stat-value">${data.totalProductos || 0}</div></div>
+        <div class="stat-card"><div class="stat-header"><span class="stat-title">CLIENTES</span><div class="stat-icon"><i class="bi bi-people"></i></div></div><div class="stat-value">${data.totalClientes || 0}</div></div>
+        <div class="stat-card"><div class="stat-header"><span class="stat-title">INGRESOS MES</span><div class="stat-icon"><i class="bi bi-currency-dollar"></i></div></div><div class="stat-value">$${(data.ingresosMes || 0).toLocaleString()}</div></div>
+        `;
+        }
+        }
+        } catch (error) {
+        console.error('Error cargando estadísticas:', error);
+        }
+        }
+        cargarEstadisticas();
+
+        // Modal soporte
+        function abrirModalSoporte() {
+        new bootstrap.Modal(document.getElementById('modalSoporte')).show();
+        }
+
+        function enviarSoporte() {
+        const asunto = document.getElementById('asuntoSoporte')?.value;
+        const descripcion = document.getElementById('descripcionSoporte')?.value;
+        const prioridad = document.getElementById('prioridadSoporte')?.value;
+
+        if (!asunto || !descripcion) {
+        Swal.fire('Error', 'Complete todos los campos', 'error');
+        return;
+        }
+
+        const mensaje = `*Soporte Óptica Claridad*%0A%0A*Asunto:* ${asunto}%0A*Prioridad:* ${prioridad}%0A*Descripción:* ${descripcion}`;
+        window.open(`https://wa.me/526561493731?text=${mensaje}`, '_blank');
+
+        bootstrap.Modal.getInstance(document.getElementById('modalSoporte'))?.hide();
+        Swal.fire('¡Enviado!', 'Su solicitud ha sido enviada', 'success');
+        document.getElementById('formSoporte')?.reset();
+        }
+    </script>
+</body>
+</html>

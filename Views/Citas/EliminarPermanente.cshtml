@@ -1,0 +1,65 @@
+﻿@model OpticaClaridad.Models.Cita
+
+@{
+    ViewData["Title"] = "Eliminar Permanentemente";
+}
+
+<div class="container mt-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-action="CitasEliminadas">Citas Eliminadas</a></li>
+            <li class="breadcrumb-item active">Eliminar Permanentemente</li>
+        </ol>
+    </nav>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h4><i class="bi bi-exclamation-triangle"></i> @ViewData["Title"]</h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-danger">
+                        <h5><i class="bi bi-exclamation-octagon"></i> ¡ADVERTENCIA!</h5>
+                        <p class="mb-0">Está a punto de eliminar PERMANENTEMENTE esta cita de la base de datos. Esta acción NO SE PUEDE DESHACER.</p>
+                    </div>
+
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <h6>Información de la cita que será eliminada:</h6>
+                            <dl class="row mt-3">
+                                <dt class="col-sm-4">Cliente:</dt>
+                                <dd class="col-sm-8">@Model.ClienteNombre</dd>
+
+                                <dt class="col-sm-4">Fecha Original:</dt>
+                                <dd class="col-sm-8">@Model.FechaHora.ToString("dd/MM/yyyy HH:mm")</dd>
+
+                                <dt class="col-sm-4">Tipo:</dt>
+                                <dd class="col-sm-8">@Model.TipoCita</dd>
+
+                                <dt class="col-sm-4">Estado:</dt>
+                                <dd class="col-sm-8">@Model.Estado</dd>
+
+                                <dt class="col-sm-4">Motivo:</dt>
+                                <dd class="col-sm-8">@Model.Motivo</dd>
+
+                                <dt class="col-sm-4">Eliminada el:</dt>
+                                <dd class="col-sm-8">@Model.FechaEliminacion?.ToString("dd/MM/yyyy HH:mm")</dd>
+                            </dl>
+                        </div>
+                    </div>
+
+                    <form asp-action="EliminarPermanente">
+                        <input type="hidden" asp-for="Id" />
+                        <div class="d-flex justify-content-between">
+                            <a asp-action="CitasEliminadas" class="btn btn-secondary">Cancelar</a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="bi bi-trash3"></i> Sí, Eliminar Permanentemente
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

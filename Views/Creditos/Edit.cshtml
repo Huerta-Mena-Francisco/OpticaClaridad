@@ -1,0 +1,473 @@
+﻿@model OpticaClaridad.Models.Credito
+@{
+    ViewData["Title"] = "Editar Crédito";
+    var pacientes = ViewBag.Pacientes as List<Paciente>;
+}
+
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header bg-warning text-dark">
+            <h3 class="card-title">
+                <i class="bi bi-pencil-square"></i> @ViewData["Title"]
+            </h3>
+        </div>
+        <div class="card-body">
+            <!-- Información del crédito actual -->
+            <div class="alert alert-info mb-4">
+                <h6 class="alert-heading">
+                    <i class="bi bi-credit-card"></i> Información Actual del Crédito
+                </h6>
+                <div class="row">
+                    <div class="col-md-3">
+                        <small class="text-muted">ID:</small><br />
+                        <strong>#@Model.Id</strong>
+                    </div>
+                    <div class="col-md-3">
+                        <small class="text-muted">Paciente:</small><br />
+                        <strong>@Model.Paciente?.Nombre</strong>
+                    </div>
+                    <div class="col-md-3">
+                        <small class="text-muted">Saldo Actual:</small><br />
+                        <strong class="text-warning">@Model.Saldo.ToString("C")</strong>
+                    </div>
+                    <div class="col-md-3">
+                        <small class="text-muted">Estado:</small><br />
+                        <span class="badge bg-@(Model.Estado == "PAGADO" ? "success" : "primary")">
+                            @Model.Estado
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <form asp-action="Edit">
+                <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                <input type="hidden" asp-for="Id" />
+                <input type="hidden" asp-for="FechaCreacion" />
+                <input type="hidden" asp-for="VentaId" />
+
+                <!-- CAMPO PACIENTE (solo editable si no tiene venta asociada) -->
+                <div class="row mb-4">
+                    <div class="col-md-12">
+                        <div class="card">
+                            <div class="card-header bg-primary text-white">
+                                <h6 class="mb-0">
+                                    <i class="bi bi-person"></i> Información del Paciente
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        @if (Model.VentaId.HasValue)
+                                        {
+                                            <div class="form-group">
+                                                <label class="form-label fw-bold">Paciente</label>
+                                                <input type="text" class="form-control" value="@Model.Paciente?.Nombre" readonly disabled />
+                                                <input type="hidden" asp-for="PacienteId" />
+                                                <small class="text-muted">
+                                                    <i class="bi bi-lock"></i> No se puede cambiar porque está asociado a una venta
+                                                </small>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <div class="form-group">
+                                                <label asp-for="PacienteId" class="form-label fw-bold required">Paciente *</label>
+                                                <select asp-for="PacienteId" class="form-select" asp-items="@(new SelectList(pacientes, "Id", "Nombre", Model.PacienteId))">
+                                                    <option value="">-- Seleccionar Paciente --</option>
+                                                </select>
+                                                <span asp-validation-for="PacienteId" class="text-danger"></span>
+                                            </div>
+                                        }
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="card border-info">
+                                            <div class="card-body">
+                                                <h6 class="card-title text-muted">Información del Paciente</h6>
+                                                @if (Model.Paciente != null)
+                                                {
+                                                    <div>
+                                                        <strong>@Model.Paciente.Nombre</strong><br />
+                                                        <small class="text-muted">
+                                                            <i class="bi bi-telephone me-1"></i>@(Model.Paciente.Telefono ?? "Sin teléfono")<br />
+                                                            <i class="bi bi-envelope me-1"></i>@(Model.Paciente.Email ?? "Sin email")
+                                                        </small>
+                                                    </div>
+                                                }
+                                                else
+                                                {
+                                                    <p class="text-muted mb-0">Seleccione un paciente</p>
+                                                }
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Monto del crédito y observaciones -->
+                <div class="row mb-4">
+                    <div class="col-md-12">
+                        <div class="card">
+                            <div class="card-header bg-warning text-dark">
+                                <h6 class="mb-0">
+                                    <i class="bi bi-currency-dollar"></i> Monto del Crédito
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <!-- MONTO TOTAL -->
+                                    <div class="col-md-6 mb-3">
+                                        <label asp-for="MontoTotal" class="form-label fw-bold required">Monto Total *</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">$</span>
+                                            <input asp-for="MontoTotal" class="form-control"
+                                                   placeholder="0.00" step="0.01" min="0.01" required
+                                                   id="MontoTotal" />
+                                        </div>
+                                        <span asp-validation-for="MontoTotal" class="text-danger"></span>
+                                        <small class="text-muted">Monto total del crédito otorgado</small>
+                                    </div>
+
+                                    <!-- SALDO ACTUAL (solo lectura) -->
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label fw-bold">Saldo Actual</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">$</span>
+                                            <input type="text" class="form-control" value="@Model.Saldo.ToString("N2")" readonly disabled />
+                                        </div>
+                                        <small class="text-muted">Calculado automáticamente según los abonos</small>
+                                    </div>
+
+                                    <!-- OBSERVACIONES -->
+                                    <div class="col-md-12 mb-3">
+                                        <label asp-for="Observaciones" class="form-label fw-bold">Observaciones</label>
+                                        <textarea asp-for="Observaciones" class="form-control" rows="3"
+                                                  placeholder="Motivo del crédito, condiciones especiales, etc." maxlength="500">@Model.Observaciones</textarea>
+                                        <span asp-validation-for="Observaciones" class="text-danger"></span>
+                                        <small class="text-muted">Máximo 500 caracteres</small>
+                                        <div class="text-end mt-1">
+                                            <small class="text-muted">
+                                                <span id="contadorCaracteres">@(Model.Observaciones?.Length ?? 0)</span>/500
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Plazo del crédito -->
+                <div class="row mb-4">
+                    <div class="col-md-12">
+                        <div class="card">
+                            <div class="card-header bg-info text-white">
+                                <h6 class="mb-0">
+                                    <i class="bi bi-calendar"></i> Plazo del Crédito
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <!-- Sistema tradicional -->
+                                    <div class="col-md-6 mb-3">
+                                        <label asp-for="DiasCredito" class="form-label fw-bold">Días de Crédito</label>
+                                        <input asp-for="DiasCredito" class="form-control" type="number"
+                                               min="1" max="365" id="DiasCredito" />
+                                        <span asp-validation-for="DiasCredito" class="text-danger"></span>
+                                        <small class="text-muted">Número de días para pagar (1-365)</small>
+                                    </div>
+
+                                    <!-- Fecha de Vencimiento -->
+                                    <div class="col-md-6 mb-3">
+                                        <label asp-for="FechaVencimiento" class="form-label fw-bold">Fecha de Vencimiento</label>
+                                        <input asp-for="FechaVencimiento" class="form-control" type="date"
+                                               id="FechaVencimiento" />
+                                        <span asp-validation-for="FechaVencimiento" class="text-danger"></span>
+                                        <small class="text-muted">Fecha límite para pagar el crédito</small>
+                                    </div>
+                                </div>
+
+                                <!-- Sistema de pagos por períodos (solo si no tiene abonos) -->
+                                @if (!Model.Abonos.Any())
+                                {
+                                    <div class="row mt-3">
+                                        <div class="col-md-12">
+                                            <h6 class="border-bottom pb-2">
+                                                <i class="bi bi-calendar-week"></i> Sistema de Pagos por Períodos (Opcional)
+                                            </h6>
+                                            <div class="row">
+                                                <div class="col-md-4 mb-3">
+                                                    <label asp-for="TipoPeriodo" class="form-label">Tipo de Período</label>
+                                                    <select asp-for="TipoPeriodo" class="form-select" id="tipoPeriodoSelect">
+                                                        <option value="">-- Sin período --</option>
+                                                        <option value="SEMANAS">Semanas</option>
+                                                        <option value="MESES">Meses</option>
+                                                    </select>
+                                                    <span asp-validation-for="TipoPeriodo" class="text-danger"></span>
+                                                </div>
+
+                                                <div class="col-md-4 mb-3">
+                                                    <label asp-for="CantidadPeriodo" class="form-label">Cantidad de Períodos</label>
+                                                    <input asp-for="CantidadPeriodo" class="form-control" type="number"
+                                                           min="1" max="52" id="CantidadPeriodo" />
+                                                    <span asp-validation-for="CantidadPeriodo" class="text-danger"></span>
+                                                </div>
+
+                                                <div class="col-md-4 mb-3">
+                                                    <label asp-for="MontoPeriodo" class="form-label">Monto por Período</label>
+                                                    <div class="input-group">
+                                                        <span class="input-group-text">$</span>
+                                                        <input asp-for="MontoPeriodo" class="form-control"
+                                                               placeholder="0.00" step="0.01" min="0"
+                                                               id="MontoPeriodo" />
+                                                    </div>
+                                                    <span asp-validation-for="MontoPeriodo" class="text-danger"></span>
+                                                </div>
+                                            </div>
+
+                                            <div class="alert alert-info mt-2" id="periodoCalculo" style="display: none;">
+                                                <i class="bi bi-calculator"></i>
+                                                <strong>Cálculo:</strong>
+                                                <span id="calculoText"></span>
+                                                <br />
+                                                <small>Total estimado: <span id="totalEstimado" class="fw-bold"></span></small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="alert alert-secondary mt-3">
+                                        <i class="bi bi-info-circle"></i>
+                                        No se puede modificar el sistema de pagos porque ya tiene abonos registrados.
+                                        <input type="hidden" asp-for="TipoPeriodo" />
+                                        <input type="hidden" asp-for="CantidadPeriodo" />
+                                        <input type="hidden" asp-for="MontoPeriodo" />
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Resumen del crédito -->
+                <div class="row mb-4">
+                    <div class="col-md-12">
+                        <div class="card">
+                            <div class="card-header bg-success text-white">
+                                <h6 class="mb-0">
+                                    <i class="bi bi-card-checklist"></i> Resumen del Crédito
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row text-center">
+                                    <div class="col-md-3">
+                                        <div class="card border-primary">
+                                            <div class="card-body">
+                                                <h6 class="card-title text-muted">Monto Total</h6>
+                                                <h3 class="text-primary" id="resumenMonto">@Model.MontoTotal.ToString("C")</h3>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="card border-info">
+                                            <div class="card-body">
+                                                <h6 class="card-title text-muted">Saldo Actual</h6>
+                                                <h4 class="text-info">@Model.Saldo.ToString("C")</h4>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="card border-warning">
+                                            <div class="card-body">
+                                                <h6 class="card-title text-muted">Fecha Vencimiento</h6>
+                                                <h4 class="text-warning" id="resumenVencimiento">
+                                                    @(Model.FechaVencimiento?.ToString("dd/MM/yyyy") ?? "No definida")
+                                                </h4>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="card border-secondary">
+                                            <div class="card-body">
+                                                <h6 class="card-title text-muted">Abonos</h6>
+                                                <h4 class="text-secondary">@(Model.Abonos?.Count ?? 0)</h4>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Botones de acción -->
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="d-flex justify-content-between">
+                            <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Cancelar
+                            </a>
+                            <div>
+                                <a asp-action="Index" class="btn btn-outline-secondary me-2">
+                                    <i class="bi bi-list"></i> Lista
+                                </a>
+                                <button type="submit" class="btn btn-warning">
+                                    <i class="bi bi-save"></i> Guardar Cambios
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+    <script>
+        $(document).ready(function() {
+            // Elementos
+            const montoTotal = $('#MontoTotal');
+            const diasCredito = $('#DiasCredito');
+            const fechaVencimiento = $('#FechaVencimiento');
+            const tipoPeriodo = $('#tipoPeriodoSelect');
+            const cantidadPeriodo = $('#CantidadPeriodo');
+            const montoPeriodo = $('#MontoPeriodo');
+
+            // Fecha actual para cálculos
+            const fechaCredito = new Date('@Model.FechaCredito.ToString("yyyy-MM-dd")');
+
+            // Contador de observaciones
+            function actualizarContador() {
+                const longitud = $('#Observaciones').val().length;
+                $('#contadorCaracteres').text(longitud);
+                if (longitud > 500) {
+                    $('#contadorCaracteres').addClass('text-danger');
+                } else {
+                    $('#contadorCaracteres').removeClass('text-danger');
+                }
+            }
+
+            $('#Observaciones').on('input', actualizarContador);
+            actualizarContador();
+
+            // Actualizar fecha de vencimiento
+            function actualizarFechaVencimiento() {
+                let fechaVenc = new Date(fechaCredito);
+                const dias = parseInt(diasCredito.val()) || 30;
+                const tipo = tipoPeriodo.val();
+                const cantidad = parseInt(cantidadPeriodo.val()) || 1;
+
+                if (tipo === 'SEMANAS') {
+                    fechaVenc.setDate(fechaVenc.getDate() + (cantidad * 7));
+                } else if (tipo === 'MESES') {
+                    fechaVenc.setMonth(fechaVenc.getMonth() + cantidad);
+                } else {
+                    fechaVenc.setDate(fechaVenc.getDate() + dias);
+                }
+
+                fechaVencimiento.val(fechaVenc.toISOString().split('T')[0]);
+
+                // Actualizar resumen
+                $('#resumenVencimiento').text(fechaVenc.toLocaleDateString('es-ES', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit'
+                }).replace(/\//g, '/'));
+            }
+
+            // Calcular monto por período
+            function calcularMontoPeriodo() {
+                const total = parseFloat(montoTotal.val()) || 0;
+                const cantidad = parseInt(cantidadPeriodo.val()) || 1;
+                const tipo = tipoPeriodo.val();
+
+                if (tipo && total > 0 && cantidad > 0) {
+                    const montoCalculado = total / cantidad;
+                    montoPeriodo.val(montoCalculado.toFixed(2));
+
+                    // Mostrar información del cálculo
+                    const texto = `${cantidad} ${tipo === 'SEMANAS' ? 'semanas' : 'meses'} × $${montoCalculado.toFixed(2)} = $${total.toFixed(2)}`;
+                    $('#calculoText').text(texto);
+                    $('#totalEstimado').text('$' + total.toFixed(2));
+                    $('#periodoCalculo').show();
+                } else {
+                    $('#periodoCalculo').hide();
+                }
+            }
+
+            // Event listeners
+            montoTotal.on('input', function() {
+                $('#resumenMonto').text('$' + (parseFloat($(this).val()) || 0).toFixed(2));
+                calcularMontoPeriodo();
+            });
+
+            diasCredito.on('input', function() {
+                if (!tipoPeriodo.val()) {
+                    actualizarFechaVencimiento();
+                }
+            });
+
+            tipoPeriodo.on('change', function() {
+                actualizarFechaVencimiento();
+                calcularMontoPeriodo();
+            });
+
+            cantidadPeriodo.on('input', function() {
+                actualizarFechaVencimiento();
+                calcularMontoPeriodo();
+            });
+
+            montoPeriodo.on('input', function() {
+                const monto = parseFloat($(this).val()) || 0;
+                const cantidad = parseInt(cantidadPeriodo.val()) || 1;
+                const total = monto * cantidad;
+                $('#totalEstimado').text('$' + total.toFixed(2));
+            });
+
+            // Validación del formulario
+            $('form').on('submit', function(e) {
+                const monto = parseFloat(montoTotal.val()) || 0;
+                if (monto <= 0) {
+                    e.preventDefault();
+                    alert('El monto total debe ser mayor a 0');
+                    return false;
+                }
+            });
+
+            // Inicializar cálculos
+            actualizarFechaVencimiento();
+            if (tipoPeriodo.val()) {
+                calcularMontoPeriodo();
+            }
+        });
+    </script>
+}
+
+<style>
+    .required:after {
+        content: " *";
+        color: red;
+    }
+
+    .card {
+        border-radius: 10px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .card-header {
+        border-radius: 10px 10px 0 0 !important;
+    }
+
+    .form-control:focus, .form-select:focus {
+        border-color: #ffc107;
+        box-shadow: 0 0 0 0.25rem rgba(255, 193, 7, 0.25);
+    }
+</style>

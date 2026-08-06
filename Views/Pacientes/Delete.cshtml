@@ -1,0 +1,174 @@
+﻿@model OpticaClaridad.Models.Paciente
+
+@{
+    ViewData["Title"] = "Eliminar Paciente";
+    var tieneHistoriales = ViewBag.TieneHistoriales as bool? ?? false;
+}
+
+<div class="container mt-4">
+    <div class="card border-danger">
+        <div class="card-header bg-danger text-white">
+            <h4><i class="fas fa-user-times me-2"></i>@ViewData["Title"]</h4>
+            <span class="badge bg-dark float-end">ID: @Model.Id</span>
+        </div>
+        <div class="card-body">
+            @if (tieneHistoriales)
+            {
+                <div class="alert alert-warning">
+                    <h5 class="alert-heading">
+                        <i class="fas fa-exclamation-triangle me-2"></i>¡Atención!
+                    </h5>
+                    <p class="mb-0">
+                        Este paciente tiene historiales clínicos registrados.
+                        <strong>No se eliminará permanentemente</strong>, solo se marcará como INACTIVO.
+                    </p>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-danger">
+                    <h5 class="alert-heading">
+                        <i class="fas fa-skull-crossbones me-2"></i>¡Eliminación Permanente!
+                    </h5>
+                    <p class="mb-0">
+                        Esta acción <strong>eliminará permanentemente</strong> al paciente del sistema.
+                        <strong>Esta acción no se puede deshacer.</strong>
+                    </p>
+                </div>
+            }
+
+            <h5 class="mb-3">¿Está seguro que desea @(tieneHistoriales ? "desactivar" : "eliminar") este paciente?</h5>
+
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 text-center">
+                            <div class="avatar-circle mb-3 mx-auto">
+                                <span class="avatar-text">
+                                    @Model.Nombre.Substring(0, 1).ToUpper()
+                                </span>
+                            </div>
+                            <div class="badge @(Model.Activo ? "bg-success" : "bg-danger")">
+                                @(Model.Activo ? "Activo" : "Inactivo")
+                            </div>
+                        </div>
+                        <div class="col-md-9">
+                            <h4>@Model.Nombre</h4>
+                            <dl class="row">
+                                <dt class="col-sm-4">ID:</dt>
+                                <dd class="col-sm-8">@Model.Id</dd>
+
+                                <dt class="col-sm-4">Edad:</dt>
+                                <dd class="col-sm-8">
+                                    @if (Model.Edad > 0)
+                                    {
+                                        @(Model.Edad + " años")
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">No especificada</span>
+                                    }
+                                </dd>
+
+                                <dt class="col-sm-4">Sexo:</dt>
+                                <dd class="col-sm-8">
+                                    @if (!string.IsNullOrEmpty(Model.Sexo))
+                                    {
+                                        @Model.Sexo
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">No especificado</span>
+                                    }
+                                </dd>
+
+                                <dt class="col-sm-4">Teléfono:</dt>
+                                <dd class="col-sm-8">
+                                    @if (!string.IsNullOrEmpty(Model.Telefono))
+                                    {
+                                        @Model.Telefono
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">No especificado</span>
+                                    }
+                                </dd>
+
+                                <dt class="col-sm-4">Email:</dt>
+                                <dd class="col-sm-8">
+                                    @if (!string.IsNullOrEmpty(Model.Email))
+                                    {
+                                        @Model.Email
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">No especificado</span>
+                                    }
+                                </dd>
+
+                                <dt class="col-sm-4">Registro:</dt>
+                                <dd class="col-sm-8">@Model.FechaRegistro?.ToString("dd/MM/yyyy")</dd>
+
+                                @if (!string.IsNullOrEmpty(Model.Observaciones))
+                                {
+                                    <dt class="col-sm-4">Observaciones:</dt>
+                                    <dd class="col-sm-8">
+                                        <div class="border p-2 bg-light rounded small">
+                                            @Model.Observaciones
+                                        </div>
+                                    </dd>
+                                }
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <form asp-action="Delete">
+                <input type="hidden" asp-for="Id" />
+
+                <div class="alert alert-dark">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="confirmDelete" required />
+                        <label class="form-check-label" for="confirmDelete">
+                            Confirmo que deseo @(tieneHistoriales ? "marcar como INACTIVO" : "ELIMINAR PERMANENTEMENTE") al paciente <strong>@Model.Nombre</strong>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-between">
+                    <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">
+                        <i class="fas fa-edit me-1"></i>Editar en lugar de @(tieneHistoriales ? "Desactivar" : "Eliminar")
+                    </a>
+                    <div>
+                        <a asp-action="Index" class="btn btn-secondary me-2">
+                            <i class="fas fa-times me-1"></i>Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-danger" id="btnEliminar" disabled>
+                            <i class="fas @(tieneHistoriales ? "fa-toggle-off" : "fa-trash-alt") me-1"></i>
+                            @(tieneHistoriales ? "Marcar como Inactivo" : "Eliminar Permanentemente")
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var confirmCheckbox = document.getElementById('confirmDelete');
+            var deleteButton = document.getElementById('btnEliminar');
+
+            if (confirmCheckbox && deleteButton) {
+                confirmCheckbox.addEventListener('change', function() {
+                    deleteButton.disabled = !this.checked;
+                });
+
+                // Enfocar el checkbox automáticamente
+                confirmCheckbox.focus();
+            }
+        });
+    </script>
+}

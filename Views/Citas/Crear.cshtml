@@ -1,0 +1,150 @@
+﻿@model OpticaClaridad.Models.Cita
+@{
+    ViewData["Title"] = "Nueva Cita";
+}
+
+<div class="container mt-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-action="Index">Citas</a></li>
+            <li class="breadcrumb-item active">Nueva Cita</li>
+        </ol>
+    </nav>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4><i class="bi bi-calendar-plus"></i> @ViewData["Title"]</h4>
+                </div>
+                <div class="card-body">
+                    <form asp-action="Crear">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="ClienteNombre" class="form-label"></label>
+                                <input asp-for="ClienteNombre" class="form-control" placeholder="Nombre completo del cliente" />
+                                <span asp-validation-for="ClienteNombre" class="text-danger"></span>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="Telefono" class="form-label"></label>
+                                <input asp-for="Telefono" class="form-control" placeholder="Teléfono de contacto" />
+                                <span asp-validation-for="Telefono" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="FechaHora" class="form-label"></label>
+                                <input asp-for="FechaHora" type="datetime-local" class="form-control" />
+                                <span asp-validation-for="FechaHora" class="text-danger"></span>
+                                <small class="form-text text-muted">Puedes seleccionar desde hoy en adelante</small>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="TipoCita" class="form-label"></label>
+                                <select asp-for="TipoCita" class="form-select">
+                                    <option value="">Seleccionar tipo</option>
+                                    <option value="Examen">Examen de la vista</option>
+                                    <option value="Ajuste">Ajuste de lentes</option>
+                                    <option value="Entrega">Entrega de lentes</option>
+                                    <option value="Consulta">Consulta general</option>
+                                    <option value="Limpieza">Limpieza y mantenimiento</option>
+                                    <option value="Otro">Otro</option>
+                                </select>
+                                <span asp-validation-for="TipoCita" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Motivo" class="form-label"></label>
+                            <textarea asp-for="Motivo" class="form-control" rows="3" placeholder="Motivo de la cita o síntomas"></textarea>
+                            <span asp-validation-for="Motivo" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Estado" class="form-label"></label>
+                            <select asp-for="Estado" class="form-select">
+                                <option value="Pendiente">Pendiente</option>
+                                <option value="Confirmada">Confirmada</option>
+                            </select>
+                            <span asp-validation-for="Estado" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Notas" class="form-label"></label>
+                            <textarea asp-for="Notas" class="form-control" rows="2" placeholder="Notas adicionales"></textarea>
+                            <span asp-validation-for="Notas" class="text-danger"></span>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
+                            <button type="submit" class="btn btn-success">Crear Cita</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Configurar fecha mínima como hoy y establecer valor por defecto
+        document.addEventListener('DOMContentLoaded', function() {
+            const fechaHoraInput = document.getElementById('FechaHora');
+            
+            // Obtener la fecha actual
+            const hoy = new Date();
+            
+            // Formatear fecha mínima: YYYY-MM-DDTHH:MM
+            const anio = hoy.getFullYear();
+            const mes = String(hoy.getMonth() + 1).padStart(2, '0');
+            const dia = String(hoy.getDate()).padStart(2, '0');
+            const fechaMinima = `${anio}-${mes}-${dia}T00:00`;
+            
+            // Establecer fecha mínima (hoy)
+            fechaHoraInput.min = fechaMinima;
+            
+            // Si no tiene valor, establecer hora actual redondeada a los próximos 30 minutos
+            if (!fechaHoraInput.value) {
+                const ahora = new Date();
+                
+                // Redondear a los próximos 30 minutos
+                const minutos = ahora.getMinutes();
+                const minutosRedondeados = Math.ceil(minutos / 30) * 30;
+                ahora.setMinutes(minutosRedondeados);
+                ahora.setSeconds(0);
+                
+                // Asegurar que no sea menor a la fecha actual
+                if (ahora < hoy) {
+                    ahora.setHours(hoy.getHours() + 1);
+                    ahora.setMinutes(0);
+                }
+                
+                // Formatear la fecha y hora
+                const anioActual = ahora.getFullYear();
+                const mesActual = String(ahora.getMonth() + 1).padStart(2, '0');
+                const diaActual = String(ahora.getDate()).padStart(2, '0');
+                const horas = String(ahora.getHours()).padStart(2, '0');
+                const minutosActual = String(ahora.getMinutes()).padStart(2, '0');
+                
+                fechaHoraInput.value = `${anioActual}-${mesActual}-${diaActual}T${horas}:${minutosActual}`;
+            }
+            
+            // Validar que la fecha seleccionada no sea anterior a hoy
+            fechaHoraInput.addEventListener('change', function() {
+                const fechaSeleccionada = new Date(this.value);
+                const hoyComparacion = new Date();
+                hoyComparacion.setHours(0, 0, 0, 0);
+                
+                if (fechaSeleccionada < hoyComparacion) {
+                    alert('No se pueden crear citas para fechas pasadas. Por favor selecciona una fecha desde hoy en adelante.');
+                    // Restaurar al valor anterior o establecer hoy
+                    const anioHoy = hoyComparacion.getFullYear();
+                    const mesHoy = String(hoyComparacion.getMonth() + 1).padStart(2, '0');
+                    const diaHoy = String(hoyComparacion.getDate()).padStart(2, '0');
+                    this.value = `${anioHoy}-${mesHoy}-${diaHoy}T09:00`;
+                }
+            });
+        });
+    </script>
+}

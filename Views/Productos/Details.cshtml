@@ -1,0 +1,337 @@
+﻿﻿@using System.IO
+@model OpticaClaridad.Models.Producto
+
+@{
+    ViewData["Title"] = ViewData["Title"] ?? $"Detalles: {Model.Nombre}";
+}
+
+@functions {
+    // Función para convertir ruta relativa a URL pública
+    string ObtenerUrlImagen(string rutaImagen)
+    {
+        var imagenDefault = "/Optica.jpg";
+
+        if (string.IsNullOrEmpty(rutaImagen))
+            return imagenDefault;
+
+        // Si ya es una URL absoluta o empieza con /archivos/, mantenerla
+        if (rutaImagen.StartsWith("/archivos/") || rutaImagen.StartsWith("http"))
+            return rutaImagen;
+
+        // Si es ruta antigua (empieza con /img/), intentar convertir
+        if (rutaImagen.StartsWith("/img/"))
+        {
+            var fileName = System.IO.Path.GetFileName(rutaImagen);
+            return $"/archivos/Imagenes/Productos/{fileName}";
+        }
+
+        // Si es ruta relativa del nuevo formato (sin /archivos/)
+        if (!rutaImagen.StartsWith("/"))
+        {
+            return $"/archivos/{rutaImagen.Replace('\\', '/')}";
+        }
+
+        return imagenDefault;
+    }
+}
+
+<div class="card">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
+        <div>
+            <h5 class="mb-0"><i class="bi bi-eye"></i> @ViewData["Title"]</h5>
+        </div>
+        <div>
+            <a asp-action="Index" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Volver
+            </a>
+        </div>
+    </div>
+
+    <div class="card-body">
+        <!-- Imágenes del Producto -->
+        <div class="row mb-4">
+            <div class="col-md-5">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <!-- Imagen Principal -->
+                        <div class="mb-3">
+                            @{
+                                var imagenPrincipalUrl = ObtenerUrlImagen(Model.ImagenPrincipalUrl);
+                            }
+                            @if (!string.IsNullOrEmpty(imagenPrincipalUrl) && imagenPrincipalUrl != "/Optica.jpg")
+                            {
+                                <img src="@imagenPrincipalUrl"
+                                     class="img-fluid rounded border"
+                                     style="max-height: 300px; object-fit: contain;"
+                                     alt="@Model.Nombre"
+                                     id="imagenPrincipal"
+                                     onerror="this.src='/Optica.jpg'">
+                            }
+                            else
+                            {
+                                <div class="d-flex flex-column align-items-center justify-content-center border rounded bg-light"
+                                     style="height: 300px;">
+                                    <i class="bi bi-camera text-secondary mb-3" style="font-size: 4rem;"></i>
+                                    <span class="text-muted">Sin imagen</span>
+                                </div>
+                            }
+                        </div>
+
+                        <!-- Miniaturas -->
+                        @if (Model.Imagenes != null && Model.Imagenes.Any(i => i.Activa))
+                        {
+                            <div class="d-flex flex-wrap gap-2 justify-content-center">
+                                @foreach (var imagen in Model.Imagenes.Where(i => i.Activa).OrderBy(i => i.Orden))
+                                {
+                                    var miniaturaUrl = ObtenerUrlImagen(imagen.ImagenUrl);
+                                    <div class="border rounded p-1 @(imagen.EsPrincipal ? "border-primary" : "")"
+                                         style="cursor: pointer;"
+                                         onclick="cambiarImagen('@miniaturaUrl')">
+                                        <img src="@miniaturaUrl"
+                                             class="img-thumbnail"
+                                             style="width: 60px; height: 60px; object-fit: cover;"
+                                             alt="Miniatura"
+                                             onerror="this.src='/Optica.jpg'">
+                                    </div>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <!-- Si no hay imágenes activas, mostrar mensaje -->
+                            <div class="text-muted">
+                                <i class="bi bi-image"></i> No hay imágenes adicionales
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Información del Producto -->
+            <div class="col-md-7">
+                <div class="row">
+                    <div class="col-12 mb-3">
+                        <h3 class="text-primary">@Model.Nombre</h3>
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <span class="badge bg-secondary">@Model.Codigo</span>
+                            @if (Model.Categoria != null)
+                            {
+                                <span class="badge bg-info">@Model.Categoria.Nombre</span>
+                            }
+                            @if (!Model.Activo)
+                            {
+                                <span class="badge bg-dark">INACTIVO</span>
+                            }
+                        </div>
+                        <p class="text-muted">@Model.Descripcion</p>
+                    </div>
+
+                    <!-- Especificaciones -->
+                    <div class="col-md-6 mb-3">
+                        <h6 class="border-bottom pb-2"><i class="bi bi-tags"></i> Especificaciones</h6>
+                        <table class="table table-sm">
+                            <tr>
+                                <th width="120">Marca:</th>
+                                <td>@(string.IsNullOrEmpty(Model.Marca) ? "No especificada" : Model.Marca)</td>
+                            </tr>
+                            <tr>
+                                <th>Modelo:</th>
+                                <td>@(string.IsNullOrEmpty(Model.Modelo) ? "No especificado" : Model.Modelo)</td>
+                            </tr>
+                            <tr>
+                                <th>Color:</th>
+                                <td>@(string.IsNullOrEmpty(Model.Color) ? "No especificado" : Model.Color)</td>
+                            </tr>
+                            <tr>
+                                <th>Material:</th>
+                                <td>@(string.IsNullOrEmpty(Model.Material) ? "No especificado" : Model.Material)</td>
+                            </tr>
+                            <tr>
+                                <th>Para:</th>
+                                <td>@(string.IsNullOrEmpty(Model.Genero) ? "No especificado" : Model.Genero)</td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <!-- Características Ópticas -->
+                    <div class="col-md-6 mb-3">
+                        <h6 class="border-bottom pb-2"><i class="bi bi-eyeglasses"></i> Características Ópticas</h6>
+                        <table class="table table-sm">
+                            <tr>
+                                <th width="120">Tipo de Lente:</th>
+                                <td>@(string.IsNullOrEmpty(Model.TipoLente) ? "No especificado" : Model.TipoLente)</td>
+                            </tr>
+                            <tr>
+                                <th>Protección UV:</th>
+                                <td>
+                                    @if (Model.TieneUV)
+                                    {
+                                        <span class="badge bg-success"><i class="bi bi-check-circle"></i> Sí</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary"><i class="bi bi-x-circle"></i> No</span>
+                                    }
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Antireflejante:</th>
+                                <td>
+                                    @if (Model.TieneAntireflejante)
+                                    {
+                                        <span class="badge bg-success"><i class="bi bi-check-circle"></i> Sí</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary"><i class="bi bi-x-circle"></i> No</span>
+                                    }
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Fotocromático:</th>
+                                <td>
+                                    @if (Model.EsFotocromatico)
+                                    {
+                                        <span class="badge bg-success"><i class="bi bi-check-circle"></i> Sí</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary"><i class="bi bi-x-circle"></i> No</span>
+                                    }
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <!-- Stock y Precios -->
+                    <div class="col-md-6 mb-3">
+                        <h6 class="border-bottom pb-2"><i class="bi bi-box"></i> Inventario</h6>
+                        <table class="table table-sm">
+                            <tr>
+                                <th width="120">Stock Actual:</th>
+                                <td>
+                                    <span class="fw-bold @(Model.Stock == 0 ? "text-danger" : Model.Stock <= Model.StockMinimo ? "text-warning" : "text-success")">
+                                        @Model.Stock unidades
+                                    </span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Stock Mínimo:</th>
+                                <td>@Model.StockMinimo unidades</td>
+                            </tr>
+                            <tr>
+                                <th>Estado:</th>
+                                <td>
+                                    @if (Model.EstadoStock == "AGOTADO")
+                                    {
+                                        <span class="badge bg-danger">AGOTADO</span>
+                                    }
+                                    else if (Model.EstadoStock == "BAJO")
+                                    {
+                                        <span class="badge bg-warning">BAJO</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-success">NORMAL</span>
+                                    }
+                                    @if (!Model.Disponible)
+                                    {
+                                        <span class="badge bg-secondary ms-1">NO DISPONIBLE</span>
+                                    }
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <!-- Información Financiera -->
+                    <div class="col-md-6 mb-3">
+                        <h6 class="border-bottom pb-2"><i class="bi bi-currency-dollar"></i> Precios</h6>
+                        <table class="table table-sm">
+                            <tr>
+                                <th width="120">Precio Venta:</th>
+                                <td class="fw-bold text-success">@Model.PrecioVenta.ToString("C")</td>
+                            </tr>
+                            <tr>
+                                <th>Precio Compra:</th>
+                                <td>@Model.PrecioCompra.ToString("C")</td>
+                            </tr>
+                            <tr>
+                                <th>Ganancia:</th>
+                                <td>
+                                    <span class="fw-bold @(Model.GananciaUnidad > 0 ? "text-success" : "text-danger")">
+                                        @Model.GananciaUnidad.ToString("C")
+                                    </span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Margen:</th>
+                                <td>
+                                    <span class="fw-bold @(Model.MargenPorcentaje > 0 ? "text-success" : "text-danger")">
+                                        @Model.MargenPorcentaje.ToString("F1")%
+                                    </span>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <!-- Información de Auditoría -->
+                    <div class="col-12 mt-3">
+                        <div class="card border-light">
+                            <div class="card-body py-2">
+                                <small class="text-muted">
+                                    <i class="bi bi-calendar"></i>
+                                    Creado: @Model.FechaCreacion.ToString("dd/MM/yyyy") •
+                                    @if (Model.FechaActualizacion.HasValue)
+                                    {
+                                        @:Actualizado: @Model.FechaActualizacion.Value.ToString("dd/MM/yyyy HH:mm")
+                                    }
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Botones de Acción -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <a asp-action="Index" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Volver al listado
+                        </a>
+                    </div>
+                    <div>
+                        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-primary">
+                            <i class="bi bi-pencil"></i> Editar Producto
+                        </a>
+                        @if (Model.Activo)
+                        {
+                            <a asp-action="Delete" asp-route-id="@Model.Id" class="btn btn-danger">
+                                <i class="bi bi-trash"></i> Eliminar
+                            </a>
+                        }
+                        else
+                        {
+                            <a asp-action="Activar" asp-route-id="@Model.Id" class="btn btn-success">
+                                <i class="bi bi-check-circle"></i> Activar
+                            </a>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function cambiarImagen(url) {
+            const imgPrincipal = document.getElementById('imagenPrincipal');
+            if (imgPrincipal) {
+                imgPrincipal.src = url;
+            }
+        }
+    </script>
+}

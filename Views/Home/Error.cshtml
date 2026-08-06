@@ -1,0 +1,179 @@
+﻿@{
+    ViewData["Title"] = "Error";
+    Layout = null; // Sin layout para ver mejor
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Error - OpticaClaridad</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background-color: #f8f9fa;
+            color: #333;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            color: #dc3545;
+            border-bottom: 2px solid #dc3545;
+            padding-bottom: 10px;
+        }
+
+        .error-section {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-left: 4px solid #007bff;
+            border-radius: 5px;
+        }
+
+        .error-title {
+            font-weight: bold;
+            color: #007bff;
+            margin-bottom: 10px;
+        }
+
+        .log-content {
+            background: #f1f1f1;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .buttons {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .btn-primary {
+            background-color: #007bff;
+            color: white;
+        }
+
+        .btn-secondary {
+            background-color: #6c757d;
+            color: white;
+        }
+
+        .btn-danger {
+            background-color: #dc3545;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>⚠️ Diagnóstico de Errores</h1>
+
+        <div class="error-section">
+            <div class="error-title">Información del Sistema</div>
+            <div>
+                <strong>Fecha y hora:</strong> @DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")<br>
+                <strong>Directorio de la aplicación:</strong> C:\PublicacionOptica<br>
+                <strong>Directorio de imágenes:</strong> C:\ImgOptica
+            </div>
+        </div>
+
+        <div class="error-section">
+            <div class="error-title">Verificación de Carpetas y Archivos</div>
+            <div class="log-content" id="fileCheck">
+                Verificando...
+            </div>
+        </div>
+
+        <div class="error-section">
+            <div class="error-title">Últimos Errores Registrados</div>
+            <div class="log-content" id="errorLog">
+                Cargando...
+            </div>
+        </div>
+
+        <div class="buttons">
+            <a href="/" class="btn btn-primary">Intentar nuevamente</a>
+            <button onclick="refreshLogs()" class="btn btn-secondary">Actualizar logs</button>
+            <button onclick="downloadLogs()" class="btn btn-danger">Descargar logs para soporte</button>
+        </div>
+    </div>
+
+    <script>
+        // Cargar información al iniciar
+        document.addEventListener('DOMContentLoaded', function() {
+            checkFiles();
+            loadErrorLog();
+        });
+
+        function checkFiles() {
+            fetch('/Home/CheckFiles')
+                .then(response => response.text())
+                .then(data => {
+                    document.getElementById('fileCheck').textContent = data;
+                })
+                .catch(error => {
+                    document.getElementById('fileCheck').textContent = 'Error al verificar archivos: ' + error;
+                });
+        }
+
+        function loadErrorLog() {
+            fetch('/Home/GetErrorLog')
+                .then(response => response.text())
+                .then(data => {
+                    document.getElementById('errorLog').textContent = data || 'No hay errores registrados.';
+                })
+                .catch(error => {
+                    document.getElementById('errorLog').textContent = 'Error al cargar log: ' + error;
+                });
+        }
+
+        function refreshLogs() {
+            checkFiles();
+            loadErrorLog();
+        }
+
+        function downloadLogs() {
+            fetch('/Home/GetErrorLog')
+                .then(response => response.text())
+                .then(data => {
+                    const blob = new Blob([data], { type: 'text/plain' });
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'errores_optica_' + new Date().toISOString().slice(0,10) + '.txt';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(url);
+                });
+        }
+    </script>
+</body>
+</html>

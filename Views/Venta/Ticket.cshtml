@@ -1,0 +1,639 @@
+﻿@model OpticaClaridad.Models.Venta
+@{
+    ViewData["Title"] = "Ticket de Venta";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ticket de Venta</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+    <style>
+            /* Estilos específicos para ticket de 58mm */
+            body {
+                font-family: 'Courier New', monospace;
+                font-size: 12px;
+                width: 58mm;
+                margin: 0 auto;
+                padding: 0;
+                background: white;
+            }
+
+            .ticket-container {
+                width: 58mm;
+                padding: 5px;
+                border: 1px dashed #ccc;
+                margin: 0;
+            }
+
+            .ticket-header {
+                text-align: center;
+                padding-bottom: 5px;
+                border-bottom: 1px dashed #000;
+                margin-bottom: 10px;
+            }
+
+            .ticket-title {
+                font-size: 14px;
+                font-weight: bold;
+                margin: 0;
+            }
+
+            .ticket-subtitle {
+                font-size: 10px;
+                margin: 2px 0;
+            }
+
+            .ticket-info {
+                margin-bottom: 8px;
+                padding-bottom: 8px;
+                border-bottom: 1px dashed #ccc;
+            }
+
+                .ticket-info p {
+                    margin: 2px 0;
+                }
+
+            .ticket-items {
+                width: 100%;
+                margin-bottom: 10px;
+            }
+
+                .ticket-items table {
+                    width: 100%;
+                    font-size: 10px;
+                    border-collapse: collapse;
+                }
+
+                .ticket-items th {
+                    border-bottom: 1px solid #000;
+                    padding: 2px 0;
+                    text-align: left;
+                }
+
+                .ticket-items td {
+                    padding: 2px 0;
+                    border-bottom: 1px dashed #ccc;
+                }
+
+            .ticket-totals {
+                margin-top: 10px;
+                padding-top: 10px;
+                border-top: 2px solid #000;
+            }
+
+            .total-row {
+                display: flex;
+                justify-content: space-between;
+                margin: 3px 0;
+            }
+
+            .total-amount {
+                font-weight: bold;
+                font-size: 14px;
+            }
+
+            .ticket-footer {
+                text-align: center;
+                margin-top: 15px;
+                padding-top: 10px;
+                border-top: 1px dashed #000;
+                font-size: 9px;
+            }
+
+            .social-icons {
+                display: flex;
+                justify-content: center;
+                gap: 10px;
+                margin: 8px 0;
+            }
+
+            .social-icon {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                text-decoration: none;
+                font-size: 8px;
+            }
+
+                .social-icon i {
+                    font-size: 12px;
+                    margin-bottom: 2px;
+                }
+
+            .contact-info {
+                margin-top: 8px;
+                padding-top: 8px;
+                border-top: 1px dashed #ddd;
+                font-size: 8px;
+            }
+
+            .contact-item {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 3px;
+                margin: 2px 0;
+            }
+
+            /* Solo para pantalla */
+            .screen-only {
+                display: none;
+            }
+
+            /* Botones solo en pantalla */
+            .btn-ticket {
+                font-size: 12px;
+                padding: 6px 12px;
+                margin: 3px;
+            }
+
+            /* Alerta flotante */
+            .print-alert {
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                z-index: 9999;
+                min-width: 250px;
+                display: none;
+            }
+
+            @@media screen {
+                body {
+                    width: 100%;
+                    max-width: 800px;
+                    margin: 20px auto;
+                    padding: 20px;
+                }
+
+                .ticket-container {
+                    width: 100%;
+                    max-width: 58mm;
+                    margin: 0 auto 20px;
+                    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+                }
+
+                .screen-only {
+                    display: block;
+                    text-align: center;
+                    margin-top: 20px;
+                    padding-top: 20px;
+                    border-top: 1px solid #ddd;
+                }
+            }
+
+            @@media print {
+                .screen-only {
+                    display: none !important;
+                }
+
+                body {
+                    width: 58mm !important;
+                    margin: 0 !important;
+                    padding: 0 !important;
+                }
+
+                .ticket-container {
+                    border: none !important;
+                    box-shadow: none !important;
+                    margin: 0 !important;
+                }
+            }
+    </style>
+</head>
+<body>
+    <div class="alert alert-info print-alert" id="printAlert">
+        <i class="bi bi-printer"></i> Enviando a impresora...
+    </div>
+
+    <div class="ticket-container">
+        <!-- Encabezado del Ticket -->
+        <div class="ticket-header">
+            <h1 class="ticket-title">ÓPTICA CLARIDAD</h1>
+            <p class="ticket-subtitle">Especialistas en salud visual</p>
+            <p class="ticket-subtitle">TEL: 656 556-3770</p>
+            <p class="ticket-subtitle">claridadoptica1@gmail.com</p>
+        </div>
+
+        <!-- Información de la Venta -->
+        <div class="ticket-info">
+            <p><strong>TICKET DE VENTA</strong></p>
+            <p><strong>No:</strong> @Model.NumeroVenta</p>
+            <p><strong>Fecha:</strong> @Model.FechaVenta.ToString("dd/MM/yyyy HH:mm")</p>
+            <p><strong>Paciente:</strong> @(Model.Paciente?.Nombre ?? "Paciente General")</p>
+            <p><strong>Vendedor:</strong> @ViewBag.Usuario</p>
+            <p><strong>Forma de pago:</strong> @Model.TipoPago.ToUpper()</p>
+            @if (!string.IsNullOrEmpty(Model.Paciente?.Telefono))
+            {
+                <p><strong>Teléfono:</strong> @Model.Paciente.Telefono</p>
+            }
+        </div>
+
+        <!-- Detalle de Productos -->
+        <div class="ticket-items">
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th>Cant</th>
+                        <th>Descripción</th>
+                        <th>Precio</th>
+                        <th>Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var detalle in Model.Detalles)
+                    {
+                        <tr>
+                            <td>@detalle.Cantidad</td>
+                            <td>@detalle.Producto.Nombre</td>
+                            <td>$@detalle.PrecioUnitario.ToString("N2")</td>
+                            <td>$@detalle.Subtotal.ToString("N2")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Totales -->
+        <div class="ticket-totals">
+            <div class="total-row">
+                <span>Subtotal:</span>
+                <span>$@Model.Total.ToString("N2")</span>
+            </div>
+
+            @if (Model.TipoPago == "Credito")
+            {
+                <div class="total-row">
+                    <span>Pagado:</span>
+                    <span>$@Model.MontoPagado.ToString("N2")</span>
+                </div>
+
+                <div class="total-row text-danger">
+                    <span>Pendiente:</span>
+                    <span>$@Model.PendientePago.ToString("N2")</span>
+                </div>
+            }
+
+            <div class="total-row">
+                <span>Cambio:</span>
+                <span>$@Model.Cambio.ToString("N2")</span>
+            </div>
+
+            <div class="total-row total-amount">
+                <span>TOTAL:</span>
+                <span>$@Model.Total.ToString("N2")</span>
+            </div>
+        </div>
+
+        <!-- Información adicional para crédito -->
+        @if (Model.TipoPago == "Credito")
+        {
+            <div style="margin-top: 10px; padding: 5px; border: 1px dashed #000; font-size: 9px;">
+                <p style="text-align: center; margin: 0; font-weight: bold;">VENTA A CRÉDITO</p>
+                <p style="margin: 2px 0;">Pendiente: $@Model.PendientePago.ToString("N2")</p>
+                <p style="margin: 2px 0;">Proximo pago: @DateTime.Today.AddDays(30).ToString("dd/MM/yyyy")</p>
+            </div>
+        }
+
+        <!-- Pie del Ticket -->
+        <div class="ticket-footer">
+            <!-- Información de contacto -->
+            <div class="contact-info">
+                <div class="contact-item">
+                    <i class="bi bi-telephone"></i>
+                    <span>Tel: 656 556 3770</span>
+                </div>
+                <div class="contact-item">
+                    <i class="bi bi-phone"></i>
+                    <span>Cel: 656 556 3770</span>
+                </div>
+                <div class="contact-item">
+                    <i class="bi bi-envelope"></i>
+                    <span>claridadoptica1@gmail.com</span>
+                </div>
+            </div>
+
+            <!-- Redes Sociales -->
+            <div>
+                <small><strong>Síguenos en redes:</strong></small>
+                <div class="social-icons">
+                    <a href="https://www.instagram.com/opticaclaridadjrz?igsh=djhuY3dkMHJ5ZHc2"
+                           target="_blank"
+                           class="social-icon"
+                           title="Instagram">
+                        <i class="bi bi-instagram" style="color: #E4405F;"></i>
+                        <span>Instagram</span>
+                    </a>
+                    <a href="https://www.facebook.com/share/17y5qoErnq/"
+                           target="_blank"
+                           class="social-icon"
+                           title="Facebook">
+                        <i class="bi bi-facebook" style="color: #1877F2;"></i>
+                        <span>Facebook</span>
+                    </a>
+                </div>
+            </div>
+
+            <p><strong>¡GRACIAS POR SU COMPRA!</strong></p>
+            <p>Artículos vendidos no se devuelven</p>
+            <p>Garantia segun producto por defecto de fábrica</p>
+            <p>Conserve este ticket para garantías</p>
+            <p>--------------------------------</p>
+            <p><strong>Folio Fiscal:</strong> @Guid.NewGuid().ToString().Substring(0, 16).ToUpper()</p>
+            <p>Fecha y hora de impresión: @DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss")</p>
+        </div>
+    </div>
+
+    <!-- Controles solo visibles en pantalla (no se imprimen) -->
+    <div class="screen-only">
+        <div class="d-flex justify-content-center flex-wrap">
+            <!-- Botón para WhatsApp -->
+            <button type="button" class="btn btn-success btn-ticket" id="btnWhatsApp">
+                <i class="bi bi-whatsapp"></i> Enviar por WhatsApp
+            </button>
+
+            <!-- Botón para imprimir directo a impresora térmica -->
+            <button type="button" class="btn btn-primary btn-ticket" id="btnImprimirDirecto">
+                <i class="bi bi-printer"></i> Imprimir Ticket
+            </button>
+
+            <!-- Botón para cerrar/volver -->
+            <a asp-action="Index" class="btn btn-secondary btn-ticket">
+                <i class="bi bi-x-circle"></i> Cerrar
+            </a>
+        </div>
+
+        <!-- Información para WhatsApp -->
+        <div class="mt-3 text-center">
+            <small class="text-muted">
+                <i class="bi bi-info-circle"></i> El paciente recibirá el ticket por WhatsApp
+                @if (!string.IsNullOrEmpty(Model.Paciente?.Telefono))
+                {
+                    <span>al número: @Model.Paciente.Telefono</span>
+                }
+                else
+                {
+                    <span>(ingrese número manualmente)</span>
+                }
+            </small>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function() {
+        // ============================================
+        // OBTENER URL DE IMPRESORA - VERSIÓN DINÁMICA CORREGIDA
+        // ============================================
+            
+        // Siempre usar la IP de la página actual (dinámico)
+        var currentHost = window.location.hostname;
+        var printerUrl = 'http://' + currentHost + ':3001';
+            
+        console.log('🖨️ URL de impresora detectada automáticamente:', printerUrl);
+            
+        // Guardar en localStorage para futuras referencias (opcional)
+        localStorage.setItem('printerUrl', printerUrl);
+            
+        // ============================================
+        // FUNCIÓN PARA WHATSAPP
+        // ============================================
+        function generarTextoWhatsApp() {
+        let texto = `*TICKET DE VENTA - ÓPTICA CLARIDAD*\n`;
+        texto += `*No:* ${'@Model.NumeroVenta'}\n`;
+        texto += `*Fecha:* ${'@Model.FechaVenta.ToString("dd/MM/yyyy HH:mm")'}\n`;
+        texto += `*Paciente:* ${'@(Model.Paciente?.Nombre ?? "Paciente General")'}\n`;
+        texto += `*Vendedor:* ${'@ViewBag.Usuario'}\n`;
+        texto += `*Forma de pago:* ${'@Model.TipoPago.ToUpper()'}\n\n`;
+
+        texto += `*PRODUCTOS:*\n`;
+
+        @foreach (var detalle in Model.Detalles)
+        {
+            <text>texto += `${'@detalle.Cantidad'} x ${'@detalle.Producto.Nombre'} - $${'@detalle.Subtotal.ToString("N2")'}\n`;</text>
+        }
+
+        texto += `\n`;
+        texto += `*SUBTOTAL:* $${'@Model.Total.ToString("N2")'}\n`;
+
+        @if (Model.TipoPago == "Credito")
+        {
+            <text>texto += `*PAGADO:* $${'@Model.MontoPagado.ToString("N2")'}\n`;
+                texto += `*PENDIENTE:* $${'@Model.PendientePago.ToString("N2")'}\n`;</text>
+            }
+
+            texto += `*CAMBIO:* $${'@Model.Cambio.ToString("N2")'}\n`;
+            texto += `*TOTAL:* $${'@Model.Total.ToString("N2")'}\n\n`;
+
+            @if (Model.TipoPago == "Credito")
+            {
+                <text>texto += `*INFORMACIÓN CRÉDITO*\n`;
+                    texto += `Próximo pago: ${'@DateTime.Today.AddDays(30).ToString("dd/MM/yyyy")'}\n\n`;</text>
+                }
+
+                texto += `*CONTACTO ÓPTICA CLARIDAD*\n`;
+                texto += `📞 Tel: 656 556 3770\n`;
+                texto += `📱 Cel: 656 556 3770\n`;
+                texto += `📧 claridadoptica1@gmail.com\n`;
+                texto += `📷 Instagram: @@opticaclaridadjrz\n`;
+                texto += `👥 Facebook: https://www.facebook.com/share/17y5qoErnq/\n\n`;
+
+                texto += `¡Gracias por su compra!\n`;
+                texto += `Conserve este ticket para garantías`;
+
+                return encodeURIComponent(texto);
+                }
+
+                // Botón WhatsApp
+                $('#btnWhatsApp').click(function() {
+                @{
+                    var telefono = Model.Paciente?.Telefono?.Replace(" ", "").Replace("-", "").Replace("+", "") ?? "";
+                    if (!string.IsNullOrEmpty(telefono) && telefono.Length >= 10)
+                    {
+                        <text>
+                            const telefonoPaciente = '@telefono';
+                            const mensaje = generarTextoWhatsApp();
+                            const telefonoLimpio = telefonoPaciente.replace(/\D/g, '');
+                            const telefonoWhatsApp = telefonoLimpio.length === 10 ? '52' + telefonoLimpio : telefonoLimpio;
+                            const url = `https://wa.me/${telefonoWhatsApp}?text=${mensaje}`;
+                            window.open(url, '_blank');
+                        </text>
+                    }
+                    else
+                    {
+                        <text>
+                            const telefonoInput = prompt('Ingrese el número de WhatsApp (10 dígitos, sin espacios):', '');
+                            if (telefonoInput && telefonoInput.replace(/\D/g, '').length >= 10) {
+                            const telefonoLimpio = telefonoInput.replace(/\D/g, '');
+                            const mensaje = generarTextoWhatsApp();
+                            const telefonoWhatsApp = '52' + telefonoLimpio;
+                            const url = `https://wa.me/${telefonoWhatsApp}?text=${mensaje}`;
+                            window.open(url, '_blank');
+                            } else if (telefonoInput) {
+                            alert('Número inválido. Debe tener al menos 10 dígitos.');
+                            const mensaje = generarTextoWhatsApp();
+                            const url = `https://web.whatsapp.com/send?text=${mensaje}`;
+                            window.open(url, '_blank');
+                            }
+                        </text>
+                    }
+                }
+                });
+
+                // ============================================
+                // FUNCIÓN PARA IMPRIMIR DIRECTO A IMPRESORA TÉRMICA
+                // ============================================
+                function generarTextoImpresion() {
+                var lineas = [];
+                var separador = "--------------------";
+                var lineaDelgada = "--------------------";
+    
+                lineas.push(separador);
+                lineas.push("    OPTICA CLARIDAD");
+                lineas.push(" Especialistas en salud");
+                lineas.push("       visual");
+                lineas.push("Tel: 656 556 3770");
+                lineas.push(separador);
+                lineas.push("");
+                lineas.push("TICKET DE VENTA");
+                lineas.push("No: @Model.NumeroVenta");
+                lineas.push("Fecha: @Model.FechaVenta.ToString("dd/MM/yyyy HH:mm")");
+                var nombrePaciente = "@(Model.Paciente?.Nombre ?? "Paciente General")";
+                if (nombrePaciente.length > 22) nombrePaciente = nombrePaciente.substring(0, 22);
+                lineas.push("Paciente: " + nombrePaciente);
+                lineas.push("Vendedor: @ViewBag.Usuario");
+                lineas.push("Forma pago: @Model.TipoPago.ToUpper()");
+                @if (!string.IsNullOrEmpty(Model.Paciente?.Telefono))
+                {
+                    <text>lineas.push("Telefono: @Model.Paciente.Telefono");</text>
+                }
+                lineas.push("");
+                lineas.push(lineaDelgada);
+                lineas.push("Cant Descripcion       Total");
+                lineas.push(lineaDelgada);
+    
+                @foreach (var detalle in Model.Detalles)
+                {
+                    <text>
+                        var cantidad = "@detalle.Cantidad".padEnd(3);
+                        var nombreProd = "@detalle.Producto.Nombre";
+                        if (nombreProd.length > 16) nombreProd = nombreProd.substring(0, 16);
+                        nombreProd = nombreProd.padEnd(16);
+                        var subtotal = "$@detalle.Subtotal.ToString("N2")";
+                        lineas.push(cantidad + " " + nombreProd + " " + subtotal);
+                    </text>
+                }
+    
+                lineas.push(lineaDelgada);
+                lineas.push("Subtotal:      $@Model.Total.ToString("N2")");
+    
+                @if (Model.TipoPago == "Credito")
+                {
+                    <text>
+                        lineas.push("Pagado:        $@Model.MontoPagado.ToString("N2")");
+                        lineas.push("Pendiente:     $@Model.PendientePago.ToString("N2")");
+                    </text>
+                }
+    
+                lineas.push("Cambio:        $@Model.Cambio.ToString("N2")");
+                lineas.push(separador);
+                lineas.push("TOTAL:         $@Model.Total.ToString("N2")");
+                lineas.push(separador);
+                lineas.push("");
+    
+                @if (Model.TipoPago == "Credito")
+                {
+                    <text>
+                        lineas.push("   VENTA A CREDITO");
+                        lineas.push("Pendiente: $@Model.PendientePago.ToString("N2")");
+                        lineas.push("Proximo pago: @DateTime.Today.AddDays(30).ToString("dd/MM/yyyy")");
+                        lineas.push("");
+                    </text>
+                }
+    
+                lineas.push("GRACIAS POR SU COMPRA!");
+                lineas.push("Articulos vendidos no");
+                lineas.push("se devuelven");
+                lineas.push("Garantia segun producto");
+                lineas.push("Consulte con su vendedor");
+                lineas.push("Conserve este ticket");
+                lineas.push(lineaDelgada);
+                lineas.push("Folio: @Guid.NewGuid().ToString().Substring(0, 12).ToUpper()");
+                lineas.push("@DateTime.Now.ToString("dd/MM/yyyy HH:mm")");
+                lineas.push("");
+                lineas.push("   VUELVA PRONTO!");
+                lineas.push("");
+    
+    
+                return lineas.join("\n");
+                }
+
+                function mostrarAlerta(mensaje, tipo) {
+                var alertMsg = $('#printAlert');
+                alertMsg.removeClass('alert-info alert-success alert-danger').addClass('alert-' + tipo);
+                alertMsg.html('<i class="bi bi-' + (tipo === 'success' ? 'check-circle' : tipo === 'danger' ? 'exclamation-triangle' : 'printer') + '"></i> ' + mensaje);
+                alertMsg.fadeIn();
+                setTimeout(function() { alertMsg.fadeOut(); }, 3000);
+                }
+
+                function imprimirDirecto() {
+                var texto = generarTextoImpresion();
+                mostrarAlerta('Enviando ticket a impresora...', 'info');
+            
+                // Usar la URL dinámica
+                fetch(printerUrl + '/imprimir', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ticket: texto })
+                })
+                .then(function(response) {
+                if (response.ok) {
+                mostrarAlerta('Ticket enviado correctamente a la impresora', 'success');
+                } else {
+                throw new Error('Error en la impresion');
+                }
+                })
+                .catch(function(error) {
+                console.error('Error:', error);
+                mostrarAlerta('Error: No se pudo conectar al servicio de impresion', 'danger');
+                });
+                }
+
+                // Botón Imprimir Directo
+                $('#btnImprimirDirecto').click(function(e) {
+                e.preventDefault();
+                imprimirDirecto();
+                });
+
+                // Auto-imprimir si viene de creación de venta
+                @if (TempData["AutoPrint"] != null && (bool)TempData["AutoPrint"])
+                {
+                    <text>
+                        setTimeout(function() {
+                        imprimirDirecto();
+                        }, 1000);
+                    </text>
+                }
+
+                // Atajo de teclado
+                $(document).keydown(function(e) {
+                if (e.ctrlKey && e.key === 'p') {
+                e.preventDefault();
+                imprimirDirecto();
+                }
+                if (e.ctrlKey && e.key === 'w') {
+                e.preventDefault();
+                $('#btnWhatsApp').click();
+                }
+                if (e.key === 'Escape') {
+                window.location.href = '@Url.Action("Index")';
+                }
+                });
+                });
+            </script>
+        </body>
+    </html>

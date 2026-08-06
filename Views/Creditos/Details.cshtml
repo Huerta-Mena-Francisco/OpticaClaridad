@@ -1,0 +1,342 @@
+﻿@model OpticaClaridad.Models.Credito
+
+@{
+    ViewData["Title"] = "Detalles del Crédito";
+}
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle-fill"></i> @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle-fill"></i> @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header bg-info text-white">
+            <div class="d-flex justify-content-between align-items-center">
+                <h3 class="card-title mb-0">
+                    <i class="bi bi-credit-card"></i> @ViewData["Title"]
+                </h3>
+                <div class="btn-group">
+                    <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-light btn-sm">
+                        <i class="bi bi-pencil"></i> Editar
+                    </a>
+                    <a asp-action="Index" class="btn btn-light btn-sm">
+                        <i class="bi bi-list"></i> Lista
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <!-- Información del crédito -->
+                <div class="col-md-6">
+                    <h5 class="border-bottom pb-2 mb-3">
+                        <i class="bi bi-info-circle"></i> Información del Crédito
+                    </h5>
+                    <dl class="row">
+                        <dt class="col-sm-4">ID:</dt>
+                        <dd class="col-sm-8">#@Model.Id</dd>
+
+                        <dt class="col-sm-4">Paciente:</dt>  <!-- 🔴 CAMBIO -->
+                        <dd class="col-sm-8">
+                            <a asp-controller="Pacientes" asp-action="Details" asp-route-id="@Model.PacienteId">  <!-- 🔴 CAMBIO -->
+                                @Model.Paciente?.Nombre  <!-- 🔴 CAMBIO -->
+                            </a>
+                        </dd>
+
+                        <dt class="col-sm-4">Monto Total:</dt>
+                        <dd class="col-sm-8">@Model.MontoTotal.ToString("C")</dd>
+
+                        <dt class="col-sm-4">Saldo Pendiente:</dt>
+                        <dd class="col-sm-8">
+                            <span class="@(Model.Saldo > 0 ? "text-danger fw-bold" : "text-success")">
+                                @Model.Saldo.ToString("C")
+                            </span>
+                        </dd>
+
+                        <dt class="col-sm-4">Abonado:</dt>
+                        <dd class="col-sm-8">
+                            <span class="text-success fw-bold">@Model.Abonado.ToString("C")</span>
+                        </dd>
+
+                        <dt class="col-sm-4">% Pagado:</dt>
+                        <dd class="col-sm-8">
+                            <div class="progress" style="height: 20px;">
+                                <div class="progress-bar @GetProgressBarClass(Model.PorcentajePagado)"
+                                     role="progressbar"
+                                     style="width: @Model.PorcentajePagado%;"
+                                     aria-valuenow="@Model.PorcentajePagado"
+                                     aria-valuemin="0"
+                                     aria-valuemax="100">
+                                    @Model.PorcentajePagado.ToString("N1")%
+                                </div>
+                            </div>
+                        </dd>
+                    </dl>
+                </div>
+
+                <!-- Fechas y estado -->
+                <div class="col-md-6">
+                    <h5 class="border-bottom pb-2 mb-3">
+                        <i class="bi bi-calendar"></i> Fechas y Estado
+                    </h5>
+                    <dl class="row">
+                        <dt class="col-sm-4">Fecha Crédito:</dt>
+                        <dd class="col-sm-8">@Model.FechaCredito.ToString("dd/MM/yyyy")</dd>
+
+                        <dt class="col-sm-4">Fecha Vencimiento:</dt>
+                        <dd class="col-sm-8">
+                            @if (Model.FechaVencimiento.HasValue)
+                            {
+                                <span class="@(Model.FechaVencimiento < DateTime.Today ? "text-danger" : "")">
+                                    @Model.FechaVencimiento.Value.ToString("dd/MM/yyyy")
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="text-muted">No definida</span>
+                            }
+                        </dd>
+
+                        <dt class="col-sm-4">Días Restantes:</dt>
+                        <dd class="col-sm-8">
+                            @if (Model.DiasRestantes.HasValue)
+                            {
+                                if (Model.DiasRestantes < 0)
+                                {
+                                    <span class="badge bg-danger">
+                                        Vencido hace @Math.Abs(Model.DiasRestantes.Value) días
+                                    </span>
+                                }
+                                else if (Model.DiasRestantes <= 7)
+                                {
+                                    <span class="badge bg-warning">
+                                        @Model.DiasRestantes días
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-success">
+                                        @Model.DiasRestantes días
+                                    </span>
+                                }
+                            }
+                            else
+                            {
+                                <span class="text-muted">N/A</span>
+                            }
+                        </dd>
+
+                        <dt class="col-sm-4">Estado:</dt>
+                        <dd class="col-sm-8">
+                            @GetEstadoBadge(Model.Estado)
+                        </dd>
+
+                        <dt class="col-sm-4">Días de Crédito:</dt>
+                        <dd class="col-sm-8">@Model.DiasCredito días</dd>
+
+                        @if (!string.IsNullOrEmpty(Model.TipoPeriodo))
+                        {
+                            <dt class="col-sm-4">Sistema de Pagos:</dt>
+                            <dd class="col-sm-8">
+                                @Model.CantidadPeriodo @(Model.TipoPeriodo == "SEMANAS" ? "semanas" : "meses")
+                                @if (Model.MontoPeriodo.HasValue)
+                                {
+                                    <br />
+                                    <small>@Model.MontoPeriodo.Value.ToString("C") por período</small>
+                                }
+                            </dd>
+                        }
+                    </dl>
+                </div>
+            </div>
+
+            <!-- Observaciones -->
+            @if (!string.IsNullOrEmpty(Model.Observaciones))
+            {
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <h5 class="border-bottom pb-2 mb-3">
+                            <i class="bi bi-chat-text"></i> Observaciones
+                        </h5>
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                @Model.Observaciones
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- Acciones rápidas -->
+            <div class="row mt-4">
+                <div class="col-12">
+                    <h5 class="border-bottom pb-2 mb-3">
+                        <i class="bi bi-lightning"></i> Acciones Rápidas
+                    </h5>
+                    <div class="d-flex flex-wrap gap-2">
+                        @if (Model.Estado != "PAGADO")
+                        {
+                            <!-- Registrar Abono: Apunta a AbonosCredito/Create -->
+                            <a asp-controller="AbonosCredito" asp-action="Create" asp-route-creditoId="@Model.Id"
+                               class="btn btn-success">
+                                <i class="bi bi-cash-coin"></i> Registrar Abono
+                            </a>
+                        }
+
+                        <!-- Historial de Abonos: Apunta a AbonosCredito/Index -->
+                        <a asp-controller="AbonosCredito" asp-action="Index" asp-route-creditoId="@Model.Id"
+                           class="btn btn-primary">
+                            <i class="bi bi-clock-history"></i> Historial de Abonos
+                        </a>
+
+                        <!-- Ver Paciente: Actualizado -->
+                        <a asp-controller="Pacientes" asp-action="Details" asp-route-id="@Model.PacienteId" 
+                           class="btn btn-info">
+                            <i class="bi bi-person"></i> Ver Paciente  <!-- 🔴 CAMBIO -->
+                        </a>
+
+                        @if (Model.Estado != "PAGADO")
+                        {
+                            <!-- Marcar como Pagado: Mantiene el formulario -->
+                            <form asp-action="CambiarEstado" method="post" class="d-inline">
+                                <input type="hidden" name="id" value="@Model.Id" />
+                                <input type="hidden" name="nuevoEstado" value="PAGADO" />
+                                <button type="submit" class="btn btn-outline-success"
+                                        onclick="return confirm('¿Marcar este crédito como PAGADO?')">
+                                    <i class="bi bi-check-circle"></i> Marcar como Pagado
+                                </button>
+                            </form>
+                        }
+
+                        <!-- Editar Crédito: Agregar este botón -->
+                        <a asp-action="Edit" asp-route-id="@Model.Id"
+                           class="btn btn-warning">
+                            <i class="bi bi-pencil"></i> Editar Crédito
+                        </a>
+
+                        <!-- Eliminar Crédito: Ya está correcto -->
+                        <a asp-action="Delete" asp-route-id="@Model.Id"
+                           class="btn btn-outline-danger">
+                            <i class="bi bi-trash"></i> Eliminar
+                        </a>
+
+                        <div class="mt-3">
+                            <a href="@Url.Action("TicketHistorico", "AbonosCredito", new { id = Model.Id })"
+                               class="btn btn-info">
+                                <i class="bi bi-receipt"></i> Ticket de Abonos
+                            </a>
+
+                        <!-- Imprimir/Exportar: Opcional -->
+                        <button onclick="window.print()" class="btn btn-outline-secondary">
+                            <i class="bi bi-printer"></i> Imprimir
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <!-- Historial de abonos recientes -->
+            @if (Model.Abonos != null && Model.Abonos.Any())
+            {
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <h5 class="border-bottom pb-2 mb-3">
+                            <i class="bi bi-cash-stack"></i> Últimos Abonos
+                        </h5>
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Fecha</th>
+                                        <th>Monto</th>
+                                        <th>Observaciones</th>
+                                        <th>Usuario</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var abono in Model.Abonos.OrderByDescending(a => a.FechaAbono).Take(5))
+                                    {
+                                        <tr>
+                                            <td>@abono.FechaAbono.ToString("dd/MM/yyyy")</td>
+                                            <td class="text-success fw-bold">@abono.Monto.ToString("C")</td>
+                                            <td>
+                                                @if (!string.IsNullOrEmpty(abono.Observaciones))
+                                                {
+                                                    <small>@abono.Observaciones</small>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted">Sin observaciones</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                <small class="text-muted">@abono.UsuarioId</small>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                            @if (Model.Abonos.Count() > 5)
+                            {
+                                <div class="text-center mt-2">
+                                    <a asp-controller="AbonosCredito" asp-action="Index" asp-route-creditoId="@Model.Id"
+                                       class="btn btn-sm btn-outline-primary">
+                                        Ver todos los abonos (@Model.Abonos.Count())
+                                    </a>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+        <div class="card-footer text-muted">
+            <small>
+                <i class="bi bi-calendar-plus"></i> Creado el @Model.FechaCreacion.ToString("dd/MM/yyyy HH:mm")
+            </small>
+        </div>
+    </div>
+</div>
+
+@functions {
+    string GetProgressBarClass(decimal porcentaje)
+    {
+        if (porcentaje >= 100) return "bg-success";
+        if (porcentaje >= 70) return "bg-info";
+        if (porcentaje >= 40) return "bg-warning";
+        return "bg-danger";
+    }
+
+    Microsoft.AspNetCore.Html.IHtmlContent GetEstadoBadge(string estado)
+    {
+        var badgeClass = estado switch
+        {
+            "PAGADO" => "bg-success",
+            "PENDIENTE" => "bg-primary",
+            "VENCIDO" => "bg-danger",
+            "MOROSO" => "bg-dark",
+            _ => "bg-secondary"
+        };
+
+        var icon = estado switch
+        {
+            "PAGADO" => "bi-check-circle",
+            "PENDIENTE" => "bi-clock",
+            "VENCIDO" => "bi-exclamation-triangle",
+            "MOROSO" => "bi-exclamation-octagon",
+            _ => "bi-question-circle"
+        };
+
+        return Html.Raw($"<span class='badge {badgeClass}'><i class='bi {icon}'></i> {estado}</span>");
+    }
+}

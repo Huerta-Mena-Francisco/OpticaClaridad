@@ -1,0 +1,240 @@
+﻿@model OpticaClaridad.Models.Credito
+
+@{
+    ViewData["Title"] = "Eliminar Crédito";
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle-fill"></i> @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="container mt-4">
+    <div class="card border-danger">
+        <div class="card-header bg-danger text-white">
+            <h3 class="card-title">
+                <i class="bi bi-trash3"></i> @ViewData["Title"]
+            </h3>
+        </div>
+        <div class="card-body">
+            <!-- Advertencia -->
+            <div class="alert alert-warning">
+                <h5 class="alert-heading">
+                    <i class="bi bi-exclamation-triangle-fill"></i> ¡ADVERTENCIA!
+                </h5>
+                <p class="mb-0">
+                    Esta acción <strong>ELIMINARÁ PERMANENTEMENTE</strong> el crédito del sistema.
+                    @if (Model.Abonos.Any())
+                    {
+                        <span class="text-danger fw-bold">
+                            <br />NO se puede eliminar porque tiene @Model.Abonos.Count() abonos registrados.
+                        </span>
+                    }
+                </p>
+            </div>
+
+            <!-- Información del crédito -->
+            <div class="row">
+                <div class="col-md-6">
+                    <h5 class="border-bottom pb-2 mb-3">Información del Crédito</h5>
+                    <dl class="row">
+                        <dt class="col-sm-4">ID:</dt>
+                        <dd class="col-sm-8">#@Model.Id</dd>
+
+                        <dt class="col-sm-4">Paciente:</dt>  <!-- 🔴 CAMBIO -->
+                        <dd class="col-sm-8">
+                            <a asp-controller="Pacientes" asp-action="Details" asp-route-id="@Model.PacienteId">
+                                <!-- 🔴 CAMBIO -->
+                                @Model.Paciente?.Nombre  <!-- 🔴 CAMBIO -->
+                            </a>
+                        </dd>
+
+                        <dt class="col-sm-4">Monto Total:</dt>
+                        <dd class="col-sm-8">@Model.MontoTotal.ToString("C")</dd>
+
+                        <dt class="col-sm-4">Saldo Pendiente:</dt>
+                        <dd class="col-sm-8">
+                            <span class="@(Model.Saldo > 0 ? "text-danger fw-bold" : "text-success")">
+                                @Model.Saldo.ToString("C")
+                            </span>
+                        </dd>
+                    </dl>
+                </div>
+
+                <div class="col-md-6">
+                    <h5 class="border-bottom pb-2 mb-3">Detalles del Crédito</h5>
+                    <dl class="row">
+                        <dt class="col-sm-4">Fecha Crédito:</dt>
+                        <dd class="col-sm-8">@Model.FechaCredito.ToString("dd/MM/yyyy")</dd>
+
+                        <dt class="col-sm-4">Fecha Vencimiento:</dt>
+                        <dd class="col-sm-8">
+                            @if (Model.FechaVencimiento.HasValue)
+                            {
+                                <span class="@(Model.FechaVencimiento < DateTime.Today ? "text-danger" : "")">
+                                    @Model.FechaVencimiento.Value.ToString("dd/MM/yyyy")
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="text-muted">No definida</span>
+                            }
+                        </dd>
+
+                        <dt class="col-sm-4">Estado:</dt>
+                        <dd class="col-sm-8">
+                            @if (Model.Estado == "PAGADO")
+                            {
+                                <span class="badge bg-success">PAGADO</span>
+                            }
+                            else if (Model.Estado == "PENDIENTE")
+                            {
+                                <span class="badge bg-primary">PENDIENTE</span>
+                            }
+                            else if (Model.Estado == "VENCIDO")
+                            {
+                                <span class="badge bg-danger">VENCIDO</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-dark">@Model.Estado</span>
+                            }
+                        </dd>
+
+                        <dt class="col-sm-4">% Pagado:</dt>
+                        <dd class="col-sm-8">
+                            <div class="progress" style="height: 20px;">
+                                <div class="progress-bar @GetProgressBarClass(Model.PorcentajePagado)"
+                                     role="progressbar"
+                                     style="width: @Model.PorcentajePagado%;"
+                                     aria-valuenow="@Model.PorcentajePagado"
+                                     aria-valuemin="0"
+                                     aria-valuemax="100">
+                                    @Model.PorcentajePagado.ToString("N1")%
+                                </div>
+                            </div>
+                        </dd>
+                    </dl>
+                </div>
+            </div>
+
+            <!-- Verificaciones de eliminación -->
+            <div class="card mt-4">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0">
+                        <i class="bi bi-clipboard-check"></i> Condiciones para Eliminar
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item @(Model.Abonos.Any() ? "list-group-item-danger" : "list-group-item-success")">
+                            <i class="bi @(Model.Abonos.Any() ? "bi-x-circle text-danger" : "bi-check-circle text-success")"></i>
+                            No tener abonos registrados
+                            @if (Model.Abonos.Any())
+                            {
+                                <span class="badge bg-danger float-end">@Model.Abonos.Count() abonos</span>
+                            }
+                        </li>
+                        <li class="list-group-item @(Model.Saldo <= 0 ? "list-group-item-success" : "list-group-item-danger")">
+                            <i class="bi @(Model.Saldo <= 0 ? "bi-check-circle text-success" : "bi-x-circle text-danger")"></i>
+                            Saldo pendiente debe ser $0.00
+                            @if (Model.Saldo > 0)
+                            {
+                                <span class="badge bg-danger float-end">@Model.Saldo.ToString("C")</span>
+                            }
+                        </li>
+                        <li class="list-group-item @(Model.Estado != "PAGADO" ? "list-group-item-danger" : "list-group-item-success")">
+                            <i class="bi @(Model.Estado != "PAGADO" ? "bi-x-circle text-danger" : "bi-check-circle text-success")"></i>
+                            Estado debe ser "PAGADO"
+                            @if (Model.Estado != "PAGADO")
+                            {
+                                <span class="badge bg-danger float-end">@Model.Estado</span>
+                            }
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Acciones -->
+            <div class="mt-4">
+                @if (Model.Abonos.Any() || Model.Saldo > 0 || Model.Estado != "PAGADO")
+                {
+                    <div class="alert alert-danger">
+                        <i class="bi bi-slash-circle"></i>
+                        <strong>NO se puede eliminar este crédito</strong> porque no cumple con las condiciones necesarias.
+                        <ul class="mt-2">
+                            @if (Model.Abonos.Any())
+                            {
+                                <li>Tiene @Model.Abonos.Count() abonos registrados</li>
+                            }
+                            @if (Model.Saldo > 0)
+                            {
+                                <li>Tiene saldo pendiente de @Model.Saldo.ToString("C")</li>
+                            }
+                            @if (Model.Estado != "PAGADO")
+                            {
+                                <li>No está marcado como PAGADO</li>
+                            }
+                        </ul>
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-info">
+                            <i class="bi bi-eye"></i> Ver Detalles
+                        </a>
+                        <a asp-action="Index" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Volver a la lista
+                        </a>
+                    </div>
+                }
+                else
+                {
+                    <form asp-action="Delete" method="post">
+                        <input type="hidden" asp-for="Id" />
+                        <div class="d-flex justify-content-between">
+                            <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-info">
+                                <i class="bi bi-eye"></i> Ver Detalles
+                            </a>
+                            <div>
+                                <a asp-action="Index" class="btn btn-secondary">
+                                    <i class="bi bi-x-circle"></i> Cancelar
+                                </a>
+                                <button type="submit" class="btn btn-danger" id="btnEliminar">
+                                    <i class="bi bi-trash3-fill"></i> ELIMINAR DEFINITIVAMENTE
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@functions {
+    string GetProgressBarClass(decimal porcentaje)
+    {
+        if (porcentaje >= 100) return "bg-success";
+        if (porcentaje >= 70) return "bg-info";
+        if (porcentaje >= 40) return "bg-warning";
+        return "bg-danger";
+    }
+}
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const btnEliminar = document.getElementById('btnEliminar');
+            if (btnEliminar) {
+                btnEliminar.addEventListener('click', function(e) {
+                    if (!confirm('¿ESTÁ SEGURO QUE DESEA ELIMINAR ESTE CRÉDITO?\n\nEsta acción NO se puede deshacer.\n\nID: #@Model.Id\nPaciente: @Model.Paciente?.Nombre\nMonto: @Model.MontoTotal.ToString("C")')) {  <!-- 🔴 CAMBIO -->
+                        e.preventDefault();
+                    }
+                });
+            }
+        });
+    </script>
+}

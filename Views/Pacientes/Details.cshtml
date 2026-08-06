@@ -1,0 +1,703 @@
+﻿@model OpticaClaridad.Models.Paciente
+@using OpticaClaridad.Models
+
+@{
+    ViewData["Title"] = "Detalles del Paciente";
+    ViewData["Subtitle"] = "Información completa y historial clínico";
+    var ultimoHistorial = ViewBag.UltimoHistorial as HistorialClinico;
+    var historialesCount = ViewBag.HistorialesCount ?? 0;
+    var ventasCount = ViewBag.VentasCount ?? 0;
+    var creditosPendientes = ViewBag.CreditosPendientes as List<Credito> ?? new List<Credito>();
+    <!-- 🔴 NUEVO -->
+}
+
+<div class="container-fluid px-4">
+    <!-- Encabezado mejorado -->
+    <div class="d-flex justify-content-between align-items-center mt-4 mb-4">
+        <div>
+            <h1 class="mt-4">
+                <i class="fas fa-user-circle me-2" style="color: #0dcaf0;"></i>
+                @Model.Nombre
+            </h1>
+            <ol class="breadcrumb mb-4">
+                <li class="breadcrumb-item">
+                    <a asp-controller="Home" asp-action="Index" class="text-decoration-none">
+                        <i class="fas fa-home me-1"></i>Inicio
+                    </a>
+                </li>
+                <li class="breadcrumb-item">
+                    <a asp-action="Index" class="text-decoration-none">
+                        <i class="fas fa-user-injured me-1"></i>Pacientes
+                    </a>
+                </li>
+                <li class="breadcrumb-item active">
+                    <i class="fas fa-info-circle me-1"></i>@Model.Nombre
+                </li>
+            </ol>
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning btn-lg shadow-sm">
+                <i class="fas fa-edit me-2"></i>Editar
+            </a>
+            <a asp-action="Index" class="btn btn-outline-secondary btn-lg shadow-sm">
+                <i class="fas fa-arrow-left me-2"></i>Volver
+            </a>
+        </div>
+    </div>
+
+    <!-- Mensajes de alerta -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+            <i class="fas fa-check-circle me-2"></i>@TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <div class="row">
+        <!-- Columna izquierda: Información del paciente -->
+        <div class="col-lg-4">
+            <!-- Tarjeta de perfil (sin cambios) -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-gradient" style="background: linear-gradient(45deg, #0dcaf0, #0d6efd);">
+                    <h5 class="mb-0 text-white">
+                        <i class="fas fa-id-card me-2"></i>Perfil del Paciente
+                    </h5>
+                </div>
+                <div class="card-body text-center">
+                    <div class="avatar-circle bg-@(Model.Sexo == "Masculino" ? "primary" : "pink") mx-auto mb-3">
+                        <span class="avatar-initials">
+                            @(string.IsNullOrEmpty(Model.Nombre) ? "?" : Model.Nombre.Substring(0, 1).ToUpper())
+                        </span>
+                    </div>
+                    <h4 class="fw-bold">@Model.Nombre</h4>
+                    <span class="badge bg-@(Model.Activo ? "success" : "danger") p-2 mb-3">
+                        <i class="fas @(Model.Activo ? "fa-check-circle" : "fa-times-circle") me-1"></i>
+                        @(Model.Activo ? "PACIENTE ACTIVO" : "PACIENTE INACTIVO")
+                    </span>
+
+                    <hr />
+
+                    <div class="text-start">
+                        <div class="info-item">
+                            <i class="fas fa-hashtag text-primary"></i>
+                            <strong>ID:</strong>
+                            <span>@Model.Id.ToString("D4")</span>
+                        </div>
+                        <div class="info-item">
+                            <i class="fas fa-birthday-cake text-info"></i>
+                            <strong>Fecha Nac.:</strong>
+                            <span>@(Model.FechaNacimiento?.ToString("dd/MM/yyyy") ?? "No registrada")</span>
+                        </div>
+                        <div class="info-item">
+                            <i class="fas fa-calendar-alt text-success"></i>
+                            <strong>Edad:</strong>
+                            <span>@(Model.Edad > 0 ? Model.Edad + " años" : "No especificada")</span>
+                        </div>
+                        <div class="info-item">
+                            <i class="fas fa-venus-mars text-warning"></i>
+                            <strong>Sexo:</strong>
+                            <span>@(Model.Sexo ?? "No especificado")</span>
+                        </div>
+                        <div class="info-item">
+                            <i class="fas fa-calendar-check text-secondary"></i>
+                            <strong>Registro:</strong>
+                            <span>@Model.FechaRegistro?.ToString("dd/MM/yyyy")</span>
+                        </div>
+                        <div class="info-item">
+                            <i class="fas fa-clock text-info"></i>
+                            <strong>Días registrado:</strong>
+                            <span>@(Model.FechaRegistro.HasValue ? (DateTime.Today - Model.FechaRegistro.Value).Days : 0) días</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tarjeta de contacto (sin cambios) -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-address-book me-2"></i>Información de Contacto
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="info-list">
+                        <div class="info-item">
+                            <i class="fas fa-phone text-primary"></i>
+                            <strong>Teléfono:</strong>
+                            @if (!string.IsNullOrEmpty(Model.Telefono))
+                            {
+                                <a href="tel:@Model.Telefono" class="text-decoration-none">@Model.Telefono</a>
+                            }
+                            else
+                            {
+                                <span class="text-muted fst-italic">No registrado</span>
+                            }
+                        </div>
+                        <div class="info-item">
+                            <i class="fas fa-envelope text-danger"></i>
+                            <strong>Email:</strong>
+                            @if (!string.IsNullOrEmpty(Model.Email))
+                            {
+                                <a href="mailto:@Model.Email" class="text-decoration-none">@Model.Email</a>
+                            }
+                            else
+                            {
+                                <span class="text-muted fst-italic">No registrado</span>
+                            }
+                        </div>
+                        <div class="info-item">
+                            <i class="fas fa-map-marker-alt text-warning"></i>
+                            <strong>Dirección:</strong>
+                            <span>@(Model.Direccion ?? "No registrada")</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Estadísticas rápidas ACTUALIZADAS para incluir créditos -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-pie me-2"></i>Estadísticas
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <div class="stats-card text-center p-3 bg-light rounded">
+                                <i class="fas fa-file-medical-alt fa-2x text-primary mb-2"></i>
+                                <h3 class="fw-bold mb-0">@historialesCount</h3>
+                                <small class="text-muted">Historiales</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="stats-card text-center p-3 bg-light rounded">
+                                <i class="fas fa-shopping-cart fa-2x text-success mb-2"></i>
+                                <h3 class="fw-bold mb-0">@ventasCount</h3>
+                                <small class="text-muted">Compras</small>
+                            </div>
+                        </div>
+                        <!-- 🔴 NUEVA: Tarjeta de créditos -->
+                        <div class="col-6">
+                            <div class="stats-card text-center p-3 bg-light rounded">
+                                <i class="fas fa-credit-card fa-2x text-warning mb-2"></i>
+                                <h3 class="fw-bold mb-0">@(Model.Creditos?.Count ?? 0)</h3>
+                                <small class="text-muted">Créditos</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="stats-card text-center p-3 bg-light rounded">
+                                <i class="fas fa-exclamation-triangle fa-2x text-danger mb-2"></i>
+                                <h3 class="fw-bold mb-0">@(creditosPendientes.Count)</h3>
+                                <small class="text-muted">Pendientes</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="stats-card text-center p-3 bg-light rounded">
+                                <i class="fas fa-calendar-check fa-2x text-warning mb-2"></i>
+                                <h3 class="fw-bold mb-0">
+                                    @if (ultimoHistorial != null)
+                                    {
+                                        @ultimoHistorial.FechaExamen.ToString("dd/MM")
+                                    }
+                                    else
+                                    {
+                                        <span>N/A</span>
+                                    }
+                                </h3>
+                                <small class="text-muted">Último examen</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="stats-card text-center p-3 bg-light rounded">
+                                <i class="fas fa-clock fa-2x text-info mb-2"></i>
+                                <h3 class="fw-bold mb-0">
+                                    @if (ultimoHistorial != null)
+                                    {
+                                        var dias = (DateTime.Today - ultimoHistorial.FechaExamen).Days;
+                                        @(dias > 0 ? $"{dias} días" : "Hoy")
+                                    }
+                                    else
+                                    {
+                                        <span>-</span>
+                                    }
+                                </h3>
+                                <small class="text-muted">Desde último</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Acciones rápidas ACTUALIZADAS para incluir créditos -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-bolt me-2"></i>Acciones Rápidas
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a asp-controller="HistorialClinico" asp-action="Create" asp-route-pacienteId="@Model.Id"
+                           class="btn btn-primary btn-lg">
+                            <i class="fas fa-file-medical-alt me-2"></i>Nuevo Historial
+                        </a>
+                        <a asp-controller="Venta" asp-action="Create" asp-route-pacienteId="@Model.Id"
+                           class="btn btn-success btn-lg">
+                            <i class="fas fa-shopping-cart me-2"></i>Registrar Venta
+                        </a>
+                        <!-- 🔴 NUEVO: Botón para créditos -->
+                        <a asp-controller="Creditos" asp-action="Index" asp-route-pacienteId="@Model.Id"
+                           class="btn btn-warning btn-lg">
+                            <i class="fas fa-credit-card me-2"></i>Ver Créditos
+                        </a>
+                        @if (Model.Activo)
+                        {
+                            <a asp-action="ToggleStatus" asp-route-id="@Model.Id"
+                               class="btn btn-outline-danger btn-lg"
+                               onclick="return confirm('¿Está seguro de desactivar este paciente?');">
+                                <i class="fas fa-toggle-off me-2"></i>Desactivar Paciente
+                            </a>
+                        }
+                        else
+                        {
+                            <a asp-action="ToggleStatus" asp-route-id="@Model.Id"
+                               class="btn btn-outline-success btn-lg"
+                               onclick="return confirm('¿Está seguro de activar este paciente?');">
+                                <i class="fas fa-toggle-on me-2"></i>Activar Paciente
+                            </a>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Columna derecha: Historial clínico, observaciones y CRÉDITOS -->
+        <div class="col-lg-8">
+            <!-- Observaciones del paciente (sin cambios) -->
+            @if (!string.IsNullOrEmpty(Model.Observaciones))
+            {
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-warning text-dark">
+                        <h5 class="mb-0">
+                            <i class="fas fa-sticky-note me-2"></i>Observaciones del Paciente
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-0">@Model.Observaciones</p>
+                    </div>
+                </div>
+            }
+
+            <!-- Último historial clínico (sin cambios) -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-gradient" style="background: linear-gradient(45deg, #20c997, #0dcaf0);">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0 text-white">
+                            <i class="fas fa-file-medical me-2"></i>
+                            @if (ultimoHistorial != null)
+                            {
+                                <span>Último Historial Clínico - @ultimoHistorial.FechaExamen.ToString("dd/MM/yyyy")</span>
+                            }
+                            else
+                            {
+                                <span>Historial Clínico</span>
+                            }
+                        </h5>
+                        <span class="badge bg-light text-dark p-2">
+                            <i class="fas fa-calendar me-1"></i>
+                            @if (ultimoHistorial != null)
+                            {
+                                var diasDesde = (DateTime.Today - ultimoHistorial.FechaExamen).Days;
+                                @(diasDesde == 0 ? "Hoy" : diasDesde == 1 ? "Ayer" : $"Hace {diasDesde} días")
+                            }
+                        </span>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    @if (ultimoHistorial != null)
+                    {
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="examen-section mb-3">
+                                    <h6 class="fw-bold text-primary">
+                                        <i class="fas fa-eye me-2"></i>Ojo Derecho (OD)
+                                    </h6>
+                                    <div class="ms-3">
+                                        <p class="mb-1">
+                                            <span class="badge bg-info bg-opacity-25 text-dark p-2">
+                                                <strong>Esf:</strong> @(ultimoHistorial.EsferaOD?.ToString("F2") ?? "0.00")
+                                            </span>
+                                            <span class="badge bg-info bg-opacity-25 text-dark p-2 ms-2">
+                                                <strong>Cil:</strong> @(ultimoHistorial.CilindroOD?.ToString("F2") ?? "0.00")
+                                            </span>
+                                            <span class="badge bg-info bg-opacity-25 text-dark p-2 ms-2">
+                                                <strong>Eje:</strong> @(ultimoHistorial.EjeOD?.ToString() ?? "0")
+                                            </span>
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="examen-section mb-3">
+                                    <h6 class="fw-bold text-success">
+                                        <i class="fas fa-eye me-2"></i>Ojo Izquierdo (OI)
+                                    </h6>
+                                    <div class="ms-3">
+                                        <p class="mb-1">
+                                            <span class="badge bg-info bg-opacity-25 text-dark p-2">
+                                                <strong>Esf:</strong> @(ultimoHistorial.EsferaOI?.ToString("F2") ?? "0.00")
+                                            </span>
+                                            <span class="badge bg-info bg-opacity-25 text-dark p-2 ms-2">
+                                                <strong>Cil:</strong> @(ultimoHistorial.CilindroOI?.ToString("F2") ?? "0.00")
+                                            </span>
+                                            <span class="badge bg-info bg-opacity-25 text-dark p-2 ms-2">
+                                                <strong>Eje:</strong> @(ultimoHistorial.EjeOI?.ToString() ?? "0")
+                                            </span>
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="info-group">
+                                    <p><strong><i class="fas fa-arrows-alt-h me-2 text-warning"></i>Distancia Pupilar:</strong> @(ultimoHistorial.DistanciaPupilar?.ToString("F1") ?? "No registrada") mm</p>
+                                    <p><strong><i class="fas fa-plus-circle me-2 text-primary"></i>Adición:</strong> @(ultimoHistorial.Adicion?.ToString("F2") ?? "0.00")</p>
+                                    <p><strong><i class="fas fa-tag me-2 text-info"></i>Tipo de Lente:</strong> @ultimoHistorial.TipoLenteSugerido</p>
+                                    <p><strong><i class="fas fa-user-md me-2 text-success"></i>Optometrista:</strong> @ultimoHistorial.Optometrista</p>
+                                    <p>
+                                        <strong><i class="fas fa-credit-card me-2 text-warning"></i>Estado:</strong>
+                                        @if (ultimoHistorial.ExamenPagado)
+                                        {
+                                            <span class="badge bg-success">Pagado</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-warning text-dark">Pendiente</span>
+                                        }
+                                        @if (ultimoHistorial.CostoExamen.HasValue && ultimoHistorial.CostoExamen.Value > 0)
+                                        {
+                                            <span class="badge bg-info ms-2">$@ultimoHistorial.CostoExamen.Value.ToString("N2")</span>
+                                        }
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        @if (!string.IsNullOrEmpty(ultimoHistorial.ObservacionesExamen))
+                        {
+                            <div class="mt-3 p-3 bg-light rounded">
+                                <strong><i class="fas fa-notes-medical me-2 text-primary"></i>Observaciones del Examen:</strong>
+                                <p class="mb-0 mt-2">@ultimoHistorial.ObservacionesExamen</p>
+                            </div>
+                        }
+
+                        @if (ultimoHistorial.NecesitaSeguimiento && ultimoHistorial.FechaProximoControl.HasValue)
+                        {
+                            <div class="mt-3 alert alert-info">
+                                <i class="fas fa-bell me-2"></i>
+                                <strong>Próximo control:</strong> @ultimoHistorial.FechaProximoControl.Value.ToString("dd/MM/yyyy")
+                                @{
+                                    var diasProximo = (ultimoHistorial.FechaProximoControl.Value - DateTime.Today).Days;
+                                }
+                                @if (diasProximo > 0)
+                                {
+                                    <span class="badge bg-info ms-2">Faltan @diasProximo días</span>
+                                }
+                                else if (diasProximo == 0)
+                                {
+                                    <span class="badge bg-warning ms-2">Hoy</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-danger ms-2">@Math.Abs(diasProximo) días de retraso</span>
+                                }
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="text-center py-5">
+                            <div class="mb-4">
+                                <i class="fas fa-file-medical-alt fa-5x text-muted"></i>
+                            </div>
+                            <h4 class="text-muted mb-3">No hay historiales clínicos registrados</h4>
+                            <p class="text-muted mb-4">Este paciente aún no tiene ningún examen visual registrado.</p>
+                            <a asp-controller="HistorialClinico" asp-action="Create" asp-route-pacienteId="@Model.Id"
+                               class="btn btn-primary btn-lg px-5">
+                                <i class="fas fa-plus-circle me-2"></i>Agregar Primer Historial
+                            </a>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- 🔴 NUEVA SECCIÓN: Créditos del paciente -->
+            @if (Model.Creditos != null && Model.Creditos.Any())
+            {
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-warning text-white">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">
+                                <i class="fas fa-credit-card me-2"></i>Créditos del Paciente
+                            </h5>
+                            <a asp-controller="Creditos" asp-action="Create" asp-route-pacienteId="@Model.Id"
+                               class="btn btn-sm btn-light">
+                                <i class="fas fa-plus-circle me-1"></i>Nuevo Crédito
+                            </a>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Fecha</th>
+                                        <th>Monto Total</th>
+                                        <th>Saldo</th>
+                                        <th>Vencimiento</th>
+                                        <th>Estado</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var credito in Model.Creditos.OrderByDescending(c => c.FechaCredito).Take(5))
+                                    {
+                                        <tr>
+                                            <td>#@credito.Id</td>
+                                            <td>@credito.FechaCredito.ToString("dd/MM/yyyy")</td>
+                                            <td class="fw-bold">@credito.MontoTotal.ToString("C")</td>
+                                            <td>
+                                                <span class="@(credito.Saldo > 0 ? "text-danger" : "text-success")">
+                                                    @credito.Saldo.ToString("C")
+                                                </span>
+                                            </td>
+                                            <td>
+                                                @if (credito.FechaVencimiento.HasValue)
+                                                {
+                                                    <span class="@(credito.FechaVencimiento < DateTime.Today ? "text-danger" : "")">
+                                                        @credito.FechaVencimiento.Value.ToString("dd/MM/yyyy")
+                                                    </span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted">N/A</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                @if (credito.Estado == "PAGADO")
+                                                {
+                                                    <span class="badge bg-success">PAGADO</span>
+                                                }
+                                                else if (credito.Estado == "VENCIDO")
+                                                {
+                                                    <span class="badge bg-danger">VENCIDO</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-primary">@credito.Estado</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                <div class="btn-group btn-group-sm">
+                                                    <a asp-controller="Creditos" asp-action="Details" asp-route-id="@credito.Id"
+                                                       class="btn btn-outline-info" title="Ver detalles">
+                                                        <i class="fas fa-eye"></i>
+                                                    </a>
+                                                    <a asp-controller="AbonosCredito" asp-action="Index" asp-route-creditoId="@credito.Id"
+                                                       class="btn btn-outline-success" title="Ver abonos">
+                                                        <i class="fas fa-cash-register"></i>
+                                                    </a>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                            @if (Model.Creditos.Count() > 5)
+                            {
+                                <div class="text-center mt-3">
+                                    <a asp-controller="Creditos" asp-action="Index" asp-route-pacienteId="@Model.Id"
+                                       class="btn btn-outline-warning btn-sm">
+                                        Ver todos los créditos (@Model.Creditos.Count())
+                                    </a>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-secondary text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-credit-card me-2"></i>Créditos del Paciente
+                        </h5>
+                    </div>
+                    <div class="card-body text-center py-4">
+                        <div class="mb-3">
+                            <i class="fas fa-credit-card fa-4x text-muted"></i>
+                        </div>
+                        <p class="text-muted">Este paciente no tiene créditos registrados</p>
+                        <a asp-controller="Creditos" asp-action="Create" asp-route-pacienteId="@Model.Id"
+                           class="btn btn-warning">
+                            <i class="fas fa-plus-circle me-2"></i>Agregar Crédito
+                        </a>
+                    </div>
+                </div>
+            }
+
+            <!-- Historial de ventas (sin cambios) -->
+            @if (ventasCount > 0)
+            {
+                <div class="card shadow-sm">
+                    <div class="card-header bg-success text-white">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">
+                                <i class="fas fa-shopping-cart me-2"></i>Últimas Compras
+                            </h5>
+                            <a asp-controller="Venta" asp-action="Index" asp-route-pacienteId="@Model.Id"
+                               class="btn btn-sm btn-light">
+                                <i class="fas fa-list me-1"></i>Ver todas
+                            </a>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted mb-0">
+                            <i class="fas fa-info-circle me-1"></i>
+                            El paciente ha realizado <strong>@ventasCount compras</strong> en el sistema.
+                        </p>
+                        <div class="mt-3 text-end">
+                            <a asp-controller="Venta" asp-action="Create" asp-route-pacienteId="@Model.Id"
+                               class="btn btn-success">
+                                <i class="fas fa-plus-circle me-2"></i>Nueva Venta
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Estilos personalizados (sin cambios) -->
+<style>
+    .bg-gradient {
+        background: linear-gradient(45deg, #0dcaf0, #0d6efd);
+    }
+
+    .avatar-circle {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 4px solid white;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+
+    .avatar-initials {
+        color: white;
+        font-size: 48px;
+        font-weight: bold;
+        text-transform: uppercase;
+    }
+
+    .bg-primary .avatar-initials {
+        background-color: #0d6efd;
+    }
+
+    .bg-pink {
+        background-color: #e83e8c !important;
+    }
+
+        .bg-pink .avatar-initials {
+            background-color: #e83e8c;
+        }
+
+    .info-item {
+        display: flex;
+        align-items: baseline;
+        gap: 10px;
+        margin-bottom: 12px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid #f0f0f0;
+    }
+
+        .info-item i {
+            width: 20px;
+            color: #6c757d;
+        }
+
+    .stats-card {
+        transition: transform 0.2s;
+    }
+
+        .stats-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+    .examen-section {
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 10px;
+        margin-bottom: 15px;
+    }
+
+    .card {
+        border-radius: 15px;
+        border: none;
+    }
+
+    .card-header {
+        border-radius: 15px 15px 0 0 !important;
+        padding: 15px 20px;
+    }
+
+    .btn {
+        border-radius: 10px;
+        padding: 10px 20px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+    .badge {
+        font-weight: 500;
+        padding: 8px 12px;
+    }
+
+    .info-group p {
+        margin-bottom: 12px;
+        padding-bottom: 8px;
+        border-bottom: 1px dashed #e9ecef;
+    }
+
+        .info-group p:last-child {
+            border-bottom: none;
+        }
+</style>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Tooltips
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            var tooltipList = tooltipTriggerList.map(function(tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+
+            // Auto-cerrar alertas después de 5 segundos
+            setTimeout(function() {
+                $('.alert').alert('close');
+            }, 5000);
+        });
+    </script>
+}

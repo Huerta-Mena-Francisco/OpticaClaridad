@@ -1,0 +1,560 @@
+﻿@model IEnumerable<OpticaClaridad.Models.HistorialClinico>
+
+@{
+    ViewData["Title"] = "Historiales Clínicos";
+    var pacienteId = ViewBag.PacienteId as int?;
+    var pacienteNombre = ViewBag.PacienteNombre as string ?? "Paciente";
+    var titulo = pacienteId.HasValue ? $"Historial Clínico - {pacienteNombre}" : "Historiales Clínicos";
+}
+
+<div class="container-fluid px-4">
+    <!-- Encabezado mejorado -->
+    <div class="d-flex justify-content-between align-items-center mt-4 mb-4">
+        <div>
+            <h1 class="mt-4 text-primary">
+                <i class="fas fa-file-medical-alt me-2"></i>@titulo
+            </h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb bg-light p-3 rounded">
+                    <li class="breadcrumb-item">
+                        <a asp-controller="Home" asp-action="Index" class="text-decoration-none">
+                            <i class="fas fa-home me-1"></i>Inicio
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a asp-controller="Pacientes" asp-action="Index" class="text-decoration-none">
+                            <i class="fas fa-users me-1"></i>Pacientes
+                        </a>
+                    </li>
+                    @if (pacienteId.HasValue)
+                    {
+                        <li class="breadcrumb-item">
+                            <a asp-controller="Pacientes" asp-action="Details" asp-route-id="@pacienteId"
+                               class="text-decoration-none">
+                                <i class="fas fa-user me-1"></i>@pacienteNombre
+                            </a>
+                        </li>
+                    }
+                    <li class="breadcrumb-item active" aria-current="page">
+                        <i class="fas fa-history me-1"></i>Historial Clínico
+                    </li>
+                </ol>
+            </nav>
+        </div>
+
+        <div class="d-flex gap-2">
+            @if (pacienteId.HasValue)
+            {
+                <a asp-controller="Pacientes" asp-action="Details" asp-route-id="@pacienteId"
+                   class="btn btn-outline-primary">
+                    <i class="fas fa-user me-1"></i>Ver Paciente
+                </a>
+            }
+            <a asp-action="Create" asp-route-pacienteId="@pacienteId"
+               class="btn btn-success shadow-sm">
+                <i class="fas fa-plus-circle me-2"></i>Nuevo Historial
+            </a>
+        </div>
+    </div>
+
+    <!-- Mensajes de alerta -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+            <div class="d-flex align-items-center">
+                <i class="fas fa-check-circle fa-2x me-3"></i>
+                <div>
+                    <h5 class="alert-heading mb-1">¡Éxito!</h5>
+                    <p class="mb-0">@TempData["SuccessMessage"]</p>
+                </div>
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <!-- Panel de estadísticas -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-gradient-primary text-white border-0 shadow-sm mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title text-uppercase text-white-50 mb-1">Total Historiales</h6>
+                            <h2 class="mb-0">@Model.Count()</h2>
+                        </div>
+                        <div class="icon-circle bg-white text-primary">
+                            <i class="fas fa-file-medical fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-gradient-success text-white border-0 shadow-sm mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title text-uppercase text-white-50 mb-1">Exámenes Pagados</h6>
+                            <h2 class="mb-0">@Model.Count(h => h.ExamenPagado)</h2>
+                        </div>
+                        <div class="icon-circle bg-white text-success">
+                            <i class="fas fa-check-circle fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-gradient-warning text-white border-0 shadow-sm mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title text-uppercase text-white-50 mb-1">Con Seguimiento</h6>
+                            <h2 class="mb-0">@Model.Count(h => h.NecesitaSeguimiento)</h2>
+                        </div>
+                        <div class="icon-circle bg-white text-warning">
+                            <i class="fas fa-calendar-check fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-gradient-info text-white border-0 shadow-sm mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title text-uppercase text-white-50 mb-1">Con Interés</h6>
+                            <h2 class="mb-0">@Model.Count(h => h.InteresEnCompra)</h2>
+                        </div>
+                        <div class="icon-circle bg-white text-info">
+                            <i class="fas fa-shopping-cart fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- NUEVA CARD: Historiales con graduación anterior -->
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-gradient-secondary text-white border-0 shadow-sm mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title text-uppercase text-white-50 mb-1">Con Grad. Anterior</h6>
+                            <h2 class="mb-0">@Model.Count(h => h.GraduacionAnterior)</h2>
+                        </div>
+                        <div class="icon-circle bg-white text-secondary">
+                            <i class="fas fa-history fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Panel de filtros -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white border-0 py-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-filter text-primary me-2"></i>Filtros de Búsqueda
+                </h5>
+                <a asp-action="Index" asp-route-pacienteId="@pacienteId"
+                   class="btn btn-sm btn-outline-secondary">
+                    <i class="fas fa-redo me-1"></i>Limpiar
+                </a>
+            </div>
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                @if (pacienteId.HasValue)
+                {
+                    <input type="hidden" name="pacienteId" value="@pacienteId" />
+                }
+                <div class="col-md-4">
+                    <label class="form-label fw-bold">Fecha de Examen</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light">
+                            <i class="fas fa-calendar-alt text-primary"></i>
+                        </span>
+                        <input type="date" name="searchDate" class="form-control"
+                               value="@Context.Request.Query["searchDate"]" />
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-bold">Tipo de Examen</label>
+                    <select name="tipoExamen" class="form-select">
+                        <option value="">Todos los tipos</option>
+                        <option value="Gratis">Gratis</option>
+                        <option value="Básico">Básico</option>
+                        <option value="Completo">Completo</option>
+                        <option value="Especializado">Especializado</option>
+                    </select>
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-search me-2"></i>Buscar Historiales
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Tabla de historiales -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white border-0 py-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-list text-primary me-2"></i>Registro de Historiales
+                    <span class="badge bg-primary ms-2">@Model.Count() registros</span>
+                </h5>
+                <div>
+                    <span class="text-muted me-3">
+                        <i class="fas fa-info-circle me-1"></i>
+                        @DateTime.Now.ToString("dd/MM/yyyy HH:mm")
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-striped mb-0">
+                    <thead class="table-primary">
+                        <tr>
+                            <th class="text-center" width="80">ID</th>
+                            @if (!pacienteId.HasValue)
+                            {
+                                <th>Paciente</th>
+                            }
+                            <th>Fecha Examen</th>
+                            <th>Tipo</th>
+                            <th class="text-center">Graduación</th>
+                            <!-- NUEVA COLUMNA: Graduación Anterior -->
+                            <th class="text-center">Grad. Anterior</th>
+                            <th>Optometrista</th>
+                            <th class="text-center">Estado</th>
+                            <th class="text-center" width="200">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <tr class="@(item.NecesitaSeguimiento ? "table-warning" : "")">
+                                <td class="text-center">
+                                    <span class="badge bg-dark rounded-pill px-3 py-2">#@item.Id</span>
+                                </td>
+
+                                @if (!pacienteId.HasValue)
+                                {
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar-circle-sm bg-primary text-white me-3">
+                                                @item.Paciente?.Nombre.Substring(0, 1).ToUpper()
+                                            </div>
+                                            <div>
+                                                <a asp-controller="Pacientes" asp-action="Details" asp-route-id="@item.PacienteId"
+                                                   class="text-decoration-none fw-bold">
+                                                    @item.Paciente?.Nombre
+                                                </a>
+                                                <div class="text-muted small">
+                                                    <i class="fas fa-phone-alt me-1"></i>@item.Paciente?.Telefono
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                }
+
+                                <td>
+                                    <div class="fw-bold">@item.FechaExamen.ToString("dd/MM/yyyy")</div>
+                                    @if (item.HoraExamen.HasValue)
+                                    {
+                                        <small class="text-muted">
+                                            <i class="far fa-clock me-1"></i>@item.HoraExamen.Value.ToString(@"hh\:mm")
+                                        </small>
+                                    }
+                                </td>
+
+                                <td>
+                                    <span class="badge @GetTipoExamenBadge(item.TipoExamen) rounded-pill px-3">
+                                        @item.TipoExamen
+                                    </span>
+                                    @if (item.CostoExamen.HasValue && item.TipoExamen != "Gratis")
+                                    {
+                                        <div class="small text-muted mt-1">
+                                            <i class="fas fa-dollar-sign me-1"></i>@item.CostoExamen.Value.ToString("N2")
+                                        </div>
+                                    }
+                                </td>
+
+                                <td class="text-center">
+                                    <div class="d-flex justify-content-center gap-2">
+                                        @if (!string.IsNullOrEmpty(item.GraduacionODFormateada))
+                                        {
+                                            <div class="graduacion-badge">
+                                                <small class="text-muted d-block">OD</small>
+                                                <span class="fw-bold">@item.GraduacionODFormateada</span>
+                                            </div>
+                                        }
+
+                                        @if (!string.IsNullOrEmpty(item.GraduacionOIFormateada))
+                                        {
+                                            <div class="graduacion-badge">
+                                                <small class="text-muted d-block">OI</small>
+                                                <span class="fw-bold">@item.GraduacionOIFormateada</span>
+                                            </div>
+                                        }
+                                    </div>
+                                </td>
+
+                                <!-- NUEVA CELDA: Indicador de Graduación Anterior -->
+                                <td class="text-center align-middle">
+                                    @if (item.GraduacionAnterior)
+                                    {
+                                        <div class="d-flex flex-column align-items-center">
+                                            <span class="badge bg-secondary rounded-pill px-3 mb-1">
+                                                <i class="fas fa-history me-1"></i>Tiene anterior
+                                            </span>
+                                            <!-- Tooltip con valores anteriores -->
+                                            @if (!string.IsNullOrEmpty(item.GraduacionODAnteriorFormateada) || 
+                                                 !string.IsNullOrEmpty(item.GraduacionOIAnteriorFormateada))
+                                            {
+                                                <small class="text-muted" data-bs-toggle="tooltip" 
+                                                       title="OD: @item.GraduacionODAnteriorFormateada | OI: @item.GraduacionOIAnteriorFormateada">
+                                                    <i class="fas fa-info-circle me-1"></i>Ver valores
+                                                </small>
+                                            }
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted small">---</span>
+                                    }
+                                </td>
+
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-user-md text-info me-2"></i>
+                                        <span>@item.Optometrista</span>
+                                    </div>
+                                </td>
+
+                                <td class="text-center">
+                                    <div class="d-flex flex-column gap-1 align-items-center">
+                                        @if (item.ExamenPagado)
+                                        {
+                                            <span class="badge bg-success rounded-pill px-3">
+                                                <i class="fas fa-check-circle me-1"></i>Pagado
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-danger rounded-pill px-3">
+                                                <i class="fas fa-clock me-1"></i>Pendiente
+                                            </span>
+                                        }
+
+                                        @if (item.NecesitaSeguimiento)
+                                        {
+                                            <span class="badge bg-warning rounded-pill px-3">
+                                                <i class="fas fa-calendar-alt me-1"></i>Seguimiento
+                                            </span>
+                                        }
+                                    </div>
+                                </td>
+
+                                <td>
+                                    <div class="d-flex justify-content-center gap-1">
+                                           <a asp-action="Edit" asp-route-id="@item.Id"
+                                           class="btn btn-sm btn-warning rounded-circle"
+                                           title="Editar"
+                                           data-bs-toggle="tooltip">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+
+                                        <a asp-action="Delete" asp-route-id="@item.Id"
+                                           class="btn btn-sm btn-danger rounded-circle"
+                                           title="Eliminar"
+                                           data-bs-toggle="tooltip">
+                                            <i class="fas fa-trash"></i>
+                                        </a>
+
+                                        <a asp-action="Reporte" asp-route-id="@item.Id"
+                                           class="btn btn-sm btn-primary rounded-circle"
+                                           title="Generar reporte"
+                                           data-bs-toggle="tooltip">
+                                            <i class="fas fa-file-pdf"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Pie de tabla -->
+        <div class="card-footer bg-white border-0 py-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    @if (Model.Any())
+                    {
+                        <span class="text-muted">
+                            Mostrando <strong>@Model.Count()</strong> historiales clínicos
+                        </span>
+                    }
+                </div>
+                <div>
+                    @if (!Model.Any())
+                    {
+                        <div class="text-center py-5">
+                            <i class="fas fa-file-medical-alt fa-4x text-muted mb-3"></i>
+                            <h4 class="text-muted">No hay historiales clínicos</h4>
+                            <p class="text-muted mb-4">Comienza agregando un nuevo historial clínico</p>
+                            <a asp-action="Create" asp-route-pacienteId="@pacienteId"
+                               class="btn btn-primary btn-lg">
+                                <i class="fas fa-plus-circle me-2"></i>Agregar Primer Historial
+                            </a>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Estilos adicionales -->
+<style>
+    .card {
+        border-radius: 10px;
+        overflow: hidden;
+    }
+
+    .card-header {
+        border-bottom: 1px solid rgba(0,0,0,.1);
+    }
+
+    .bg-gradient-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+
+    .bg-gradient-success {
+        background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+    }
+
+    .bg-gradient-warning {
+        background: linear-gradient(135deg, #f7971e 0%, #ffd200 100%);
+    }
+
+    .bg-gradient-info {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    }
+
+    .bg-gradient-secondary {
+        background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+    }
+
+    .text-secondary {
+        color: #6c757d !important;
+    }
+
+    .icon-circle {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .avatar-circle-sm {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 14px;
+    }
+
+    .graduacion-badge {
+        background-color: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 6px;
+        padding: 4px 8px;
+        min-width: 70px;
+    }
+
+    .table-striped tbody tr:nth-of-type(odd) {
+        background-color: rgba(0, 123, 255, 0.02);
+    }
+
+    .table-hover tbody tr:hover {
+        background-color: rgba(0, 123, 255, 0.05);
+        transform: translateY(-1px);
+        transition: all 0.2s ease;
+    }
+
+    .btn-sm.rounded-circle {
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .breadcrumb {
+        background-color: #f8f9fa;
+        border-radius: 8px;
+    }
+
+    .shadow-sm {
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075) !important;
+    }
+</style>
+
+<!-- Scripts -->
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Inicializar tooltips
+            $('[data-bs-toggle="tooltip"]').tooltip();
+
+            // Inicializar DataTable (opcional)
+            $('#historialesTable').DataTable({
+                pageLength: 10,
+                language: {
+                    url: '//cdn.datatables.net/plug-ins/1.13.4/i18n/es-ES.json'
+                },
+                order: [[2, 'desc']]
+            });
+
+            // Estilo para filas con seguimiento
+            $('.table-warning').hover(function() {
+                $(this).addClass('shadow-sm');
+            }, function() {
+                $(this).removeClass('shadow-sm');
+            });
+        });
+    </script>
+}
+
+@functions {
+    public string GetTipoExamenBadge(string tipoExamen)
+    {
+        return tipoExamen switch
+        {
+            "Gratis" => "bg-success",
+            "Básico" => "bg-info",
+            "Completo" => "bg-primary",
+            "Especializado" => "bg-warning",
+            _ => "bg-secondary"
+        };
+    }
+}

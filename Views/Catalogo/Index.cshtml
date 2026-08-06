@@ -1,0 +1,152 @@
+﻿﻿@using System.IO
+@model IEnumerable<OpticaClaridad.Models.Producto>
+
+@{
+    ViewData["Title"] = "Catálogo de Productos";
+}
+
+@functions {
+    // Función para convertir ruta relativa a URL pública
+    string ObtenerUrlImagen(string rutaImagen)
+    {
+        var imagenDefault = "/Optica.jpg";
+
+        if (string.IsNullOrEmpty(rutaImagen))
+            return imagenDefault;
+
+        // Si ya es una URL absoluta o empieza con /archivos/, mantenerla
+        if (rutaImagen.StartsWith("/archivos/") || rutaImagen.StartsWith("http"))
+            return rutaImagen;
+
+        // Si es ruta antigua (empieza con /img/), intentar convertir
+        if (rutaImagen.StartsWith("/img/"))
+        {
+            var fileName = System.IO.Path.GetFileName(rutaImagen);
+            return $"/archivos/Imagenes/Productos/{fileName}";
+        }
+
+        // Si es ruta relativa del nuevo formato (sin /archivos/)
+        if (!rutaImagen.StartsWith("/"))
+        {
+            return $"/archivos/{rutaImagen.Replace('\\', '/')}";
+        }
+
+        return imagenDefault;
+    }
+}
+
+<div class="container mt-4">
+    <h1 class="mb-4">@ViewData["Title"]</h1>
+
+    @if (Model != null && Model.Any())
+    {
+        <p class="text-muted mb-4">Mostrando @Model.Count() productos</p>
+
+        <div class="row">
+            @foreach (var producto in Model)
+            {
+                // Obtener la URL de la imagen principal
+                var imagenUrl = ObtenerUrlImagen(producto.ImagenPrincipalUrl);
+
+                // Si no hay imagen principal, buscar la primera imagen activa
+                if (imagenUrl == "/Optica.jpg" && producto.Imagenes != null && producto.Imagenes.Any(i => i.Activa))
+                {
+                    var primeraImagen = producto.Imagenes.FirstOrDefault(i => i.Activa);
+                    if (primeraImagen != null)
+                    {
+                        imagenUrl = ObtenerUrlImagen(primeraImagen.ImagenUrl);
+                    }
+                }
+
+                <div class="col-md-4 col-lg-3 mb-4">
+                    <div class="card h-100 shadow-sm">
+                        <!-- Imagen -->
+                        <div class="text-center p-3" style="height: 200px; background-color: #f8f9fa;">
+                            @if (imagenUrl != "/Optica.jpg")
+                            {
+                                <img src="@imagenUrl"
+                                     class="img-fluid h-100"
+                                     alt="@producto.Nombre"
+                                     style="object-fit: contain;"
+                                     onerror="this.src='/Optica.jpg'">
+                            }
+                            else
+                            {
+                                <div class="h-100 d-flex flex-column align-items-center justify-content-center">
+                                    <img src="/Optica.jpg"
+                                         class="img-fluid h-100"
+                                         alt="@producto.Nombre"
+                                         style="object-fit: contain;">
+                                </div>
+                            }
+                        </div>
+
+                        <!-- Info del producto -->
+                        <div class="card-body">
+                            <h6 class="card-title">@producto.Nombre</h6>
+
+                            @if (producto.Categoria != null)
+                            {
+                                <span class="badge bg-secondary">@producto.Categoria.Nombre</span>
+                            }
+
+                            <div class="mt-2">
+                                <h5 class="text-primary">@producto.PrecioVenta.ToString("C")</h5>
+
+                                <!-- Stock -->
+                                <small class="@(producto.Stock > 0 ? "text-success" : "text-danger")">
+                                    <i class="bi bi-box"></i>
+                                    @if (producto.Stock > 0)
+                                    {
+                                        @:Disponible (@producto.Stock)
+                                    }
+                                    else
+                                    {
+                                        @:Agotado
+                                    }
+                                </small>
+                            </div>
+                        </div>
+
+                        <!-- Botones -->
+                        <div class="card-footer bg-white">
+                            <a asp-action="Detalles" asp-route-id="@producto.Id"
+                               class="btn btn-primary btn-sm w-100">
+                                <i class="bi bi-eye"></i> Ver detalles
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-warning">
+            <h4>No hay productos en el catálogo</h4>
+            <p>Agrega productos desde la sección de administración.</p>
+
+            <!-- Verifica si hay productos en la base de datos -->
+            @if (User.Identity?.IsAuthenticated == true)
+            {
+                <a asp-controller="Productos" asp-action="Index" class="btn btn-secondary">
+                    <i class="bi bi-box"></i> Ir a Productos
+                </a>
+            }
+        </div>
+    }
+</div>
+
+<style>
+    .card {
+        transition: transform 0.2s;
+    }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+    .badge {
+        font-size: 0.75rem;
+    }
+</style>

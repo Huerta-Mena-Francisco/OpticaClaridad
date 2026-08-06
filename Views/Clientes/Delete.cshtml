@@ -1,0 +1,125 @@
+﻿@model OpticaClaridad.Models.Cliente
+
+@{
+    ViewData["Title"] = "Eliminar Cliente";
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle-fill"></i> @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="container mt-4">
+    <div class="card border-danger">
+        <div class="card-header bg-danger text-white">
+            <h3 class="card-title">
+                <i class="bi bi-exclamation-triangle"></i> @ViewData["Title"]
+            </h3>
+        </div>
+        <div class="card-body">
+            <div class="alert alert-warning">
+                <h5 class="alert-heading">
+                    <i class="bi bi-trash3-fill"></i> ¡ADVERTENCIA DE ELIMINACIÓN COMPLETA!
+                </h5>
+                <p class="mb-0">
+                    Esta acción eliminará <strong>PERMANENTEMENTE</strong>:
+                </p>
+                <ul>
+                    <li>Los datos del cliente</li>
+                    <li>Todos los créditos asociados</li>
+                    <li>El historial completo de abonos</li>
+                </ul>
+                <p class="mb-0 fw-bold text-danger">
+                    Esta acción NO se puede deshacer.
+                </p>
+            </div>
+
+            <h4 class="text-danger">¿Está seguro que desea eliminar este cliente?</h4>
+
+            <div class="row mt-4">
+                <div class="col-md-6">
+                    <h5>Información del Cliente</h5>
+                    <dl class="row">
+                        <dt class="col-sm-4">Nombre:</dt>
+                        <dd class="col-sm-8">@Html.DisplayFor(model => model.Nombre)</dd>
+
+                        <dt class="col-sm-4">Teléfono:</dt>
+                        <dd class="col-sm-8">@Html.DisplayFor(model => model.Telefono)</dd>
+
+                        <dt class="col-sm-4">Email:</dt>
+                        <dd class="col-sm-8">@Html.DisplayFor(model => model.Email)</dd>
+
+                        <dt class="col-sm-4">Dirección:</dt>
+                        <dd class="col-sm-8">@Html.DisplayFor(model => model.Direccion)</dd>
+
+                        <dt class="col-sm-4">Fecha Registro:</dt>
+                        <dd class="col-sm-8">@Model.FechaRegistro?.ToString("dd/MM/yyyy")</dd>
+
+                        <dt class="col-sm-4">Estado:</dt>
+                        <dd class="col-sm-8">
+                            @if (Model.Activo)
+                            {
+                                <span class="badge bg-success">Activo</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-danger">Inactivo</span>
+                            }
+                        </dd>
+                    </dl>
+                </div>
+
+                <div class="col-md-6">
+                    <h5>Verificación de Eliminación</h5>
+                    <div class="card">
+                        <div class="card-body">
+                            <p class="card-text">
+                                <i class="bi bi-info-circle text-primary"></i>
+                                <strong>Para eliminar el cliente debe cumplir:</strong>
+                            </p>
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item">
+                                    <i class="bi bi-check-circle text-success"></i>
+                                    No tener créditos pendientes de pago
+                                </li>
+                                <li class="list-group-item">
+                                    <i class="bi bi-check-circle text-success"></i>
+                                    Todos los créditos deben estar marcados como "PAGADO"
+                                </li>
+                                <li class="list-group-item">
+                                    <i class="bi bi-check-circle text-success"></i>
+                                    Saldo pendiente debe ser $0.00
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Botón para ver créditos del cliente -->
+            <div class="mt-3">
+                <a asp-controller="Creditos" asp-action="Index" asp-route-clienteId="@Model.Id"
+                   class="btn btn-info">
+                    <i class="bi bi-credit-card"></i> Ver Créditos del Cliente
+                </a>
+                <small class="text-muted ms-2">(Recomendado verificar antes de eliminar)</small>
+            </div>
+        </div>
+        <div class="card-footer">
+            <form asp-action="Delete">
+                <input type="hidden" asp-for="Id" />
+                <div class="d-flex justify-content-between">
+                    <a asp-action="Index" class="btn btn-secondary">
+                        <i class="bi bi-arrow-left"></i> Volver a la lista
+                    </a>
+                    <button type="submit" class="btn btn-danger" onclick="return confirm('¿ESTÁ ABSOLUTAMENTE SEGURO?\\n\\nEsta acción eliminará PERMANENTEMENTE: \\n✓ Datos del cliente \\n✓ Historial de créditos \\n✓ Registro de abonos\\n\\n¿Continuar?')">
+                        <i class="bi bi-trash3-fill"></i> ELIMINAR DEFINITIVAMENTE
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

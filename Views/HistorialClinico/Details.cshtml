@@ -1,0 +1,719 @@
+﻿﻿@model OpticaClaridad.Models.HistorialClinico
+
+@{
+    ViewData["Title"] = "Detalles del Historial Clínico";
+    var fechaExamenFormatted = Model.FechaExamen.ToString("dd/MM/yyyy");
+    var horaExamenFormatted = Model.HoraExamen?.ToString(@"hh\:mm");
+    var fechaProximoControlFormatted = Model.FechaProximoControl?.ToString("dd/MM/yyyy");
+    var fechaRegistroFormatted = Model.FechaRegistro.ToString("dd/MM/yyyy HH:mm");
+    var fechaModificacionFormatted = Model.FechaModificacion?.ToString("dd/MM/yyyy HH:mm") ?? "No modificado";
+}
+
+<div class="container-fluid px-4">
+    <div class="d-flex justify-content-between align-items-center mt-4 mb-4">
+        <div>
+            <h1 class="mt-4">
+                <i class="fas fa-file-medical me-2"></i>@ViewData["Title"]
+            </h1>
+            <ol class="breadcrumb mb-4">
+                <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index">Inicio</a></li>
+                <li class="breadcrumb-item"><a asp-controller="Pacientes" asp-action="Index">Pacientes</a></li>
+                <li class="breadcrumb-item"><a asp-controller="Pacientes" asp-action="Details" asp-route-id="@Model.PacienteId">@Model.Paciente?.Nombre</a></li>
+                <li class="breadcrumb-item"><a asp-action="Index" asp-route-pacienteId="@Model.PacienteId">Historial</a></li>
+                <li class="breadcrumb-item active">Detalles</li>
+            </ol>
+        </div>
+        <div>
+            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning me-2">
+                <i class="fas fa-edit me-1"></i>Editar
+            </a>
+            <a asp-action="Index" asp-route-pacienteId="@Model.PacienteId" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-1"></i>Volver al Historial
+            </a>
+        </div>
+    </div>
+
+    <!-- Encabezado del historial -->
+    <div class="card mb-4 border-primary">
+        <div class="card-header bg-primary text-white">
+            <i class="fas fa-id-card me-2"></i>Información General
+            <span class="badge bg-dark float-end">ID: @Model.Id</span>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Paciente:</strong> 
+                        <a asp-controller="Pacientes" asp-action="Details" asp-route-id="@Model.PacienteId" class="text-decoration-none">
+                            <i class="fas fa-user me-1"></i>@Model.Paciente?.Nombre
+                        </a>
+                    </p>
+                    <p><strong>Fecha Examen:</strong> @fechaExamenFormatted @if (!string.IsNullOrEmpty(horaExamenFormatted)) { <text>- @horaExamenFormatted</text> }</p>
+                    <p><strong>Optometrista:</strong> @Model.Optometrista</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Tipo de Examen:</strong> 
+                        <span class="badge @(Model.TipoExamen == "Gratis" ? "bg-success" : "bg-warning")">
+                            @Model.TipoExamen
+                        </span>
+                        @if (Model.CostoExamen.HasValue && Model.TipoExamen != "Gratis")
+                        {
+                            <text> - @Model.CostoFormateado</text>
+                        }
+                    </p>
+                    <p><strong>Estado Pago:</strong> 
+                        @if (Model.ExamenPagado)
+                        {
+                            <span class="badge bg-success">Pagado</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-danger">Pendiente</span>
+                        }
+                    </p>
+                    <p><strong>Motivo:</strong> @(Model.MotivoExamen ?? "No especificado")</p>
+                </div>
+            </div>
+            <div class="row mt-2">
+                <div class="col-md-6">
+                    <small class="text-muted">
+                        <i class="fas fa-calendar-plus me-1"></i>Registrado: @fechaRegistroFormatted
+                    </small>
+                </div>
+                <div class="col-md-6">
+                    <small class="text-muted">
+                        <i class="fas fa-calendar-edit me-1"></i>Última modificación: @fechaModificacionFormatted
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Resultados del Examen -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header bg-info text-white">
+                    <i class="fas fa-eye me-2"></i>Ojo Derecho (OD)
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-3">
+                        <h5>Graduación</h5>
+                        @if (!string.IsNullOrEmpty(Model.GraduacionODFormateada))
+                        {
+                            <div class="display-6">@Model.GraduacionODFormateada</div>
+                        }
+                        else
+                        {
+                            <p class="text-muted">No registrada</p>
+                        }
+                    </div>
+                    
+                    <dl class="row">
+                        <dt class="col-sm-5">Esfera:</dt>
+                        <dd class="col-sm-7">
+                            @if (Model.EsPlanoOD)
+                            {
+                                <span class="badge bg-info">PL (Plano)</span>
+                            }
+                            else
+                            {
+                                @(Model.EsferaOD?.ToString("+0.00;-0.00") ?? "---")
+                            }
+                        </dd>
+                        
+                        <dt class="col-sm-5">Cilindro:</dt>
+                        <dd class="col-sm-7">
+                            @if (Model.CilindroPlanoOD)
+                            {
+                                <span class="badge bg-success">ESF (Esférico)</span>
+                            }
+                            else
+                            {
+                                @(Model.CilindroOD?.ToString("+0.00;-0.00") ?? "---")
+                            }
+                        </dd>
+                        
+                        <dt class="col-sm-5">Eje:</dt>
+                        <dd class="col-sm-7">
+                            @if (Model.EjeOD.HasValue && !Model.CilindroPlanoOD)
+                            {
+                                @(Model.EjeOD.Value.ToString())<text>°</text>
+                            }
+                            else
+                            {
+                                <span class="text-muted">---</span>
+                            }
+                        </dd>
+                        
+                        <dt class="col-sm-5">A.V. Lejos:</dt>
+                        <dd class="col-sm-7">@(Model.AgudezaVisualODLejos ?? "---")</dd>
+                        
+                        <dt class="col-sm-5">A.V. Cerca:</dt>
+                        <dd class="col-sm-7">@(Model.AgudezaVisualODCerca ?? "---")</dd>
+                    </dl>
+
+                    @if (Model.EsPlanoOD && Model.CilindroPlanoOD)
+                    {
+                        <div class="alert alert-light small mt-2 mb-0 py-1">
+                            <i class="fas fa-info-circle me-1"></i>
+                            <strong>Sin graduación:</strong> PL (Plano) en esfera y ESF (Esférico) en cilindro
+                        </div>
+                    }
+                    else if (Model.EsPlanoOD)
+                    {
+                        <div class="alert alert-light small mt-2 mb-0 py-1">
+                            <i class="fas fa-info-circle me-1"></i>
+                            <strong>PL (Plano):</strong> Sin graduación esférica
+                        </div>
+                    }
+                    else if (Model.CilindroPlanoOD)
+                    {
+                        <div class="alert alert-light small mt-2 mb-0 py-1">
+                            <i class="fas fa-info-circle me-1"></i>
+                            <strong>ESF (Esférico):</strong> Solo corrección esférica, sin componente cilíndrico
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header bg-info text-white">
+                    <i class="fas fa-eye me-2"></i>Ojo Izquierdo (OI)
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-3">
+                        <h5>Graduación</h5>
+                        @if (!string.IsNullOrEmpty(Model.GraduacionOIFormateada))
+                        {
+                            <div class="display-6">@Model.GraduacionOIFormateada</div>
+                        }
+                        else
+                        {
+                            <p class="text-muted">No registrada</p>
+                        }
+                    </div>
+                    
+                    <dl class="row">
+                        <dt class="col-sm-5">Esfera:</dt>
+                        <dd class="col-sm-7">
+                            @if (Model.EsPlanoOI)
+                            {
+                                <span class="badge bg-info">PL (Plano)</span>
+                            }
+                            else
+                            {
+                                @(Model.EsferaOI?.ToString("+0.00;-0.00") ?? "---")
+                            }
+                        </dd>
+                        
+                        <dt class="col-sm-5">Cilindro:</dt>
+                        <dd class="col-sm-7">
+                            @if (Model.CilindroPlanoOI)
+                            {
+                                <span class="badge bg-success">ESF (Esférico)</span>
+                            }
+                            else
+                            {
+                                @(Model.CilindroOI?.ToString("+0.00;-0.00") ?? "---")
+                            }
+                        </dd>
+                        
+                        <dt class="col-sm-5">Eje:</dt>
+                        <dd class="col-sm-7">
+                            @if (Model.EjeOI.HasValue && !Model.CilindroPlanoOI)
+                            {
+                                @(Model.EjeOI.Value.ToString())<text>°</text>
+                            }
+                            else
+                            {
+                                <span class="text-muted">---</span>
+                            }
+                        </dd>
+                        
+                        <dt class="col-sm-5">A.V. Lejos:</dt>
+                        <dd class="col-sm-7">@(Model.AgudezaVisualOILejos ?? "---")</dd>
+                        
+                        <dt class="col-sm-5">A.V. Cerca:</dt>
+                        <dd class="col-sm-7">@(Model.AgudezaVisualOICerca ?? "---")</dd>
+                    </dl>
+
+                    @if (Model.EsPlanoOI && Model.CilindroPlanoOI)
+                    {
+                        <div class="alert alert-light small mt-2 mb-0 py-1">
+                            <i class="fas fa-info-circle me-1"></i>
+                            <strong>Sin graduación:</strong> PL (Plano) en esfera y ESF (Esférico) en cilindro
+                        </div>
+                    }
+                    else if (Model.EsPlanoOI)
+                    {
+                        <div class="alert alert-light small mt-2 mb-0 py-1">
+                            <i class="fas fa-info-circle me-1"></i>
+                            <strong>PL (Plano):</strong> Sin graduación esférica
+                        </div>
+                    }
+                    else if (Model.CilindroPlanoOI)
+                    {
+                        <div class="alert alert-light small mt-2 mb-0 py-1">
+                            <i class="fas fa-info-circle me-1"></i>
+                            <strong>ESF (Esférico):</strong> Solo corrección esférica, sin componente cilíndrico
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Graduación Anterior (si existe) -->
+    @if (Model.GraduacionAnterior)
+    {
+        <div class="card mb-4 border-secondary">
+            <div class="card-header bg-secondary text-white">
+                <i class="fas fa-history me-2"></i>Graduación Anterior
+                <span class="badge bg-light text-dark float-end">Registro previo</span>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-light small mb-3">
+                    <i class="fas fa-info-circle me-1"></i>
+                    Esta es la graduación registrada en un examen anterior del paciente.
+                </div>
+
+                <div class="row">
+                    <!-- Ojo Derecho Anterior -->
+                    <div class="col-md-6">
+                        <div class="card border-light">
+                            <div class="card-header bg-light">
+                                <i class="fas fa-eye me-1"></i>Ojo Derecho Anterior (OD)
+                            </div>
+                            <div class="card-body">
+                                <dl class="row mb-0">
+                                    <dt class="col-sm-5">Esfera anterior:</dt>
+                                    <dd class="col-sm-7">
+                                        @if (Model.ODEsfAnterior.HasValue)
+                                        {
+                                            @Model.ODEsfAnterior.Value.ToString("+0.00;-0.00")
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">---</span>
+                                        }
+                                    </dd>
+
+                                    <dt class="col-sm-5">Cilindro anterior:</dt>
+                                    <dd class="col-sm-7">
+                                        @if (Model.ODCilAnterior.HasValue)
+                                        {
+                                            @Model.ODCilAnterior.Value.ToString("+0.00;-0.00")
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">---</span>
+                                        }
+                                    </dd>
+
+                                    <dt class="col-sm-5">Eje anterior:</dt>
+                                    <dd class="col-sm-7">
+                                        @if (Model.ODEjeAnterior.HasValue)
+                                        {
+                                            @Model.ODEjeAnterior.Value.ToString()<text>°</text>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">---</span>
+                                        }
+                                    </dd>
+
+                                    <dt class="col-sm-5">Adición anterior:</dt>
+                                    <dd class="col-sm-7">
+                                        @if (Model.ODAddAnterior.HasValue)
+                                        {
+                                            @Model.ODAddAnterior.Value.ToString("+0.00;-0.00")
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">---</span>
+                                        }
+                                    </dd>
+                                </dl>
+
+                                @if (Model.ODEsfAnterior.HasValue || Model.ODCilAnterior.HasValue || Model.ODAddAnterior.HasValue)
+                                {
+                                    <hr />
+                                    <div class="small">
+                                        <strong>Graduación formateada:</strong><br />
+                                        <span class="badge bg-secondary">@Model.GraduacionODAnteriorFormateada</span>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Ojo Izquierdo Anterior -->
+                    <div class="col-md-6">
+                        <div class="card border-light">
+                            <div class="card-header bg-light">
+                                <i class="fas fa-eye me-1"></i>Ojo Izquierdo Anterior (OI)
+                            </div>
+                            <div class="card-body">
+                                <dl class="row mb-0">
+                                    <dt class="col-sm-5">Esfera anterior:</dt>
+                                    <dd class="col-sm-7">
+                                        @if (Model.OIEsfAnterior.HasValue)
+                                        {
+                                            @Model.OIEsfAnterior.Value.ToString("+0.00;-0.00")
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">---</span>
+                                        }
+                                    </dd>
+
+                                    <dt class="col-sm-5">Cilindro anterior:</dt>
+                                    <dd class="col-sm-7">
+                                        @if (Model.OICilAnterior.HasValue)
+                                        {
+                                            @Model.OICilAnterior.Value.ToString("+0.00;-0.00")
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">---</span>
+                                        }
+                                    </dd>
+
+                                    <dt class="col-sm-5">Eje anterior:</dt>
+                                    <dd class="col-sm-7">
+                                        @if (Model.OIEjeAnterior.HasValue)
+                                        {
+                                            @Model.OIEjeAnterior.Value.ToString()<text>°</text>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">---</span>
+                                        }
+                                    </dd>
+
+                                    <dt class="col-sm-5">Adición anterior:</dt>
+                                    <dd class="col-sm-7">
+                                        @if (Model.OIAddAnterior.HasValue)
+                                        {
+                                            @Model.OIAddAnterior.Value.ToString("+0.00;-0.00")
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">---</span>
+                                        }
+                                    </dd>
+                                </dl>
+
+                                @if (Model.OIEsfAnterior.HasValue || Model.OICilAnterior.HasValue || Model.OIAddAnterior.HasValue)
+                                {
+                                    <hr />
+                                    <div class="small">
+                                        <strong>Graduación formateada:</strong><br />
+                                        <span class="badge bg-secondary">@Model.GraduacionOIAnteriorFormateada</span>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Comparación con graduación actual (si aplica) -->
+                @if ((Model.EsferaOD.HasValue || Model.EsPlanoOD || Model.EsferaOI.HasValue || Model.EsPlanoOI) &&
+                     (Model.ODEsfAnterior.HasValue || Model.OIEsfAnterior.HasValue))
+                {
+                    <div class="alert alert-info mt-3 mb-0 small">
+                        <i class="fas fa-chart-line me-1"></i>
+                        <strong>Comparación con examen actual:</strong><br />
+                        @{
+                            var cambios = new List<string>();
+                            
+                            // OD
+                            if ((Model.EsferaOD.HasValue || Model.EsPlanoOD) && Model.ODEsfAnterior.HasValue)
+                            {
+                                var valorActualOD = Model.EsPlanoOD ? 0 : Model.EsferaOD ?? 0;
+                                var diffOD = valorActualOD - Model.ODEsfAnterior.Value;
+                                var tipoOD = Model.EsPlanoOD ? "PL" : (Model.CilindroPlanoOD ? "ESF" : "");
+                                cambios.Add($"OD: {(diffOD > 0 ? "+" : "")}{diffOD:F2} D {(string.IsNullOrEmpty(tipoOD) ? "" : $"({tipoOD})")}");
+                            }
+                            
+                            // OI
+                            if ((Model.EsferaOI.HasValue || Model.EsPlanoOI) && Model.OIEsfAnterior.HasValue)
+                            {
+                                var valorActualOI = Model.EsPlanoOI ? 0 : Model.EsferaOI ?? 0;
+                                var diffOI = valorActualOI - Model.OIEsfAnterior.Value;
+                                var tipoOI = Model.EsPlanoOI ? "PL" : (Model.CilindroPlanoOI ? "ESF" : "");
+                                cambios.Add($"OI: {(diffOI > 0 ? "+" : "")}{diffOI:F2} D {(string.IsNullOrEmpty(tipoOI) ? "" : $"({tipoOI})")}");
+                            }
+                            
+                            if (cambios.Any())
+                            {
+                                <span>@string.Join(" | ", cambios)</span>
+                            }
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    }
+
+    <!-- Datos adicionales y antecedentes -->
+    <div class="row mb-4">
+        <!-- Antecedentes Médicos -->
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header bg-warning text-white">
+                    <i class="fas fa-clipboard-list me-2"></i>Antecedentes Médicos
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="mb-3">
+                                <h6>Patologías:</h6>
+                                <div class="d-flex flex-wrap gap-2 mb-2">
+                                    @if (Model.TieneDiabetes)
+                                    {
+                                        <span class="badge bg-danger">Diabetes</span>
+                                    }
+                                    @if (Model.TieneHipertension)
+                                    {
+                                        <span class="badge bg-danger">Hipertensión</span>
+                                    }
+                                    @if (Model.TieneAlergias)
+                                    {
+                                        <span class="badge bg-warning">Alergias</span>
+                                    }
+                                    @if (!Model.TieneDiabetes && !Model.TieneHipertension && !Model.TieneAlergias)
+                                    {
+                                        <span class="text-muted">No registradas</span>
+                                    }
+                                </div>
+                                
+                                @if (Model.TieneDiabetes && !string.IsNullOrEmpty(Model.DiabetesTratamiento))
+                                {
+                                    <p><small><strong>Tratamiento Diabetes:</strong> @Model.DiabetesTratamiento</small></p>
+                                }
+                                
+                                @if (Model.TieneHipertension && !string.IsNullOrEmpty(Model.HipertensionTratamiento))
+                                {
+                                    <p><small><strong>Tratamiento Hipertensión:</strong> @Model.HipertensionTratamiento</small></p>
+                                }
+                            </div>
+                            
+                            @if (!string.IsNullOrEmpty(Model.OtrasPatologias))
+                            {
+                                <div class="mb-3">
+                                    <h6>Otras Patologías:</h6>
+                                    <p class="mb-0">@Model.OtrasPatologias</p>
+                                </div>
+                            }
+                            
+                            <div class="mb-3">
+                                <h6>Antecedentes Oculares:</h6>
+                                @if (Model.AntecedentesOculares)
+                                {
+                                    <p class="mb-1"><span class="badge bg-info">Sí</span></p>
+                                    @if (!string.IsNullOrEmpty(Model.DetalleAntecedentes))
+                                    {
+                                        <p class="mb-0">@Model.DetalleAntecedentes</p>
+                                    }
+                                }
+                                else
+                                {
+                                    <p class="text-muted mb-0">No registrados</p>
+                                }
+                            </div>
+                            
+                            <div>
+                                <h6>Uso de Lentes:</h6>
+                                @if (Model.UsaLentes)
+                                {
+                                    <p class="mb-1"><span class="badge bg-success">Sí</span></p>
+                                    @if (!string.IsNullOrEmpty(Model.TipoLentesActuales))
+                                    {
+                                        <p class="mb-0"><strong>Tipo:</strong> @Model.TipoLentesActuales</p>
+                                    }
+                                }
+                                else
+                                {
+                                    <p class="text-muted mb-0">No usa lentes actualmente</p>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Datos adicionales y seguimiento -->
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header bg-success text-white">
+                    <i class="fas fa-ruler-combined me-2"></i>Datos Adicionales
+                </div>
+                <div class="card-body">
+                    <dl class="row">
+                        <dt class="col-sm-6">Adición:</dt>
+                        <dd class="col-sm-6">
+                            @if (Model.Adicion.HasValue)
+                            {
+                                <span class="badge bg-primary">+@Model.Adicion.Value.ToString("0.00")</span>
+                            }
+                            else
+                            {
+                                <span class="text-muted">---</span>
+                            }
+                        </dd>
+                        
+                        <dt class="col-sm-6">Distancia Pupilar:</dt>
+                        <dd class="col-sm-6">
+                            @if (Model.DistanciaPupilar.HasValue)
+                            {
+                                <span>@Model.DistanciaPupilar.Value.ToString("0.0") mm</span>
+                            }
+                            else
+                            {
+                                <span class="text-muted">---</span>
+                            }
+                        </dd>
+                        
+                        <dt class="col-sm-6">Tipo de Lente Sugerido:</dt>
+                        <dd class="col-sm-6">
+                            <span class="badge bg-dark">@Model.TipoLenteSugerido</span>
+                        </dd>
+                    </dl>
+                    
+                    <hr />
+                    
+                    <div class="mb-3">
+                        <h6>Seguimiento:</h6>
+                        @if (Model.NecesitaSeguimiento)
+                        {
+                            <p class="mb-1">
+                                <span class="badge bg-warning">Necesita seguimiento</span>
+                            </p>
+                            @if (Model.FechaProximoControl.HasValue)
+                            {
+                                <p class="mb-0">
+                                    <strong>Próximo control:</strong> @fechaProximoControlFormatted
+                                </p>
+                            }
+                        }
+                        else
+                        {
+                            <p class="text-muted mb-0">No requiere seguimiento</p>
+                        }
+                    </div>
+                    
+                    <div>
+                        <h6>Interés en Compra:</h6>
+                        @if (Model.InteresEnCompra)
+                        {
+                            <p class="mb-1">
+                                <span class="badge bg-info">Mostró interés</span>
+                            </p>
+                            @if (!string.IsNullOrEmpty(Model.ObservacionesInteres))
+                            {
+                                <p class="mb-0">@Model.ObservacionesInteres</p>
+                            }
+                        }
+                        else
+                        {
+                            <p class="text-muted mb-0">Sin interés registrado</p>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Observaciones y recomendaciones -->
+    <div class="card mb-4">
+        <div class="card-header bg-secondary text-white">
+            <i class="fas fa-sticky-note me-2"></i>Observaciones y Recomendaciones
+        </div>
+        <div class="card-body">
+            <div class="row">
+                @if (!string.IsNullOrEmpty(Model.ObservacionesExamen))
+                {
+                    <div class="col-md-6">
+                        <h6>Observaciones del Examen:</h6>
+                        <div class="border p-3 bg-light rounded">
+                            @Model.ObservacionesExamen
+                        </div>
+                    </div>
+                }
+                
+                @if (!string.IsNullOrEmpty(Model.Recomendaciones))
+                {
+                    <div class="col-md-6">
+                        <h6>Recomendaciones:</h6>
+                        <div class="border p-3 bg-light rounded">
+                            @Model.Recomendaciones
+                        </div>
+                    </div>
+                }
+                
+                @if (string.IsNullOrEmpty(Model.ObservacionesExamen) && string.IsNullOrEmpty(Model.Recomendaciones))
+                {
+                    <div class="col-12 text-center py-3">
+                        <p class="text-muted">No hay observaciones ni recomendaciones registradas.</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Acciones -->
+    <div class="card">
+        <div class="card-body">
+            <div class="d-flex justify-content-center gap-3">
+                <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">
+                    <i class="fas fa-edit me-2"></i>Editar Historial
+                </a>
+                <a asp-action="Delete" asp-route-id="@Model.Id" class="btn btn-danger">
+                    <i class="fas fa-trash-alt me-2"></i>Eliminar Historial
+                </a>
+                <a asp-action="Reporte" asp-route-id="@Model.Id" class="btn btn-primary" target="_blank">
+                    <i class="fas fa-print me-2"></i>Generar Reporte
+                </a>
+                <a asp-controller="HistorialClinico" asp-action="Create" asp-route-pacienteId="@Model.PacienteId" 
+                   class="btn btn-success">
+                    <i class="fas fa-plus-circle me-2"></i>Nuevo Historial
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Estilos adicionales -->
+<style>
+    .display-6 {
+        font-size: 2rem;
+        font-weight: 300;
+        line-height: 1.2;
+    }
+    
+    .card {
+        border: 1px solid #dee2e6;
+        border-radius: 0.5rem;
+    }
+    
+    .card-header {
+        border-bottom: 1px solid rgba(0,0,0,.125);
+    }
+    
+    dl.row dt {
+        font-weight: 500;
+        color: #6c757d;
+    }
+    
+    dl.row dd {
+        font-weight: 400;
+    }
+    
+    .badge {
+        font-size: 0.75em;
+    }
+</style>

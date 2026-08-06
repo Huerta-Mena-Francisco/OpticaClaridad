@@ -1,0 +1,58 @@
+﻿@model OpticaClaridad.Models.Cita
+
+@{
+    ViewData["Title"] = "Mover a Papelera";
+}
+
+<div class="container mt-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-action="Index">Citas</a></li>
+            <li class="breadcrumb-item active">Mover a Papelera</li>
+        </ol>
+    </nav>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card border-warning">
+                <div class="card-header bg-warning">
+                    <h4><i class="bi bi-trash"></i> @ViewData["Title"]</h4>
+                </div>
+                <div class="card-body">
+                    <h5 class="mb-4">¿Mover esta cita a la papelera de reciclaje?</h5>
+
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <h6>@Model.ClienteNombre</h6>
+                            <p class="mb-1">
+                                <i class="bi bi-calendar"></i>
+                                @Model.FechaHora.ToString("dd/MM/yyyy HH:mm")
+                            </p>
+                            <p class="mb-1">
+                                <i class="bi bi-clipboard"></i> @Model.TipoCita
+                            </p>
+                            <p class="mb-0">
+                                <i class="bi bi-info-circle"></i> @Model.Estado
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i>
+                        La cita será movida a la papelera de reciclaje. Podrá restaurarla más tarde si es necesario.
+                    </div>
+
+                    <form asp-action="EliminarLogicamente">
+                        <input type="hidden" asp-for="Id" />
+                        <div class="d-flex justify-content-between">
+                            <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
+                            <button type="submit" class="btn btn-warning">
+                                <i class="bi bi-trash"></i> Sí, Mover a Papelera
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,46 @@
+﻿@* Views/Catalogo/Ofertas.cshtml *@
+@model IEnumerable<OpticaClaridad.Models.Producto>
+
+@{
+    ViewData["Title"] = "Productos en Oferta";
+    ViewData["Subtitle"] = "Aprovecha nuestras mejores promociones";
+}
+
+<!-- Hero Section para Ofertas -->
+<div class="hero-ofertas mb-5">
+    <div class="container py-5">
+        <div class="row align-items-center">
+            <div class="col-lg-8">
+                <h1 class="display-4 fw-bold text-white mb-3">@ViewData["Title"]</h1>
+                <p class="lead text-white mb-4">@ViewData["Subtitle"]</p>
+                <p class="text-white-50">
+                    Encuentra los mejores descuentos en lentes y accesorios.
+                    ¡Aprovecha antes de que se acaben!
+                </p>
+            </div>
+            <div class="col-lg-4 text-center">
+                <div class="oferta-badge">
+                    <h2 class="display-1 fw-bold text-white">50%</h2>
+                    <p class="text-white">DESCUENTO<br>EN SELECCIONADOS</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Reutiliza el grid de productos del Index -->
+@await Html.PartialAsync("_ProductGrid", Model)
+
+<style>
+    .hero-ofertas {
+        background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+        border-radius: 0 0 30px 30px;
+    }
+
+    .oferta-badge {
+        background: rgba(255,255,255,0.2);
+        border-radius: 20px;
+        padding: 2rem;
+        backdrop-filter: blur(10px);
+    }
+</style>

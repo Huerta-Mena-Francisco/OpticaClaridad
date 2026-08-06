@@ -1,0 +1,481 @@
+﻿@model OpticaClaridad.Models.Paciente
+
+@{
+    ViewData["Title"] = "Nuevo Paciente";
+    ViewData["Subtitle"] = "Ingrese los datos del nuevo paciente en el sistema";
+}
+
+<div class="container-fluid px-4">
+    <!-- Encabezado -->
+    <div class="d-flex justify-content-between align-items-center mt-4 mb-4">
+        <div>
+            <h1 class="mt-4">
+                <i class="fas fa-user-injured me-2" style="color: #0dcaf0;"></i>
+                @ViewData["Title"]
+            </h1>
+            <ol class="breadcrumb mb-4">
+                <li class="breadcrumb-item">
+                    <a asp-controller="Home" asp-action="Index" class="text-decoration-none">
+                        <i class="fas fa-home me-1"></i>Inicio
+                    </a>
+                </li>
+                <li class="breadcrumb-item">
+                    <a asp-action="Index" class="text-decoration-none">
+                        <i class="fas fa-user-injured me-1"></i>Pacientes
+                    </a>
+                </li>
+                <li class="breadcrumb-item active">
+                    <i class="fas fa-plus-circle me-1"></i>Nuevo Paciente
+                </li>
+            </ol>
+        </div>
+        <div>
+            <a asp-action="Index" class="btn btn-outline-secondary btn-lg">
+                <i class="fas fa-arrow-left me-2"></i>Volver
+            </a>
+        </div>
+    </div>
+
+    <!-- Mensajes de alerta -->
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+            <i class="fas fa-exclamation-triangle me-2"></i>@TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Formulario principal -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-gradient" style="background: linear-gradient(45deg, #0dcaf0, #0d6efd);">
+                    <h5 class="mb-0 text-white">
+                        <i class="fas fa-edit me-2"></i>Formulario de Registro
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form asp-action="Create" id="createForm">
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+                        <!-- Sección 1: Información Personal -->
+                        <div class="section-title">
+                            <i class="fas fa-user-circle me-2" style="color: #0d6efd;"></i>
+                            <span>Información Personal</span>
+                        </div>
+                        <div class="section-content">
+                            <div class="row mb-3">
+                                <div class="col-md-8">
+                                    <div class="form-group">
+                                        <label asp-for="Nombre" class="form-label fw-bold required"></label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light">
+                                                <i class="fas fa-user text-primary"></i>
+                                            </span>
+                                            <input asp-for="Nombre" class="form-control form-control-lg"
+                                                   placeholder="Nombre completo del paciente" />
+                                        </div>
+                                        <span asp-validation-for="Nombre" class="text-danger"></span>
+                                        <small class="form-text text-muted">
+                                            <i class="fas fa-info-circle me-1"></i>
+                                            Mínimo 3 caracteres
+                                        </small>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label asp-for="FechaNacimiento" class="form-label fw-bold"></label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light">
+                                                <i class="fas fa-calendar-alt text-primary"></i>
+                                            </span>
+                                            <input asp-for="FechaNacimiento" type="date" class="form-control form-control-lg"
+                                                   max="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                                        </div>
+                                        <span asp-validation-for="FechaNacimiento" class="text-danger"></span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label asp-for="Sexo" class="form-label fw-bold"></label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light">
+                                                <i class="fas fa-venus-mars text-primary"></i>
+                                            </span>
+                                            <select asp-for="Sexo" class="form-select form-select-lg">
+                                                <option value="">Seleccionar...</option>
+                                                <option value="Masculino">
+                                                    <i class="fas fa-mars"></i> Masculino
+                                                </option>
+                                                <option value="Femenino">
+                                                    <i class="fas fa-venus"></i> Femenino
+                                                </option>
+                                                <option value="Otro">Otro</option>
+                                            </select>
+                                        </div>
+                                        <span asp-validation-for="Sexo" class="text-danger"></span>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label asp-for="Telefono" class="form-label fw-bold"></label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light">
+                                                <i class="fas fa-phone text-primary"></i>
+                                            </span>
+                                            <input asp-for="Telefono" class="form-control form-control-lg"
+                                                   placeholder="(XXX) XXX-XXXX"
+                                                   data-inputmask="'mask': '(999) 999-9999'" />
+                                        </div>
+                                        <span asp-validation-for="Telefono" class="text-danger"></span>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label asp-for="Email" class="form-label fw-bold"></label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light">
+                                                <i class="fas fa-envelope text-primary"></i>
+                                            </span>
+                                            <input asp-for="Email" type="email" class="form-control form-control-lg"
+                                                   placeholder="paciente@ejemplo.com" />
+                                        </div>
+                                        <span asp-validation-for="Email" class="text-danger"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Sección 2: Información de Contacto -->
+                        <div class="section-title mt-4">
+                            <i class="fas fa-map-marker-alt me-2" style="color: #198754;"></i>
+                            <span>Información de Contacto</span>
+                        </div>
+                        <div class="section-content">
+                            <div class="row mb-3">
+                                <div class="col-12">
+                                    <div class="form-group">
+                                        <label asp-for="Direccion" class="form-label fw-bold"></label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light">
+                                                <i class="fas fa-home text-success"></i>
+                                            </span>
+                                            <textarea asp-for="Direccion" class="form-control" rows="3"
+                                                      placeholder="Dirección completa del paciente"></textarea>
+                                        </div>
+                                        <span asp-validation-for="Direccion" class="text-danger"></span>
+                                        <small class="form-text text-muted">
+                                            <i class="fas fa-info-circle me-1"></i>
+                                            Calle, número, colonia, ciudad, código postal
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Sección 3: Información Adicional -->
+                        <div class="section-title mt-4">
+                            <i class="fas fa-sticky-note me-2" style="color: #ffc107;"></i>
+                            <span>Información Adicional</span>
+                        </div>
+                        <div class="section-content">
+                            <div class="row mb-3">
+                                <div class="col-md-8">
+                                    <div class="form-group">
+                                        <label asp-for="Observaciones" class="form-label fw-bold"></label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light">
+                                                <i class="fas fa-notes-medical text-warning"></i>
+                                            </span>
+                                            <textarea asp-for="Observaciones" class="form-control" rows="4"
+                                                      placeholder="Observaciones médicas, alergias, condiciones especiales..."></textarea>
+                                        </div>
+                                        <span asp-validation-for="Observaciones" class="text-danger"></span>
+                                        <small class="form-text text-muted">
+                                            <i class="fas fa-info-circle me-1"></i>
+                                            Máximo 500 caracteres. Información relevante para el historial clínico.
+                                        </small>
+                                        <div class="mt-1">
+                                            <span id="charCount" class="badge bg-light text-dark">0/500</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="card h-100 border-0 shadow-sm">
+                                        <div class="card-body">
+                                            <div class="text-center mb-3">
+                                                <i class="fas fa-toggle-on fa-3x text-primary"></i>
+                                            </div>
+                                            <div class="form-check form-switch d-flex justify-content-center">
+                                                <input class="form-check-input" type="checkbox" role="switch"
+                                                       asp-for="Activo" checked style="width: 60px; height: 30px;">
+                                                <label class="form-check-label ms-3 fw-bold" asp-for="Activo">
+                                                    Paciente Activo
+                                                </label>
+                                            </div>
+                                            <hr />
+                                            <div class="mt-3">
+                                                <small class="text-muted d-block">
+                                                    <i class="fas fa-check-circle text-success me-1"></i>
+                                                    Activo: Aparece en búsquedas
+                                                </small>
+                                                <small class="text-muted d-block">
+                                                    <i class="fas fa-info-circle text-info me-1"></i>
+                                                    Inactivo: Solo visible en historial
+                                                </small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Fecha de registro automática -->
+                        <input type="hidden" asp-for="FechaRegistro" value="@DateTime.Today.ToString("yyyy-MM-dd")" />
+
+                        <!-- Botones de acción -->
+                        <hr class="mt-4" />
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <a asp-action="Index" class="btn btn-outline-secondary btn-lg px-4">
+                                        <i class="fas fa-times me-2"></i>Cancelar
+                                    </a>
+                                    <div>
+                                        <button type="reset" class="btn btn-outline-warning btn-lg px-4 me-2">
+                                            <i class="fas fa-undo me-2"></i>Limpiar
+                                        </button>
+                                        <button type="submit" class="btn btn-success btn-lg px-5" id="btnSubmit">
+                                            <i class="fas fa-save me-2"></i>Guardar Paciente
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel lateral informativo -->
+        <div class="col-lg-4">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-info-circle me-2"></i>Información Importante
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-4">
+                        <h6 class="fw-bold">
+                            <i class="fas fa-check-circle text-success me-1"></i>
+                            Campos Requeridos
+                        </h6>
+                        <p class="text-muted small">
+                            El campo <span class="fw-bold text-danger">*</span> Nombre es obligatorio.
+                            Los demás campos son opcionales pero recomendados.
+                        </p>
+                    </div>
+
+                    <div class="mb-4">
+                        <h6 class="fw-bold">
+                            <i class="fas fa-calendar-alt text-primary me-1"></i>
+                            Fecha de Nacimiento
+                        </h6>
+                        <p class="text-muted small">
+                            La edad se calcula automáticamente y se usa para estadísticas.
+                        </p>
+                    </div>
+
+                    <div class="mb-4">
+                        <h6 class="fw-bold">
+                            <i class="fas fa-notes-medical text-warning me-1"></i>
+                            Observaciones Médicas
+                        </h6>
+                        <p class="text-muted small">
+                            Incluya información relevante como:
+                        </p>
+                        <ul class="text-muted small">
+                            <li>Alergias conocidas</li>
+                            <li>Condiciones preexistentes</li>
+                            <li>Medicamentos actuales</li>
+                            <li>Notas importantes</li>
+                        </ul>
+                    </div>
+
+                    <div class="alert alert-info mb-0">
+                        <i class="fas fa-lightbulb me-2"></i>
+                        <strong>Consejo:</strong>
+                        Complete la mayor cantidad de información posible para tener un expediente completo del paciente.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Acciones rápidas -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-bolt me-2"></i>Acciones Rápidas
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a asp-action="Index" class="btn btn-outline-primary text-start">
+                            <i class="fas fa-list me-2"></i>Ver todos los pacientes
+                        </a>
+                        <a asp-controller="Home" asp-action="Index" class="btn btn-outline-secondary text-start">
+                            <i class="fas fa-home me-2"></i>Ir al inicio
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Estilos personalizados -->
+<style>
+    .bg-gradient {
+        background: linear-gradient(45deg, #0dcaf0, #0d6efd);
+    }
+
+    .section-title {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #e9ecef;
+        display: flex;
+        align-items: center;
+    }
+
+    .section-content {
+        padding-left: 10px;
+    }
+
+    .required:after {
+        content: " *";
+        color: red;
+        font-weight: bold;
+    }
+
+    .form-control-lg, .form-select-lg {
+        border-radius: 10px;
+        border: 1px solid #dee2e6;
+        transition: all 0.3s ease;
+    }
+
+        .form-control-lg:focus, .form-select-lg:focus {
+            border-color: #0dcaf0;
+            box-shadow: 0 0 0 0.25rem rgba(13, 202, 240, 0.25);
+        }
+
+    .input-group-text {
+        border-radius: 10px 0 0 10px;
+        border: 1px solid #dee2e6;
+    }
+
+    .card {
+        border-radius: 15px;
+        border: none;
+    }
+
+    .card-header {
+        border-radius: 15px 15px 0 0 !important;
+    }
+
+    .btn {
+        border-radius: 10px;
+        padding: 10px 20px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+    .form-check-input:checked {
+        background-color: #198754;
+        border-color: #198754;
+    }
+
+    .form-check-input:focus {
+        border-color: #198754;
+        box-shadow: 0 0 0 0.25rem rgba(25, 135, 84, 0.25);
+    }
+
+    #charCount {
+        font-size: 0.85rem;
+        padding: 5px 10px;
+        border-radius: 20px;
+    }
+</style>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+    <!-- InputMask para teléfono -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.inputmask/5.0.8/jquery.inputmask.min.js"></script>
+
+    <script>
+        $(document).ready(function() {
+            // Máscara para teléfono
+            $('#Telefono').inputmask({
+                mask: '(999) 999-9999',
+                placeholder: '(___) ___-____'
+            });
+
+            // Contador de caracteres para observaciones
+            $('#Observaciones').on('input', function() {
+                var length = $(this).val().length;
+                $('#charCount').text(length + '/500');
+
+                if (length > 500) {
+                    $('#charCount').removeClass('bg-light').addClass('bg-danger text-white');
+                    $('#btnSubmit').prop('disabled', true);
+                } else if (length > 450) {
+                    $('#charCount').removeClass('bg-light').addClass('bg-warning');
+                    $('#btnSubmit').prop('disabled', false);
+                } else {
+                    $('#charCount').removeClass('bg-danger bg-warning').addClass('bg-light text-dark');
+                    $('#btnSubmit').prop('disabled', false);
+                }
+            });
+
+            // Validación de edad (no permitir fechas futuras)
+            $('#FechaNacimiento').attr('max', new Date().toISOString().split('T')[0]);
+
+            // Confirmación al limpiar formulario
+            $('button[type="reset"]').click(function(e) {
+                if ($('#createForm').serializeArray().length > 3) {
+                    if (!confirm('¿Está seguro de limpiar todos los campos?')) {
+                        e.preventDefault();
+                    }
+                }
+            });
+
+            // Tooltips
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            var tooltipList = tooltipTriggerList.map(function(tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+
+            // Prevenir envío si hay errores de longitud
+            $('#createForm').submit(function(e) {
+                var observacionesLength = $('#Observaciones').val().length;
+                if (observacionesLength > 500) {
+                    e.preventDefault();
+                    alert('Las observaciones no pueden exceder los 500 caracteres.');
+                }
+            });
+        });
+    </script>
+}

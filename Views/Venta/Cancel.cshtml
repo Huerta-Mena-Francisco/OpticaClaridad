@@ -1,0 +1,278 @@
+﻿@model OpticaClaridad.Models.Venta
+@{
+    ViewData["Title"] = "Cancelar Venta";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container mt-3">
+    <!-- Encabezado -->
+    <div class="d-flex justify-content-between align-items-start mb-4">
+        <div>
+            <h2><i class="bi bi-x-circle text-warning"></i> Cancelar Venta</h2>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a asp-action="Index">Ventas</a></li>
+                    <li class="breadcrumb-item"><a asp-action="Details" asp-route-id="@Model.Id">@Model.NumeroVenta</a></li>
+                    <li class="breadcrumb-item active text-warning">Cancelar</li>
+                </ol>
+            </nav>
+        </div>
+        <div>
+            <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Volver al Detalle
+            </a>
+        </div>
+    </div>
+
+    <!-- Alertas -->
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle"></i> @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- Advertencia Principal -->
+    <div class="card border-warning mb-4">
+        <div class="card-header bg-warning text-white">
+            <h4 class="mb-0"><i class="bi bi-exclamation-triangle"></i> ADVERTENCIA: Cancelación de Venta</h4>
+        </div>
+        <div class="card-body">
+            <div class="alert alert-warning">
+                <h5 class="alert-heading">
+                    <i class="bi bi-exclamation-octagon"></i> Esta acción no se puede deshacer
+                </h5>
+                <p class="mb-0">
+                    Al cancelar esta venta, todos los productos serán devueltos al inventario
+                    automáticamente y la venta quedará marcada como <strong>CANCELADA</strong>.
+                </p>
+            </div>
+
+            <ul class="list-group list-group-flush mb-3">
+                <li class="list-group-item">
+                    <i class="bi bi-check-circle text-danger"></i>
+                    <strong>Stock será restaurado</strong> - Los productos volverán al inventario
+                </li>
+                <li class="list-group-item">
+                    <i class="bi bi-check-circle text-danger"></i>
+                    <strong>Venta se marcará como cancelada</strong> - Se mantendrá en el historial
+                </li>
+                <li class="list-group-item">
+                    <i class="bi bi-check-circle text-danger"></i>
+                    <strong>No se puede revertir</strong> - La acción es permanente
+                </li>
+                <li class="list-group-item">
+                    <i class="bi bi-check-circle text-danger"></i>
+                    <strong>Notifique al paciente</strong> - Si corresponde  <!-- 🔴 CAMBIO -->
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Información de la Venta a Cancelar -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-cart"></i> Información de la Venta</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm table-borderless">
+                        <tr>
+                            <td width="40%"><strong>N° Venta:</strong></td>
+                            <td>@Model.NumeroVenta</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Fecha:</strong></td>
+                            <td>@Model.FechaVenta.ToString("dd/MM/yyyy HH:mm")</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Paciente:</strong></td>  <!-- 🔴 CAMBIO -->
+                            <td>@(Model.Paciente?.Nombre ?? "Cliente General")</td>  <!-- 🔴 CAMBIO -->
+                        </tr>
+                        <tr>
+                            <td><strong>Tipo de Pago:</strong></td>
+                            <td>@Model.TipoPago.ToUpper()</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Total:</strong></td>
+                            <td><strong class="text-success">@Model.Total.ToString("C")</strong></td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-box"></i> Productos a Devolver</h5>
+                </div>
+                <div class="card-body">
+                    <div style="max-height: 200px; overflow-y: auto;">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Producto</th>
+                                    <th class="text-center">Cantidad</th>
+                                    <th class="text-end">Valor</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var detalle in Model.Detalles)
+                                {
+                                    <tr>
+                                        <td>
+                                            <small>@detalle.Producto.Nombre</small>
+                                        </td>
+                                        <td class="text-center">
+                                            <span class="badge bg-primary">@detalle.Cantidad</span>
+                                        </td>
+                                        <td class="text-end">
+                                            <small>@detalle.Subtotal.ToString("C")</small>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="mt-2">
+                        <small class="text-muted">
+                            <i class="bi bi-info-circle"></i>
+                            @Model.Detalles.Count producto(s) serán devueltos al stock
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Formulario de Cancelación (sin cambios) -->
+    <div class="card">
+        <div class="card-header bg-danger text-white">
+            <h5 class="mb-0"><i class="bi bi-x-octagon"></i> Confirmar Cancelación</h5>
+        </div>
+        <div class="card-body">
+            <form asp-action="Cancel" method="post" id="cancelForm">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@Model.Id" />
+
+                <div class="mb-4">
+                    <label class="form-label fw-bold">
+                        <i class="bi bi-chat-text"></i> Motivo de la Cancelación (Opcional)
+                    </label>
+                    <textarea class="form-control" name="motivo" rows="4"
+                              placeholder="Describa brevemente el motivo de la cancelación..."></textarea>
+                    <div class="form-text">
+                        Esta información quedará registrada en las observaciones de la venta.
+                    </div>
+                </div>
+
+                <!-- Verificación de Seguridad -->
+                <div class="alert alert-danger">
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="checkbox" id="confirmStock" required>
+                        <label class="form-check-label" for="confirmStock">
+                            <strong>Confirmo que comprendo que el stock será restaurado automáticamente</strong>
+                        </label>
+                    </div>
+
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="checkbox" id="confirmIrreversible" required>
+                        <label class="form-check-label" for="confirmIrreversible">
+                            <strong>Confirmo que esta acción no se puede deshacer</strong>
+                        </label>
+                    </div>
+
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="confirmResponsibility" required>
+                        <label class="form-check-label" for="confirmResponsibility">
+                            <strong>Confirmo que soy responsable de esta cancelación</strong>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Botones -->
+                <div class="d-flex justify-content-between mt-4">
+                    <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-secondary">
+                        <i class="bi bi-arrow-left"></i> Volver sin Cancelar
+                    </a>
+
+                    <button type="submit" class="btn btn-danger" id="btnCancelarVenta" disabled>
+                        <i class="bi bi-x-octagon"></i> CONFIRMAR CANCELACIÓN
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Información Adicional (sin cambios) -->
+    <div class="card border-info mt-4">
+        <div class="card-header bg-info text-white">
+            <h5 class="mb-0"><i class="bi bi-info-circle"></i> ¿Qué sucede después de cancelar?</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h6><i class="bi bi-check2-circle text-success"></i> Proceso automático:</h6>
+                    <ul class="list-unstyled">
+                        <li><i class="bi bi-arrow-return-right"></i> Stock actualizado inmediatamente</li>
+                        <li><i class="bi bi-arrow-return-right"></i> Venta marcada como CANCELADA</li>
+                        <li><i class="bi bi-arrow-return-right"></i> Motivo guardado en observaciones</li>
+                        <li><i class="bi bi-arrow-return-right"></i> Historial mantenido en sistema</li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <h6><i class="bi bi-exclamation-triangle text-warning"></i> Consideraciones:</h6>
+                    <ul class="list-unstyled">
+                        <li><i class="bi bi-x-circle text-danger"></i> No afecta reportes anteriores</li>
+                        <li><i class="bi bi-x-circle text-danger"></i> No se elimina, solo se cancela</li>
+                        <li><i class="bi bi-x-circle text-danger"></i> No genera reembolso automático</li>
+                        <li><i class="bi bi-x-circle text-danger"></i> Verifique políticas de devolución</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Función MUY SIMPLE
+            function validar() {
+                const todosMarcados =
+                    $('#confirmStock').is(':checked') &&
+                    $('#confirmIrreversible').is(':checked') &&
+                    $('#confirmResponsibility').is(':checked');
+
+                $('#btnCancelarVenta').prop('disabled', !todosMarcados);
+                return todosMarcados;
+            }
+
+            // Escuchar cambios
+            $('.form-check-input').change(validar);
+
+            // Validar al enviar
+            $('#cancelForm').submit(function(e) {
+                if (!validar()) {
+                    e.preventDefault();
+                    alert('Marque todas las casillas de verificación.');
+                    return false;
+                }
+
+                if (!confirm('¿Cancelar venta?')) {
+                    e.preventDefault();
+                    return false;
+                }
+
+                $('#btnCancelarVenta').prop('disabled', true).html('Cancelando...');
+                return true;
+            });
+
+            // Inicializar
+            validar();
+        });
+    </script>
+}

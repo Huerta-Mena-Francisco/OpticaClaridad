@@ -1,0 +1,394 @@
+﻿@model OpticaClaridad.Models.Venta
+@{
+    ViewData["Title"] = "Ticket de Venta - Impresión Directa";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ticket de Venta - Impresión Directa</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+        .ticket-preview {
+            width: 58mm;
+            margin: 0 auto;
+            background: white;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            padding: 10px;
+        }
+        .ticket-header {
+            text-align: center;
+            padding-bottom: 10px;
+            border-bottom: 1px dashed #000;
+            margin-bottom: 10px;
+        }
+        .ascii-logo {
+            font-family: 'Courier New', monospace;
+            font-size: 10px;
+            line-height: 1.3;
+            margin: 0;
+            color: #000;
+            font-weight: bold;
+        }
+        .ticket-info {
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px dashed #ccc;
+        }
+        .ticket-info p {
+            margin: 3px 0;
+        }
+        .ticket-items table {
+            width: 100%;
+            font-size: 10px;
+            border-collapse: collapse;
+        }
+        .ticket-items th {
+            border-bottom: 1px solid #000;
+            padding: 5px 0;
+            text-align: left;
+        }
+        .ticket-items td {
+            padding: 4px 0;
+            border-bottom: 1px dashed #ccc;
+        }
+        .ticket-totals {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 2px solid #000;
+        }
+        .total-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 5px 0;
+        }
+        .total-amount {
+            font-weight: bold;
+            font-size: 14px;
+            margin-top: 8px;
+            padding-top: 5px;
+            border-top: 1px solid #000;
+        }
+        .ticket-footer {
+            text-align: center;
+            margin-top: 15px;
+            padding-top: 10px;
+            border-top: 1px dashed #000;
+            font-size: 9px;
+        }
+        .screen-only {
+            margin-top: 20px;
+            text-align: center;
+        }
+        .btn-ticket {
+            font-size: 12px;
+            padding: 8px 16px;
+            margin: 5px;
+        }
+        .alert-message {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            display: none;
+            min-width: 250px;
+        }
+        @@media print {
+            .screen-only {
+                display: none !important;
+            }
+            .ticket-preview {
+                box-shadow: none;
+                padding: 5px;
+                margin: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="alert alert-success alert-message" id="alertMessage"></div>
+
+    <div class="ticket-preview" id="ticketContainer">
+        <!-- Encabezado con Logo ASCII -->
+        <div class="ticket-header">
+            <pre class="ascii-logo">
+    OPTICA CLARIDAD
+ Especialistas en salud visual
+    Tel: 656 556 3770
+            </pre>
+        </div>
+
+        <!-- Información de la Venta -->
+        <div class="ticket-info">
+            <p><strong>TICKET DE VENTA</strong></p>
+            <p><strong>No:</strong> @Model.NumeroVenta</p>
+            <p><strong>Fecha:</strong> @Model.FechaVenta.ToString("dd/MM/yyyy HH:mm")</p>
+            <p><strong>Paciente:</strong> @(Model.Paciente?.Nombre?.Length > 25 ? Model.Paciente.Nombre.Substring(0, 25) : (Model.Paciente?.Nombre ?? "Paciente General"))</p>
+            <p><strong>Vendedor:</strong> @ViewBag.Usuario</p>
+            <p><strong>Forma pago:</strong> @Model.TipoPago.ToUpper()</p>
+            @if (!string.IsNullOrEmpty(Model.Paciente?.Telefono)) 
+            {
+                <p><strong>Teléfono:</strong> @Model.Paciente.Telefono</p>
+            }
+        </div>
+
+        <!-- Detalle de Productos -->
+        <div class="ticket-items">
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th style="width:15%">Cant</th>
+                        <th style="width:55%">Descripción</th>
+                        <th style="width:30%">Total</th>
+                    </thead>
+                <tbody>
+                    @foreach (var detalle in Model.Detalles)
+                    {
+                        <tr>
+                            <td>@detalle.Cantidad</td>
+                            <td>@(detalle.Producto.Nombre.Length > 20 ? detalle.Producto.Nombre.Substring(0, 20) : detalle.Producto.Nombre)</td>
+                            <td>$@detalle.Subtotal.ToString("N2")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Totales -->
+        <div class="ticket-totals">
+            <div class="total-row">
+                <span>Subtotal:</span>
+                <span>$@Model.Total.ToString("N2")</span>
+            </div>
+
+            @if (Model.TipoPago == "Credito")
+            {
+                <div class="total-row">
+                    <span>Pagado:</span>
+                    <span>$@Model.MontoPagado.ToString("N2")</span>
+                </div>
+                <div class="total-row text-danger">
+                    <span>Pendiente:</span>
+                    <span>$@Model.PendientePago.ToString("N2")</span>
+                </div>
+            }
+
+            <div class="total-row">
+                <span>Cambio:</span>
+                <span>$@Model.Cambio.ToString("N2")</span>
+            </div>
+
+            <div class="total-row total-amount">
+                <span>TOTAL:</span>
+                <span>$@Model.Total.ToString("N2")</span>
+            </div>
+        </div>
+
+        <!-- Información adicional para crédito -->
+        @if (Model.TipoPago == "Credito")
+        {
+            <div style="margin-top: 10px; padding: 5px; border: 1px dashed #000; font-size: 9px; text-align:center;">
+                <p style="margin: 2px 0; font-weight: bold;">VENTA A CRÉDITO</p>
+                <p style="margin: 2px 0;">Pendiente: $@Model.PendientePago.ToString("N2")</p>
+                <p style="margin: 2px 0;">Próximo pago: @DateTime.Today.AddDays(30).ToString("dd/MM/yyyy")</p>
+            </div>
+        }
+
+        <!-- Pie del Ticket -->
+        <div class="ticket-footer">
+            <p>¡GRACIAS POR SU COMPRA!</p>
+            <p>Artículos vendidos no se devuelven</p>
+            <p>Garantía: 30 días</p>
+            <p>Conserve este ticket</p>
+            <p>-------------------------------------------</p>
+            <p>Folio: @Guid.NewGuid().ToString().Substring(0, 12).ToUpper()</p>
+            <p>@DateTime.Now.ToString("dd/MM/yyyy HH:mm")</p>
+            <p>¡VUELVA PRONTO!</p>
+        </div>
+    </div>
+
+    <!-- Controles solo visibles en pantalla -->
+    <div class="screen-only">
+        <div class="d-flex justify-content-center flex-wrap">
+            <button type="button" class="btn btn-success btn-ticket" id="btnImprimirDirecto">
+                <i class="bi bi-printer"></i> Imprimir Ticket
+            </button>
+            <button type="button" class="btn btn-primary btn-ticket" id="btnVistaPrevia">
+                <i class="bi bi-eye"></i> Vista Previa
+            </button>
+            <a asp-action="Index" class="btn btn-secondary btn-ticket">
+                <i class="bi bi-arrow-left"></i> Volver
+            </a>
+        </div>
+        <div class="mt-3 text-center text-muted">
+            <small><i class="bi bi-info-circle"></i> La impresión se envía directamente a la impresora térmica</small>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            // Función para generar texto plano del ticket optimizado para 58mm
+            function generarTextoImpresion() {
+                var lineas = [];
+                var separador = "--------------------";
+                var lineaDelgada = "--------------------";
+                
+                // Línea superior y logo
+                lineas.push(separador);
+                lineas.push("    OPTICA CLARIDAD");
+                lineas.push(" Especialistas en salud");
+                lineas.push("       visual");
+                lineas.push("Tel: 656 556 3770");
+                lineas.push(separador);
+                lineas.push("");
+                
+                // Encabezado ticket
+                lineas.push("TICKET DE VENTA");
+                lineas.push("No: @Model.NumeroVenta");
+                lineas.push("Fecha: @Model.FechaVenta.ToString("dd/MM/yyyy HH:mm")");
+                var nombrePaciente = "@(Model.Paciente?.Nombre ?? "Paciente General")";
+                if (nombrePaciente.length > 22) nombrePaciente = nombrePaciente.substring(0, 22);
+                lineas.push("Paciente: " + nombrePaciente);
+                lineas.push("Vendedor: @ViewBag.Usuario");
+                lineas.push("Forma pago: @Model.TipoPago.ToUpper()");
+                @if (!string.IsNullOrEmpty(Model.Paciente?.Telefono))
+                {
+                    <text>lineas.push("Telefono: @Model.Paciente.Telefono");</text>
+                }
+                lineas.push("");
+                lineas.push(lineaDelgada);
+                
+                // Encabezado de productos
+                lineas.push("Cant Descripcion       Total");
+                lineas.push(lineaDelgada);
+                
+                // Productos
+                @foreach (var detalle in Model.Detalles)
+                {
+                    <text>
+                    var cantidad = "@detalle.Cantidad".padEnd(3);
+                    var nombreProd = "@detalle.Producto.Nombre";
+                    if (nombreProd.length > 16) nombreProd = nombreProd.substring(0, 16);
+                    nombreProd = nombreProd.padEnd(16);
+                    var subtotal = "$@detalle.Subtotal.ToString("N2")";
+                    lineas.push(cantidad + " " + nombreProd + " " + subtotal);
+                    </text>
+                }
+                
+                lineas.push(lineaDelgada);
+                
+                // Totales
+                lineas.push("Subtotal:      $@Model.Total.ToString("N2")");
+                
+                @if (Model.TipoPago == "Credito")
+                {
+                    <text>
+                    lineas.push("Pagado:        $@Model.MontoPagado.ToString("N2")");
+                    lineas.push("Pendiente:     $@Model.PendientePago.ToString("N2")");
+                    </text>
+                }
+                
+                lineas.push("Cambio:        $@Model.Cambio.ToString("N2")");
+                lineas.push(separador);
+                lineas.push("TOTAL:         $@Model.Total.ToString("N2")");
+                lineas.push(separador);
+                lineas.push("");
+                
+                @if (Model.TipoPago == "Credito")
+                {
+                    <text>
+                    lineas.push("   VENTA A CREDITO");
+                    lineas.push("Pendiente: $@Model.PendientePago.ToString("N2")");
+                    lineas.push("Proximo pago: @DateTime.Today.AddDays(30).ToString("dd/MM/yyyy")");
+                    lineas.push("");
+                    </text>
+                }
+                
+                // Pie del ticket (el QR lo agrega la app C#)
+                lineas.push("GRACIAS POR SU COMPRA!");
+                lineas.push("Articulos vendidos no");
+                lineas.push("se devuelven");
+                lineas.push("Garantia: 30 dias");
+                lineas.push("Conserve este ticket");
+                lineas.push(lineaDelgada);
+                lineas.push("Folio: @Guid.NewGuid().ToString().Substring(0, 12).ToUpper()");
+                lineas.push("@DateTime.Now.ToString("dd/MM/yyyy HH:mm")");
+                lineas.push("");
+                lineas.push("   VUELVA PRONTO!");
+                
+                return lineas.join("\n");
+            }
+            
+            function mostrarAlerta(mensaje, tipo) {
+                var alertMsg = $('#alertMessage');
+                alertMsg.removeClass('alert-success alert-danger alert-info').addClass('alert-' + tipo);
+                alertMsg.html(mensaje);
+                alertMsg.fadeIn();
+                setTimeout(function() { alertMsg.fadeOut(); }, 3000);
+            }
+            
+            function imprimirTicket() {
+                var texto = generarTextoImpresion();
+                mostrarAlerta('Enviando ticket a impresora...', 'info');
+                
+                fetch('http://localhost:3001/imprimir', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ticket: texto })
+                })
+                .then(function(response) {
+                    if (response.ok) {
+                        mostrarAlerta('Ticket enviado correctamente a la impresora', 'success');
+                    } else {
+                        throw new Error('Error en la impresion');
+                    }
+                })
+                .catch(function(error) {
+                    console.error('Error:', error);
+                    mostrarAlerta('Error: No se pudo conectar al servicio de impresion', 'danger');
+                });
+            }
+            
+            $('#btnImprimirDirecto').click(function(e) {
+                e.preventDefault();
+                imprimirTicket();
+            });
+            
+            $('#btnVistaPrevia').click(function() {
+                window.print();
+            });
+            
+            @if (TempData["AutoPrint"] != null && (bool)TempData["AutoPrint"])
+            {
+                <text>
+                setTimeout(function() {
+                    imprimirTicket();
+                }, 1000);
+                </text>
+            }
+            
+            // Atajo de teclado Ctrl+P para imprimir directo
+            $(document).keydown(function(e) {
+                if (e.ctrlKey && e.key === 'p') {
+                    e.preventDefault();
+                    imprimirTicket();
+                }
+                if (e.key === 'Escape') {
+                    window.location.href = '@Url.Action("Index")';
+                }
+            });
+        });
+    </script>
+</body>
+</html>

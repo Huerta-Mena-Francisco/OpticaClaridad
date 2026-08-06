@@ -1,0 +1,226 @@
+﻿using Microsoft.Extensions.Options;
+using System.Drawing;
+using System.Drawing.Imaging;
+
+namespace OpticaClaridad.Services
+{
+    public class ImagenesConfig
+    {
+        public string RutaBase { get; set; }
+        public Dictionary<string, string> Subcarpetas { get; set; }
+    }
+
+    public class ImagenesService
+    {
+        private readonly IWebHostEnvironment _env;
+        private readonly ImagenesConfig _config;
+        private readonly ILogger<ImagenesService> _logger;
+
+        public ImagenesService(IWebHostEnvironment env, IOptions<ImagenesConfig> config, ILogger<ImagenesService> logger)
+        {
+            _env = env;
+            _config = config.Value;
+            _logger = logger;
+            
+            // Crear carpetas si no existen
+            CrearEstructuraCarpetas();
+        }
+
+        private void CrearEstructuraCarpetas()
+        {
+            try
+            {
+                var rutaBase = Path.GetFullPath(_config.RutaBase);
+                
+                foreach (var carpeta in _config.Subcarpetas.Values)
+                {
+                    var rutaCompleta = Path.Combine(rutaBase, carpeta);
+                    if (!Directory.Exists(rutaCompleta))
+                    {
+                        Directory.CreateDirectory(rutaCompleta);
+                        _logger.LogInformation($"Carpeta creada: {rutaCompleta}");
+                    }
+                }
+                
+                // Subcarpetas para tamaños
+                var tamanos = new[] { "original", "grande", "mediana", "miniatura" };
+                foreach (var tipo in _config.Subcarpetas.Values)
+                {
+                    foreach (var tamano in tamanos)
+                    {
+                        var ruta = Path.Combine(rutaBase, tipo, tamano);
+                        if (!Directory.Exists(ruta))
+                        {
+                            Directory.CreateDirectory(ruta);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creando estructura de carpetas");
+            }
+        }
+
+        public string GuardarImagenProducto(IFormFile imagen, int productoId, bool esPrincipal = false)
+        {
+            try
+            {
+                if (imagen == null || imagen.Length == 0)
+                    return null;
+
+                var extension = Path.GetExtension(imagen.FileName).ToLower();
+                var extensionesPermitidas = new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp" };
+                
+                if (!extensionesPermitidas.Contains(extension))
+                    throw new ArgumentException("Formato de imagen no permitido");
+
+                // Nombre único para la imagen
+                var nombreArchivo = $"{productoId}_{Guid.NewGuid():N}{extension}";
+                var rutaProductos = _config.Subcarpetas["Productos"];
+                
+                // Ruta relativa para la base de datos
+                var rutaRelativa = $"/imagenes-externas/{rutaProductos}/original/{nombreArchivo}";
+                
+                // Ruta física completa
+                var rutaFisica = Path.Combine(
+                    Path.GetFullPath(_config.RutaBase),
+                    rutaProductos,
+                    "original",
+                    nombreArchivo
+                );
+
+                // Guardar imagen original
+                using (var stream = new FileStream(rutaFisica, FileMode.Create))
+                {
+                    imagen.CopyTo(stream);
+                }
+
+                // Crear miniaturas automáticamente
+                CrearMiniaturas(rutaFisica, nombreArchivo, rutaProductos);
+
+                _logger.LogInformation($"Imagen guardada: {rutaRelativa}");
+                return rutaRelativa;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error guardando imagen de producto");
+                return null;
+            }
+        }
+
+        private void CrearMiniaturas(string rutaOriginal, string nombreArchivo, string carpetaProductos)
+        {
+            try
+            {
+                using (var imagenOriginal = Image.FromFile(rutaOriginal))
+                {
+                    // Tamaños para miniaturas
+                    var tamanos = new[] 
+                    {
+                        (nombre: "grande", ancho: 1200, alto: 1200),
+                        (nombre: "mediana", ancho: 500, alto: 500),
+                        (nombre: "miniatura", ancho: 150, alto: 150)
+                    };
+
+                    foreach (var tamano in tamanos)
+                    {
+                        var rutaDestino = Path.Combine(
+                            Path.GetFullPath(_config.RutaBase),
+                            carpetaProductos,
+                            tamano.nombre,
+                            nombreArchivo
+                        );
+
+                        RedimensionarImagen(imagenOriginal, rutaDestino, tamano.ancho, tamano.alto);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creando miniaturas");
+            }
+        }
+
+        private void RedimensionarImagen(Image imagenOriginal, string rutaDestino, int ancho, int alto)
+        {
+            var relacionOriginal = (double)imagenOriginal.Width / imagenOriginal.Height;
+            var relacionDestino = (double)ancho / alto;
+
+            int nuevoAncho, nuevoAlto;
+            
+            if (relacionOriginal > relacionDestino)
+            {
+                nuevoAncho = ancho;
+                nuevoAlto = (int)(ancho / relacionOriginal);
+            }
+            else
+            {
+                nuevoAlto = alto;
+                nuevoAncho = (int)(alto * relacionOriginal);
+            }
+
+            using (var imagenRedimensionada = new Bitmap(nuevoAncho, nuevoAlto))
+            using (var graphics = Graphics.FromImage(imagenRedimensionada))
+            {
+                graphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+                graphics.DrawImage(imagenOriginal, 0, 0, nuevoAncho, nuevoAlto);
+                imagenRedimensionada.Save(rutaDestino, ImageFormat.Jpeg);
+            }
+        }
+
+        public void EliminarImagen(string rutaRelativa)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(rutaRelativa))
+                    return;
+
+                // Convertir ruta relativa a física
+                var rutaFisica = rutaRelativa.Replace("/imagenes-externas/", "")
+                    .Replace("/", "\\");
+                rutaFisica = Path.Combine(Path.GetFullPath(_config.RutaBase), rutaFisica);
+
+                if (File.Exists(rutaFisica))
+                {
+                    File.Delete(rutaFisica);
+                    
+                    // Eliminar miniaturas también
+                    var carpeta = Path.GetDirectoryName(rutaFisica);
+                    var archivo = Path.GetFileName(rutaFisica);
+                    var carpetasTamano = new[] { "grande", "mediana", "miniatura" };
+                    
+                    foreach (var tamano in carpetasTamano)
+                    {
+                        var rutaMiniatura = Path.Combine(carpeta, "..", tamano, archivo);
+                        if (File.Exists(rutaMiniatura))
+                        {
+                            File.Delete(rutaMiniatura);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error eliminando imagen: {rutaRelativa}");
+            }
+        }
+
+        public string ObtenerUrlMiniatura(string rutaOriginal)
+        {
+            if (string.IsNullOrEmpty(rutaOriginal))
+                return "/images/productos/default.png";
+
+            // Reemplazar "/original/" por "/miniatura/" en la ruta
+            return rutaOriginal.Replace("/original/", "/miniatura/");
+        }
+
+        public string ObtenerUrlMediana(string rutaOriginal)
+        {
+            if (string.IsNullOrEmpty(rutaOriginal))
+                return "/images/productos/default.png";
+
+            return rutaOriginal.Replace("/original/", "/mediana/");
+        }
+    }
+}

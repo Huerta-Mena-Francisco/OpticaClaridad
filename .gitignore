@@ -1,0 +1,8 @@
+# Archivos compilados 
+bin/ 
+obj/ 
+*.mdf 
+*.ldf 
+*.db 
+*.sqlite 
+.vs/ 
